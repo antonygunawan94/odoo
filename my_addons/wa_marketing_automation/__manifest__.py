@@ -1,0 +1,19 @@
+{
+    "name": "WhatsApp Marketing Automation",
+    "version": "18.0.1.0.0",
+    "category": "Marketing",
+    "summary": "WhatsApp Marketing Automation - Streamline campaigns, engage customers, and boost conversions with automated messaging workflows",
+    "description": "Comprehensive WhatsApp marketing automation platform for creating, managing, and optimizing customer engagement campaigns. Features include automated messaging workflows, campaign scheduling, audience segmentation, performance analytics, and integration with WhatsApp Business API for seamless communication and lead generation.",
+    "author": "Antony Gunawan",
+    "depends": ["base", "mail"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/campaign_views.xml",
+        "views/customer_segmentation_views.xml",
+        "views/menu.xml",
+    ],
+    "installable": True,
+    "auto_install": False,
+    "application": True,
+    "license": "LGPL-3",
+}

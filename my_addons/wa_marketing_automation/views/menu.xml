@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="wa_marketing_automation_menu_base"
+        name="WhatsApp Marketing Automation"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_campaign"
+        name="Campaigns"
+        parent="wa_marketing_automation_menu_base"
+        action="wa_marketing_automation.wa_marketing_automation_campaign_action"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_customer_segmentation"
+        name="Customer Segmentations"
+        parent="wa_marketing_automation_menu_base"
+        action="wa_marketing_automation.wa_marketing_automation_customer_segmentation_action"
+    />
+</odoo>

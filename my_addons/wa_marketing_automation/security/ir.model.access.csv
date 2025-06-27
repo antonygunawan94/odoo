@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_create,perm_write,perm_read,perm_unlink
+access_wa_marketing_automation_campaign,access.wa_marketing_automation.campaign,model_wa_marketing_automation_campaign,base.group_user,1,1,1,1
+access_wa_marketing_automation_customer_segmentation,access.wa_marketing_automation.customer_segmentation,model_wa_marketing_automation_customer_segmentation,base.group_user,1,1,1,1
