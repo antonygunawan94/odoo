@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background circle -->
+    <circle cx="64" cy="64" r="58" fill="#4a90e2" stroke="#357abd" stroke-width="2" />
+
+    <!-- Main gear (automation symbol) -->
+    <g transform="translate(45, 35)">
+        <circle cx="18" cy="18" r="12" fill="#ffffff" />
+        <circle cx="18" cy="18" r="6" fill="#4a90e2" />
+        <!-- Gear teeth -->
+        <rect x="16" y="2" width="4" height="6" fill="#ffffff" />
+        <rect x="28" y="16" width="6" height="4" fill="#ffffff" />
+        <rect x="16" y="28" width="4" height="6" fill="#ffffff" />
+        <rect x="2" y="16" width="6" height="4" fill="#ffffff" />
+        <rect x="24.5" y="6.5" width="4" height="6" fill="#ffffff" transform="rotate(45 26.5 9.5)" />
+        <rect x="24.5" y="21.5" width="4" height="6" fill="#ffffff" transform="rotate(45 26.5 24.5)" />
+        <rect x="5.5" y="21.5" width="4" height="6" fill="#ffffff" transform="rotate(45 7.5 24.5)" />
+        <rect x="5.5" y="6.5" width="4" height="6" fill="#ffffff" transform="rotate(45 7.5 9.5)" />
+    </g>
+
+    <!-- Email envelope (marketing symbol) -->
+    <g transform="translate(55, 55)">
+        <rect x="0" y="8" width="32" height="22" rx="2" fill="#ffffff" stroke="#4a90e2"
+            stroke-width="1" />
+        <path d="M2 10 L16 20 L30 10" stroke="#4a90e2" stroke-width="2" fill="none" />
+        <!-- Email lines inside -->
+        <line x1="6" y1="24" x2="26" y2="24" stroke="#4a90e2" stroke-width="1" />
+        <line x1="6" y1="27" x2="20" y2="27" stroke="#4a90e2" stroke-width="1" />
+    </g>
+
+    <!-- Automation arrows -->
+    <g fill="#ffffff">
+        <!-- Arrow from gear to email -->
+        <path d="M70 45 Q75 50 70 55 L68 53 L72 50 L68 47 Z" />
+        <!-- Circular arrow around the whole icon -->
+        <path d="M95 64 Q95 45 80 35 L82 32 Q98 44 98 64 Q98 70 96 75 L93 73 Q95 69 95 64 Z" />
+        <path d="M33 64 Q33 83 48 93 L46 96 Q30 84 30 64 Q30 58 32 53 L35 55 Q33 59 33 64 Z" />
+    </g>
+
+    <!-- Small connecting dots -->
+    <circle cx="75" cy="50" r="2" fill="#ffffff" />
+    <circle cx="85" cy="75" r="2" fill="#ffffff" />
+    <circle cx="43" cy="75" r="2" fill="#ffffff" />
+</svg> 

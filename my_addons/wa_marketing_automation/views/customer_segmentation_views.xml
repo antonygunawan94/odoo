@@ -17,6 +17,8 @@
         <field name="arch" type="xml">
             <list string="Customer Segmentation">
                 <field name="name" />
+                <field name="description" optional="show" />
+                <field name="type" />
             </list>
         </field>
     </record>
@@ -27,8 +29,26 @@
         <field name="arch" type="xml">
             <form string="Customer Segmentation">
                 <sheet>
-                    <field name="name" />
+                    <group>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" placeholder="Name.." />
+                            </h1>
+                        </div>
+                        <field name="description" />
+                        <field name="type" widget="radio"
+                            options="{'horizontal': true}" />
+                        <field name="selected_customers"
+                            domain="['|', ('phone', '!=', False), ('mobile', '!=', False)]"
+                            invisible="type != 'manual'"
+                            required="type == 'manual'" />
+                        <field name="rules" widget="domain"
+                            options="{'model': 'res.partner', 'foldable': true}"
+                            invisible="type != 'rules'"
+                            required="type == 'rules'" />
+                    </group>
                 </sheet>
+                <chatter />
             </form>
         </field>
     </record>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wa_marketing_automation_whatsapp_api_log_action" model="ir.actions.act_window">
+        <field name="name">WhatsApp API Log</field>
+        <field name="res_model">wa_marketing_automation.whatsapp_api_log</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Looks like you haven't sent any campaign messages yet.
+            </p>
+        </field>
+    </record>
+
+    <record id="wa_marketing_automation_whatsapp_api_log_list_view" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.whatsapp_api_log.list</field>
+        <field name="model">wa_marketing_automation.whatsapp_api_log</field>
+        <field name="arch" type="xml">
+            <list string="WhatsApp API Log" create="False" edit="False"
+                decoration-success="status == 'success'"
+                decoration-danger="status == 'error'">
+                <field name="at" />
+                <field name="campaign_id" optional="show" />
+                <field name="execution_type" optional="show" />
+                <field name="recipients_count" optional="show" />
+                <field name="status" />
+                <field name="message" />
+            </list>
+        </field>
+    </record>
+
+    <record id="wa_marketing_automation_whatsapp_api_log_form_view" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.whatsapp_api_log.form</field>
+        <field name="model">wa_marketing_automation.whatsapp_api_log</field>
+        <field name="arch" type="xml">
+            <form string="WhatsApp API Log" create="False" edit="False">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="status" widget="badge"
+                                decoration-success="status == 'success'"
+                                decoration-danger="status == 'error'" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="at" />
+                            <field name="campaign_id" />
+                            <field name="execution_type" />
+                        </group>
+                        <group>
+                            <field name="recipients_count" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Message Details">
+                            <field name="message" widget="text" />
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="wa_marketing_automation_whatsapp_api_log_search_view" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.whatsapp_api_log.search</field>
+        <field name="model">wa_marketing_automation.whatsapp_api_log</field>
+        <field name="arch" type="xml">
+            <search string="Search WhatsApp API Logs">
+                <field name="message" string="Message" filter_domain="[('message', 'ilike', self)]" />
+                <field name="campaign_id" string="Campaign" />
+                <separator />
+                <filter string="Success" name="filter_success" domain="[('status', '=', 'success')]" />
+                <filter string="Error" name="filter_error" domain="[('status', '=', 'error')]" />
+                <separator />
+                <filter string="Manual Execution" name="filter_manual"
+                    domain="[('execution_type', '=', 'manual')]" />
+                <filter string="Scheduled Execution" name="filter_scheduled"
+                    domain="[('execution_type', '=', 'scheduled')]" />
+                <filter string="Test Execution" name="filter_test"
+                    domain="[('execution_type', '=', 'test')]" />
+                <separator />
+                <filter string="Today" name="filter_today"
+                    domain="[('at', '>=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))), ('at', '&lt;=', datetime.datetime.combine(context_today(), datetime.time(23,59,59)))]" />
+                <filter string="This Week" name="filter_week"
+                    domain="[('at', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')), ('at', '&lt;=', (context_today() + datetime.timedelta(days=6-context_today().weekday())).strftime('%Y-%m-%d'))]" />
+                <filter string="This Month" name="filter_month"
+                    domain="[('at', '&gt;=', context_today().strftime('%Y-%m-01')), ('at', '&lt;=', (context_today().replace(day=1) + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(days=1))]" />
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_status" context="{'group_by': 'status'}" />
+                    <filter string="Campaign" name="group_campaign"
+                        context="{'group_by': 'campaign_id'}" />
+                    <filter string="Execution Type" name="group_execution_type"
+                        context="{'group_by': 'execution_type'}" />
+                    <filter string="Date" name="group_date" context="{'group_by': 'at:day'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

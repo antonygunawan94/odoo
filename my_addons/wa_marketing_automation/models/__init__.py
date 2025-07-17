@@ -1,1 +1,1 @@
-from . import campaign, customer_segmentation
+from . import campaign, configuration, customer_segmentation, whatsapp_api_log

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wa_marketing_automation_configuration_action" model="ir.actions.act_window">
+        <field name="name">Configuration</field>
+        <field name="res_model">wa_marketing_automation.configuration</field>
+        <field name="res_id" eval="1" />
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'create': False, 'edit': True}</field>
+    </record>
+
+    <record id="wa_marketing_automation_configuration_form_view" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.configuration.form</field>
+        <field name="model">wa_marketing_automation.configuration</field>
+        <field name="arch" type="xml">
+            <form string="Configuration" create="False" edit="True">
+                <header>
+                    <button name="action_test_connection" type="object"
+                        string="Test Connection" class="btn-primary"
+                        confirm="Test the WhatsApp API connection?" />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1" />
+                        </h1>
+                    </div>
+                    <group string="API Configuration">
+                        <field name="base_url" placeholder="https://api.whatsapp.com/v1" />
+                        <field name="access_token" password="True" />
+                        <field name="send_path_url" placeholder="/send-message" />
+                        <field name="health_check_path_url" placeholder="/health" />
+                        <field name="test_customer_id" domain="[('is_company', '=', False)]" />
+                    </group>
+                </sheet>
+                <chatter />
+            </form>
+        </field>
+    </record>
+
+
+</odoo>
