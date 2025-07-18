@@ -294,7 +294,7 @@
 **Sustainability Advocates**
 ```python
 [
-    ('sustainability_preference_score', '>', 70),
+    ('eco_friendly_score', '>', 70),
     ('premium_product_propensity', '>', 50),
     ('active', '=', True)
 ]
@@ -313,7 +313,7 @@
 ```python
 [
     ('social_responsibility_score', '>', 75),
-    ('sustainability_preference_score', '>', 60),
+    ('eco_friendly_score', '>', 60),
     ('customer_journey_stage', 'in', ['loyalty', 'advocacy'])
 ]
 ```
@@ -479,7 +479,7 @@
 | `preferred_channel` | Selection | Primary communication channel |
 | `churn_risk_level` | Selection | Churn risk level (very_low to very_high) |
 | `churn_risk_score` | Float | Churn probability in next 90 days (0-100) |
-| `sustainability_preference_score` | Float | Preference for eco-friendly products (0-100) |
+| `eco_friendly_score` | Float | Preference for eco-friendly products (0-100) |
 | `premium_product_propensity` | Float | Likelihood to buy premium products (0-100) |
 | `social_responsibility_score` | Float | Preference for ethical brands (0-100) |
 | `social_media_source` | Selection | Primary social media source |

@@ -20,6 +20,9 @@
         "views/res_partner_views.xml",
         "views/customer_demographics_report_views.xml",  # Fixed with type="html"
         "views/cohort_analysis_report_views.xml",
+        "views/advanced_analytics_filter_views.xml",
+        "views/res_config_settings_views.xml",
+        "views/config_action_views.xml",
         "views/menu.xml",
     ],
     "installable": True,

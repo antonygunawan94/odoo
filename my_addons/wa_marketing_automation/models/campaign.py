@@ -715,8 +715,9 @@ Formatting tips:
         self.ensure_one()
 
         for rec in self:
-            config = self.env["wa_marketing_automation.configuration"].get_config()
-            test_customers = [config.test_customer_id]
+            config = self.env["res.config.settings"].get_whatsapp_config()
+            test_customer_id = config.get('test_customer_id', False)
+            test_customers = [self.env['res.partner'].browse(test_customer_id)] if test_customer_id else []
 
             if not test_customers:
                 # Get target customers with safe evaluation
@@ -1530,8 +1531,8 @@ Formatting tips:
                 )
 
             # Prepare API request data
-            config = self.env["wa_marketing_automation.configuration"].get_config()
-            api_url = f"{config.base_url}{config.send_path_url}"
+            config = self.env["res.config.settings"].get_whatsapp_config()
+            api_url = f"{config['base_url']}{config['send_path_url']}"
             request_data = {"recipients": recipients}
 
             # Track execution start time

@@ -72,11 +72,19 @@
         sequence="90"
     />
 
-    <menuitem id="wa_marketing_automation_menu_configuration"
+    <!-- Configuration Menu - Opens Settings > General Settings > WhatsApp Marketing Automation -->
+    <menuitem id="wa_marketing_automation_menu_config"
         name="Configuration"
         parent="wa_marketing_automation_menu_base"
-        action="wa_marketing_automation.wa_marketing_automation_configuration_action"
+        action="wa_marketing_automation.action_wa_marketing_config"
         sequence="100"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_advanced_filter"
+        name="Advanced Analytics Filter"
+        parent="wa_marketing_automation_menu_base"
+        action="wa_marketing_automation.action_advanced_analytics_filter"
+        sequence="25"
     />
 
 </odoo>

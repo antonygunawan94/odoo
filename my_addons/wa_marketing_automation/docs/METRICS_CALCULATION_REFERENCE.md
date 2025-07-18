@@ -364,33 +364,92 @@ def _compute_whatsapp_engagement(self):
 
 ### 4. Overall Engagement Score
 
-**Formula**:
+**Overview**: Adaptive weighted average of channel-specific engagement scores.
+
+**Algorithm**:
 ```python
-def _compute_overall_engagement(self):
-    scores = []
-    weights = []
+def _compute_engagement_metrics(self):
+    """Compute engagement scores across all channels (adaptive based on configuration)"""
+    # Get metrics configuration
+    config = self.env['res.config.settings'].get_analytics_config()
     
-    # Email engagement (weight: 1)
-    if partner.email:
-        scores.append(partner.email_engagement_score)
-        weights.append(1)
-    
-    # Website engagement (weight: 1)
-    if partner.sale_order_ids:
-        scores.append(partner.website_engagement_score)
-        weights.append(1)
-    
-    # WhatsApp engagement (weight: 1)
-    if partner.mobile:
-        scores.append(partner.whatsapp_engagement_score)
-        weights.append(1)
-    
-    # Calculate weighted average
-    if scores:
-        partner.overall_engagement_score = sum(s * w for s, w in zip(scores, weights)) / sum(weights)
-    else:
-        partner.overall_engagement_score = 0
+    for partner in self:
+        # Skip if engagement scoring is disabled
+        if not config.get('enable_engagement_scoring', True):
+            partner.overall_engagement_score = 0.0
+            partner.engagement_level = 'unknown'
+            continue
+        
+        # Calculate individual channel scores
+        scores = {}
+        
+        # Email engagement (if enabled)
+        if config.get('enable_email_engagement', True) and partner.email:
+            ninety_days_ago = date.today() - timedelta(days=90)
+            email_messages = messages.filtered(
+                lambda m: m.date and m.date.date() >= ninety_days_ago and 
+                m.message_type == 'email'
+            )
+            scores['email_engagement'] = min(len(email_messages) * 5, 100)
+        else:
+            scores['email_engagement'] = 0
+        
+        # Website engagement (if enabled)
+        if config.get('enable_website_engagement', True) and partner.sale_order_ids:
+            website_score = 0
+            if partner.days_since_last_purchase <= 30:
+                website_score += 50
+            elif partner.days_since_last_purchase <= 90:
+                website_score += 30
+            
+            if partner.purchase_count >= 3:
+                website_score += 30
+            elif partner.purchase_count >= 1:
+                website_score += 15
+            
+            if partner.total_spent >= 500:
+                website_score += 20
+            elif partner.total_spent >= 100:
+                website_score += 10
+            
+            scores['website_engagement'] = min(website_score, 100)
+        else:
+            scores['website_engagement'] = 0
+        
+        # WhatsApp engagement (if enabled)
+        if config.get('enable_whatsapp_engagement', True) and partner.mobile:
+            whatsapp_score = 20  # Base score for having mobile
+            if campaigns:
+                whatsapp_score += min(len(campaigns) * 10, 60)
+            if partner.message_ids:
+                whatsapp_score += min(len(partner.message_ids) * 5, 20)
+            scores['whatsapp_engagement'] = min(whatsapp_score, 100)
+        else:
+            scores['whatsapp_engagement'] = 0
+        
+        # Calculate weighted average of enabled channels
+        active_channels = []
+        total_weighted_score = 0
+        total_weight = 0
+        
+        for channel, score in scores.items():
+            if score > 0:  # Only include channels with activity
+                active_channels.append((channel, score))
+                total_weighted_score += score * 1  # Equal weights for all channels
+                total_weight += 1
+        
+        overall_score = total_weighted_score / total_weight if total_weight > 0 else 0.0
+        
+        partner.overall_engagement_score = overall_score
 ```
+
+**Business Logic**:
+- **Adaptive Configuration**: Only calculates enabled channel scores
+- **Email Engagement**: Based on email messages in last 90 days (5 points per message, max 100)
+- **Website Engagement**: Based on purchase recency, frequency, and spending (max 100)
+- **WhatsApp Engagement**: Based on mobile presence, campaigns, and messages (max 100)
+- **Weighted Average**: Equal weights for all active channels
+- **Missing Channels**: Excluded from calculation rather than treated as zero
 
 ### 5. Engagement Level Classification
 
@@ -420,60 +479,121 @@ Churn prediction calculates the probability (0-100) that a customer will churn i
 
 ### Churn Risk Score Calculation
 
-**Formula**:
+**Overview**: Adaptive churn prediction model that adjusts weights based on enabled features.
+
+**Algorithm**:
 ```python
 def _compute_churn_prediction(self):
-    # Multi-factor churn prediction model
-    churn_score = 0
+    # Get metrics configuration
+    config = self.env['res.config.settings'].get_analytics_config()
     
-    # Factor 1: RFM Segment (40% weight)
-    rfm_risk = {
-        'lost': 90,
-        'hibernating': 80,
-        'at_risk': 70,
-        'cannot_lose_them': 60,
-        'about_to_sleep': 50,
-        'need_attention': 40,
-        'promising': 20,
-        'potential_loyalists': 15,
-        'loyal_customers': 10,
-        'new_customers': 25,
-        'champions': 5,
-        'others': 30
-    }
-    churn_score += rfm_risk.get(partner.rfm_segment, 30) * 0.4
-    
-    # Factor 2: Recency Factor (30% weight)
-    if partner.days_since_last_purchase <= 30:
-        recency_risk = 10
-    elif partner.days_since_last_purchase <= 90:
-        recency_risk = 25
-    elif partner.days_since_last_purchase <= 180:
-        recency_risk = 50
-    elif partner.days_since_last_purchase <= 365:
-        recency_risk = 75
-    else:
-        recency_risk = 95
-    
-    churn_score += recency_risk * 0.3
-    
-    # Factor 3: Engagement Factor (20% weight)
-    engagement_risk = 100 - partner.overall_engagement_score
-    churn_score += engagement_risk * 0.2
-    
-    # Factor 4: Journey Stage Factor (10% weight)
-    journey_risk = {
-        'advocacy': 5,
-        'loyalty': 15,
-        'purchase': 25,
-        'consideration': 35,
-        'awareness': 45,
-        'dormant': 85
-    }
-    churn_score += journey_risk.get(partner.customer_journey_stage, 50) * 0.1
-    
-    partner.churn_risk_score = min(churn_score, 100)
+    for partner in self:
+        # Skip if churn prediction is disabled
+        if not config.get('enable_churn_prediction', True):
+            partner.churn_risk_score = 0.0
+            partner.churn_risk_level = 'unknown'
+            continue
+            
+        if not partner.is_company and partner.customer_rank > 0:
+            # Get adaptive weights for churn factors
+            weights = self._get_adaptive_churn_weights(config)
+            churn_score = 0.0
+            
+            # RFM-based risk (always available)
+            rfm_factor = 0.0
+            if partner.rfm_segment in ('lost', 'hibernating'):
+                rfm_factor = 100.0
+            elif partner.rfm_segment in ('cannot_lose_them', 'at_risk'):
+                rfm_factor = 75.0
+            elif partner.rfm_segment in ('about_to_sleep', 'need_attention'):
+                rfm_factor = 50.0
+            elif partner.rfm_segment in ('promising', 'new_customers'):
+                rfm_factor = 25.0
+            
+            if 'rfm_analysis' in weights:
+                churn_score += rfm_factor * (weights['rfm_analysis'] / 100)
+            
+            # Engagement factor (if enabled)
+            if 'engagement_scoring' in weights and config.get('enable_engagement_scoring', True):
+                engagement_factor = 0.0
+                if partner.overall_engagement_score < 20:
+                    engagement_factor = 100.0
+                elif partner.overall_engagement_score < 40:
+                    engagement_factor = 75.0
+                elif partner.overall_engagement_score < 60:
+                    engagement_factor = 50.0
+                
+                churn_score += engagement_factor * (weights['engagement_scoring'] / 100)
+            
+            # Journey stage factor (if enabled)
+            if 'customer_journey' in weights and config.get('enable_customer_journey', True):
+                journey_factor = 0.0
+                if partner.customer_journey_stage == 'dormant':
+                    journey_factor = 100.0
+                elif partner.customer_journey_stage == 'consideration':
+                    journey_factor = 50.0
+                
+                churn_score += journey_factor * (weights['customer_journey'] / 100)
+            
+            # Multi-channel factor (if enabled)
+            if 'multichannel_behavior' in weights and config.get('enable_multichannel_behavior', True):
+                multichannel_factor = 0.0
+                if partner.multichannel_touchpoints <= 1:
+                    multichannel_factor = 80.0
+                elif partner.multichannel_consistency_score < 30:
+                    multichannel_factor = 60.0
+                
+                churn_score += multichannel_factor * (weights['multichannel_behavior'] / 100)
+            
+            partner.churn_risk_score = min(churn_score, 100.0)
 ```
+
+**Adaptive Weight System**:
+```python
+def _get_adaptive_churn_weights(self, config):
+    """Get adaptive churn prediction weights based on enabled features"""
+    base_factors = {
+        'rfm_analysis': 40,
+        'engagement_scoring': 30,
+        'customer_journey': 20,
+        'multichannel_behavior': 10
+    }
+    
+    enabled_factors = {}
+    disabled_weight = 0
+    
+    # Check which factors are enabled and redistribute weights
+    for factor, weight in base_factors.items():
+        if factor == 'rfm_analysis':
+            enabled_factors[factor] = weight  # Always enabled
+        elif factor == 'engagement_scoring' and config.get('enable_engagement_scoring', True):
+            enabled_factors[factor] = weight
+        elif factor == 'customer_journey' and config.get('enable_customer_journey', True):
+            enabled_factors[factor] = weight
+        elif factor == 'multichannel_behavior' and config.get('enable_multichannel_behavior', True):
+            enabled_factors[factor] = weight
+        else:
+            disabled_weight += weight
+    
+    # Redistribute disabled weights proportionally
+    if disabled_weight > 0 and enabled_factors:
+        total_enabled_weight = sum(enabled_factors.values())
+        for factor in enabled_factors:
+            enabled_factors[factor] += (disabled_weight * enabled_factors[factor] / total_enabled_weight)
+    
+    return enabled_factors
+```
+
+**Business Logic**:
+- **Adaptive Weights**: Adjusts factor weights based on enabled features
+- **RFM Risk Levels**: 
+  - Lost/Hibernating: 100% risk
+  - Cannot Lose/At Risk: 75% risk
+  - About to Sleep/Need Attention: 50% risk
+  - Promising/New: 25% risk
+- **Engagement Thresholds**: <20 = 100% risk, <40 = 75% risk, <60 = 50% risk
+- **Journey Stage Risk**: Dormant = 100%, Consideration = 50%
+- **Multi-channel Risk**: Single channel = 80%, Low consistency = 60%
 
 ### Churn Risk Level Classification
 
@@ -608,105 +728,182 @@ def _compute_consistency_score(self):
 ## Values-Driven Propensity Calculations
 
 ### Overview
-Values-driven propensity analyzes customer preferences for sustainability, premium products, and social responsibility based on purchase history.
+Values-driven propensity analyzes customer preferences for eco-friendly products, premium pricing, and social responsibility based on purchase history. These metrics help identify customers who make purchasing decisions based on their personal values rather than just price considerations.
 
-### 1. Sustainability Preference Score
+### 1. Eco-Friendly Score
+
+**Data Source**: All confirmed sale orders (`sale_order` where `state IN ('sale', 'done')`)
 
 **Algorithm**:
 ```python
-def _compute_sustainability_preference(self):
-    if not partner.sale_order_ids:
-        partner.sustainability_preference_score = 0
-        return
+def _compute_eco_friendly_score(self):
+    # Get analytics configuration
+    config = self.env['res.config.settings'].get_analytics_config()
     
-    orders = partner.sale_order_ids.filtered(lambda o: o.state in ('sale', 'done'))
-    total_products = 0
-    sustainable_products = 0
-    
-    # Keywords indicating sustainable products
-    sustainability_keywords = [
-        'eco', 'organic', 'green', 'sustainable', 'bamboo', 'recycled',
-        'biodegradable', 'renewable', 'fair trade', 'carbon neutral'
-    ]
-    
-    for order in orders:
-        for line in order.order_line:
-            total_products += 1
-            product_name = line.product_id.name.lower()
+    for partner in self:
+        # Skip if values analytics is disabled
+        if not config.get('enable_values_analytics', False):
+            partner.eco_friendly_score = 0.0
+            continue
             
-            if any(keyword in product_name for keyword in sustainability_keywords):
-                sustainable_products += 1
-    
-    if total_products > 0:
-        preference_ratio = sustainable_products / total_products
-        partner.sustainability_preference_score = preference_ratio * 100
-    else:
-        partner.sustainability_preference_score = 0
+        # Check if sale_order_ids field exists (sale module might not be installed)
+        if not hasattr(partner, 'sale_order_ids'):
+            partner.eco_friendly_score = 25.0
+            continue
+            
+        if partner.sale_order_ids:
+            # Analyze product purchases for eco-friendly patterns
+            order_lines = partner.sale_order_ids.mapped('order_line')
+            products = order_lines.mapped('product_id')
+            
+            # Eco-friendly score (based on product names)
+            sustainability_score = 0.0
+            
+            # Fixed keywords for eco-friendly products
+            sustainability_keywords = ['eco', 'organic', 'sustainable', 'green', 'bio', 'natural']
+            
+            sustainable_products = products.filtered(
+                lambda p: any(keyword in p.name.lower() for keyword in sustainability_keywords) if p.name else False
+            )
+            
+            if products:
+                sustainability_score = (len(sustainable_products) / len(products)) * 100
+            
+            # Boost scores for loyal customers (Champions/Loyal RFM segments)
+            if partner.rfm_segment in ('champions', 'loyal_customers'):
+                sustainability_score = min(sustainability_score * 1.2, 100)
+            
+            partner.eco_friendly_score = sustainability_score
+        else:
+            # Default scores for customers without purchase history
+            partner.eco_friendly_score = 25.0
 ```
 
+**Business Logic**:
+- **Keywords**: `eco`, `organic`, `sustainable`, `green`, `bio`, `natural` (case-insensitive)
+- **Formula**: `(eco_friendly_products / total_products) * 100`
+- **Loyalty Bonus**: 20% increase for Champions and Loyal Customers
+- **Default Value**: 25.0 for customers without purchase history
+- **Configuration**: Requires `enable_values_analytics` to be enabled
+
 ### 2. Premium Product Propensity
+
+**Data Source**: All confirmed sale orders (`sale_order` where `state IN ('sale', 'done')`)
 
 **Algorithm**:
 ```python
 def _compute_premium_propensity(self):
-    if not partner.sale_order_ids:
-        partner.premium_product_propensity = 0
-        return
+    # Get analytics configuration
+    config = self.env['res.config.settings'].get_analytics_config()
     
-    orders = partner.sale_order_ids.filtered(lambda o: o.state in ('sale', 'done'))
-    
-    # Calculate average order value
-    if orders:
-        avg_order_value = sum(orders.mapped('amount_total')) / len(orders)
-        
-        # Premium propensity based on spending patterns
-        if avg_order_value >= 500:
-            partner.premium_product_propensity = 90
-        elif avg_order_value >= 300:
-            partner.premium_product_propensity = 70
-        elif avg_order_value >= 200:
-            partner.premium_product_propensity = 50
-        elif avg_order_value >= 100:
-            partner.premium_product_propensity = 30
+    for partner in self:
+        # Skip if values analytics is disabled
+        if not config.get('enable_values_analytics', False):
+            partner.premium_product_propensity = 0.0
+            continue
+            
+        # Check if sale_order_ids field exists (sale module might not be installed)
+        if not hasattr(partner, 'sale_order_ids'):
+            partner.premium_product_propensity = 25.0
+            continue
+            
+        if partner.sale_order_ids:
+            # Analyze product purchases for premium patterns
+            order_lines = partner.sale_order_ids.mapped('order_line')
+            
+            # Premium product propensity (based on price points)
+            premium_score = 0.0
+            if order_lines:
+                avg_price = sum(order_lines.mapped('price_unit')) / len(order_lines)
+                # Score based on average price point (adjust thresholds as needed)
+                if avg_price > 500:
+                    premium_score = 90.0
+                elif avg_price > 200:
+                    premium_score = 70.0
+                elif avg_price > 100:
+                    premium_score = 50.0
+                elif avg_price > 50:
+                    premium_score = 30.0
+                else:
+                    premium_score = 10.0
+            
+            # Boost scores for loyal customers (Champions/Loyal RFM segments)
+            if partner.rfm_segment in ('champions', 'loyal_customers'):
+                premium_score = min(premium_score * 1.1, 100)
+            
+            partner.premium_product_propensity = premium_score
         else:
-            partner.premium_product_propensity = 10
-    else:
-        partner.premium_product_propensity = 0
+            # Default scores for customers without purchase history
+            partner.premium_product_propensity = 25.0
 ```
 
+**Business Logic**:
+- **Data**: Average price per unit across all order lines
+- **Thresholds**: 
+  - `>$500`: 90 points (luxury tier)
+  - `>$200`: 70 points (premium tier)
+  - `>$100`: 50 points (mid-range tier)
+  - `>$50`: 30 points (budget-plus tier)
+  - `≤$50`: 10 points (budget tier)
+- **Loyalty Bonus**: 10% increase for Champions and Loyal Customers
+- **Default Value**: 25.0 for customers without purchase history
+- **Configuration**: Requires `enable_values_analytics` to be enabled
+
 ### 3. Social Responsibility Score
+
+**Data Source**: All confirmed sale orders (`sale_order` where `state IN ('sale', 'done')`)
 
 **Algorithm**:
 ```python
 def _compute_social_responsibility_score(self):
-    if not partner.sale_order_ids:
-        partner.social_responsibility_score = 0
-        return
+    # Get analytics configuration
+    config = self.env['res.config.settings'].get_analytics_config()
     
-    orders = partner.sale_order_ids.filtered(lambda o: o.state in ('sale', 'done'))
-    total_products = 0
-    social_products = 0
-    
-    # Keywords indicating socially responsible products
-    social_keywords = [
-        'charity', 'donation', 'social', 'community', 'ethical',
-        'fair trade', 'local', 'artisan', 'support', 'cause'
-    ]
-    
-    for order in orders:
-        for line in order.order_line:
-            total_products += 1
-            product_name = line.product_id.name.lower()
+    for partner in self:
+        # Skip if values analytics is disabled
+        if not config.get('enable_values_analytics', False):
+            partner.social_responsibility_score = 0.0
+            continue
             
-            if any(keyword in product_name for keyword in social_keywords):
-                social_products += 1
-    
-    if total_products > 0:
-        responsibility_ratio = social_products / total_products
-        partner.social_responsibility_score = responsibility_ratio * 100
-    else:
-        partner.social_responsibility_score = 0
+        # Check if sale_order_ids field exists (sale module might not be installed)
+        if not hasattr(partner, 'sale_order_ids'):
+            partner.social_responsibility_score = 25.0
+            continue
+            
+        if partner.sale_order_ids:
+            # Analyze product purchases for social responsibility patterns
+            order_lines = partner.sale_order_ids.mapped('order_line')
+            products = order_lines.mapped('product_id')
+            
+            # Social responsibility score (based on brand preferences)
+            social_score = 0.0
+            
+            # Fixed keywords for socially responsible products
+            social_keywords = ['fair', 'ethical', 'charity', 'community', 'social']
+            
+            social_products = products.filtered(
+                lambda p: any(keyword in p.name.lower() for keyword in social_keywords) if p.name else False
+            )
+            
+            if products:
+                social_score = (len(social_products) / len(products)) * 100
+            
+            # Boost scores for loyal customers (Champions/Loyal RFM segments)
+            if partner.rfm_segment in ('champions', 'loyal_customers'):
+                social_score = min(social_score * 1.2, 100)
+            
+            partner.social_responsibility_score = social_score
+        else:
+            # Default scores for customers without purchase history
+            partner.social_responsibility_score = 25.0
 ```
+
+**Business Logic**:
+- **Keywords**: `fair`, `ethical`, `charity`, `community`, `social` (case-insensitive)
+- **Formula**: `(social_products / total_products) * 100`
+- **Loyalty Bonus**: 20% increase for Champions and Loyal Customers
+- **Default Value**: 25.0 for customers without purchase history
+- **Configuration**: Requires `enable_values_analytics` to be enabled
 
 ---
 

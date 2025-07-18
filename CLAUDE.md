@@ -300,6 +300,84 @@ make run-update
 make run-update
 ```
 
+### Analytics Metric Description Standards
+
+When adding new analytics metrics to the WhatsApp Marketing Automation module, follow these business-friendly description standards to ensure consistency and user understanding:
+
+#### Configuration Settings Description Format
+All metric descriptions in `views/res_config_settings_views.xml` should follow this structure:
+
+```xml
+<setting string="Metric Name" help="[What it shows]. [What it analyzes]. [Data sources]. [How to use it]." />
+```
+
+**Required components:**
+1. **What it shows**: Clear explanation of what the metric measures in business terms
+2. **What it analyzes**: Specific data or behavior patterns examined
+3. **Data sources**: Where the data comes from (orders, emails, website, etc.)
+4. **How to use it**: Actionable business insights and use cases
+
+**Example:**
+```xml
+<setting string="Eco-Friendly Score" help="Shows how much customers prefer environmentally-friendly products. Calculates the percentage of their purchases that include eco-friendly, organic, sustainable, green, bio, or natural products. Based on product purchase history and keyword analysis. Use this to target customers with sustainable product offerings and create eco-focused marketing campaigns." />
+```
+
+#### Customer Views Description Format
+All metric descriptions in `views/res_partner_views.xml` should follow this structure:
+
+```xml
+<div class="alert alert-info" role="alert">
+    <strong>[Business-Friendly Title]:</strong><br />
+    [Brief explanation of what this shows]<br /><br />
+    <strong>What we analyze:</strong>
+    <ul>
+        <li><strong>[Metric 1]:</strong> [Explanation in business terms]</li>
+        <li><strong>[Metric 2]:</strong> [Explanation in business terms]</li>
+    </ul>
+    <strong>Data sources:</strong> [List all data sources used]<br /><br />
+    <strong>Use this to:</strong> [Actionable business recommendations]
+</div>
+```
+
+#### Writing Guidelines
+
+1. **Use Business Language**: Avoid technical jargon, use terms business people understand
+2. **Focus on Value**: Explain what the metric helps achieve, not just what it calculates
+3. **Include Data Sources**: Always mention where the data comes from (builds trust)
+4. **Provide Actions**: Give specific ways to use the metric for business decisions
+5. **Be Consistent**: Use the same format and structure across all metrics
+
+#### Examples of Good vs Bad Descriptions
+
+**❌ Bad (Technical):**
+```
+"Multi-channel engagement analysis with adaptive weights: Email (40%), Website (35%), WhatsApp (25%)"
+```
+
+**✅ Good (Business-Friendly):**
+```
+"Shows how actively customers interact with your business. Looks at email opens and clicks, website visits and purchases, and WhatsApp message responses over the last 90 days."
+```
+
+#### Standard Metric Categories
+
+When creating new metrics, categorize them properly:
+
+1. **Core Analytics**: Always enabled (RFM, basic engagement)
+2. **Behavioral Analytics**: Customer preferences and values
+3. **Commerce Analytics**: Sales channels and payment behavior
+
+Each category should have clear business value and use cases documented.
+
+#### Configuration Field Naming
+
+- Use descriptive field names: `eco_friendly_keywords` not `ef_kw`
+- Include units in labels: `"Email Engagement Period (days)"`
+- Provide sensible defaults and placeholders
+- Group related fields visually in the UI
+
+This ensures all analytics metrics are accessible to business users while maintaining technical accuracy.
+
 ## Database Configuration
 - **Host**: localhost (default)
 - **Port**: 5432 (PostgreSQL default)

@@ -392,9 +392,27 @@ The system uses a weighted algorithm:
 #### Scoring Method
 
 Based on product purchase history analysis:
-- **Sustainability Score**: Eco-friendly keyword detection in product names
-- **Premium Propensity**: Average price point analysis
-- **Social Responsibility**: Ethical brand keyword detection
+
+- **Eco-Friendly Score**: Calculates percentage of eco-friendly products purchased
+  - **Keywords**: `eco`, `organic`, `sustainable`, `green`, `bio`, `natural`
+  - **Formula**: `(eco_friendly_products / total_products) * 100`
+  - **Bonus**: 20% boost for loyal customers (Champions/Loyal RFM segments)
+  - **Default**: 25.0 for customers without purchase history
+
+- **Premium Propensity**: Scoring based on average price point thresholds
+  - **>$500**: 90 points (luxury tier)
+  - **>$200**: 70 points (premium tier)
+  - **>$100**: 50 points (mid-range tier)
+  - **>$50**: 30 points (budget-plus tier)
+  - **≤$50**: 10 points (budget tier)
+  - **Bonus**: 10% boost for loyal customers
+  - **Default**: 25.0 for customers without purchase history
+
+- **Social Responsibility**: Calculates percentage of socially responsible products purchased
+  - **Keywords**: `fair`, `ethical`, `charity`, `community`, `social`
+  - **Formula**: `(social_products / total_products) * 100`
+  - **Bonus**: 20% boost for loyal customers (Champions/Loyal RFM segments)
+  - **Default**: 25.0 for customers without purchase history
 
 #### Score Ranges
 
@@ -407,9 +425,9 @@ Based on product purchase history analysis:
 #### Marketing Applications
 
 ```python
-# Sustainability-focused campaign
+# Eco-friendly focused campaign
 [
-    ('sustainability_preference_score', '>', 70),
+    ('eco_friendly_score', '>', 70),
     ('customer_journey_stage', 'in', ['loyalty', 'advocacy'])
 ]
 
@@ -587,7 +605,7 @@ The system analyzes:
 ```python
 # Eco-friendly product launch to sustainability advocates
 [
-    ('sustainability_preference_score', '>', 70),
+    ('eco_friendly_score', '>', 70),
     ('social_responsibility_score', '>', 60),
     ('customer_journey_stage', 'in', ['loyalty', 'advocacy'])
 ]

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Advanced Analytics Filter Form View -->
+        <record id="view_advanced_analytics_filter_form" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.advanced_filter.form</field>
+            <field name="model">wa_marketing_automation.advanced_filter</field>
+            <field name="arch" type="xml">
+                <form string="Advanced Analytics Filter">
+                    <header>
+                        <button name="action_preview_customers" string="Preview Customers" type="object" class="btn-primary"/>
+                        <button name="action_apply_filter" string="Apply Filter" type="object" class="btn-primary"/>
+                        <button name="action_save_template" string="Save as Template" type="object" class="btn-secondary"/>
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <label for="name" class="oe_edit_only"/>
+                            <h1>
+                                <field name="name" placeholder="Enter filter name..."/>
+                            </h1>
+                        </div>
+                        
+                        <!-- Results Summary -->
+                        <group string="Filter Results" invisible="customer_count == 0">
+                            <field name="customer_count" readonly="1"/>
+                            <field name="filter_domain" readonly="1" widget="text"/>
+                        </group>
+                        
+                        <notebook>
+                            <!-- Core Analytics Tab -->
+                            <page string="Core Analytics" name="core_analytics">
+                                <group>
+                                    <group string="RFM Analysis">
+                                        <field name="rfm_segments" placeholder="e.g., champions,loyal_customers,at_risk"/>
+                                        <label for="rfm_score_min" string="RFM Score Range"/>
+                                        <div>
+                                            <field name="rfm_score_min" class="oe_inline"/> to 
+                                            <field name="rfm_score_max" class="oe_inline"/>
+                                        </div>
+                                    </group>
+                                    <group string="Engagement Analytics">
+                                        <field name="engagement_levels" placeholder="e.g., high,very_high,medium"/>
+                                        <label for="engagement_score_min" string="Engagement Score Range"/>
+                                        <div>
+                                            <field name="engagement_score_min" class="oe_inline"/> to 
+                                            <field name="engagement_score_max" class="oe_inline"/>
+                                        </div>
+                                    </group>
+                                </group>
+                                <group>
+                                    <group string="Churn Risk">
+                                        <field name="churn_risk_levels" placeholder="e.g., high,very_high"/>
+                                        <label for="churn_score_min" string="Churn Score Range"/>
+                                        <div>
+                                            <field name="churn_score_min" class="oe_inline"/> to 
+                                            <field name="churn_score_max" class="oe_inline"/>
+                                        </div>
+                                    </group>
+                                    <group string="Customer Journey">
+                                        <field name="journey_stages" placeholder="e.g., loyalty,advocacy,dormant"/>
+                                    </group>
+                                </group>
+                            </page>
+                            
+                            <!-- Demographics & Behavior Tab -->
+                            <page string="Demographics &amp; Behavior" name="demographics">
+                                <group>
+                                    <group string="Demographics">
+                                        <label for="age_min" string="Age Range"/>
+                                        <div>
+                                            <field name="age_min" class="oe_inline"/> to 
+                                            <field name="age_max" class="oe_inline"/>
+                                        </div>
+                                    </group>
+                                    <group string="Purchase Behavior">
+                                        <label for="days_since_purchase_min" string="Days Since Purchase"/>
+                                        <div>
+                                            <field name="days_since_purchase_min" class="oe_inline"/> to 
+                                            <field name="days_since_purchase_max" class="oe_inline"/>
+                                        </div>
+                                        <field name="purchase_count_min" string="Min Purchase Count"/>
+                                        <label for="total_spent_min" string="Total Spent Range"/>
+                                        <div>
+                                            <field name="total_spent_min" class="oe_inline"/> to 
+                                            <field name="total_spent_max" class="oe_inline"/>
+                                        </div>
+                                    </group>
+                                </group>
+                                <group>
+                                    <group string="Multi-Channel Behavior">
+                                        <field name="touchpoints_min" string="Min Channel Touchpoints"/>
+                                        <field name="consistency_score_min" string="Min Consistency Score"/>
+                                    </group>
+                                </group>
+                            </page>
+                            
+                            <!-- Advanced Analytics Tab -->
+                            <page string="Advanced Analytics" name="advanced_analytics">
+                                <group>
+                                    <group string="Values-Driven Analytics">
+                                        <field name="sustainability_score_min" string="Min Sustainability Score"/>
+                                        <field name="premium_propensity_min" string="Min Premium Propensity"/>
+                                        <field name="social_responsibility_min" string="Min Social Responsibility"/>
+                                    </group>
+                                    <group string="Social Commerce">
+                                        <field name="social_media_sources" placeholder="e.g., facebook,instagram,tiktok"/>
+                                        <field name="social_engagement_min" string="Min Social Engagement"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <group string="BNPL &amp; Mobile Commerce">
+                                        <field name="bnpl_usage_frequencies" placeholder="e.g., frequently,always"/>
+                                        <field name="mobile_commerce_score_min" string="Min Mobile Score"/>
+                                        <field name="device_preferences" placeholder="e.g., smartphone,tablet"/>
+                                    </group>
+                                </group>
+                            </page>
+                            
+                            <!-- Output Options Tab -->
+                            <page string="Output Options" name="output">
+                                <group>
+                                    <group string="Segment Creation">
+                                        <field name="create_segment"/>
+                                        <field name="segment_name" required="create_segment" invisible="not create_segment"/>
+                                    </group>
+                                </group>
+                                <div class="o_form_field_text">
+                                    <h4>Filter Actions</h4>
+                                    <ul>
+                                        <li><strong>Preview Customers:</strong> See who matches your criteria without creating a segment</li>
+                                        <li><strong>Apply Filter:</strong> Filter the customer list and optionally create a segment</li>
+                                        <li><strong>Save as Template:</strong> Save this filter configuration for reuse</li>
+                                    </ul>
+                                    
+                                    <h4>Tips for Effective Filtering</h4>
+                                    <ul>
+                                        <li>Start with broad criteria and narrow down</li>
+                                        <li>Use Preview to check customer count before applying</li>
+                                        <li>Combine multiple analytics for precise targeting</li>
+                                        <li>Save successful filters as templates</li>
+                                    </ul>
+                                </div>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Advanced Analytics Filter Action -->
+        <record id="action_advanced_analytics_filter" model="ir.actions.act_window">
+            <field name="name">Advanced Analytics Filter</field>
+            <field name="res_model">wa_marketing_automation.advanced_filter</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <field name="context">{'default_name': 'My Advanced Filter'}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create Advanced Customer Filters
+                </p>
+                <p>
+                    Use multiple analytics criteria to create precise customer segments.
+                    Combine RFM analysis, engagement scores, churn risk, and advanced metrics
+                    to target exactly the right customers for your campaigns.
+                </p>
+            </field>
+        </record>
+
+        <!-- Filter Template List View -->
+        <record id="view_filter_template_tree" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.filter_template.list</field>
+            <field name="model">wa_marketing_automation.filter_template</field>
+            <field name="arch" type="xml">
+                <list string="Filter Templates">
+                    <field name="name"/>
+                    <field name="description"/>
+                    <field name="usage_count"/>
+                    <button name="action_use_template" string="Use Template" type="object" class="btn-primary"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Filter Template Form View -->
+        <record id="view_filter_template_form" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.filter_template.form</field>
+            <field name="model">wa_marketing_automation.filter_template</field>
+            <field name="arch" type="xml">
+                <form string="Filter Template">
+                    <header>
+                        <button name="action_use_template" string="Use Template" type="object" class="btn-primary"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="description"/>
+                            <field name="usage_count" readonly="1"/>
+                        </group>
+                        <group string="Template Configuration">
+                            <field name="template_data" widget="text" readonly="1"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Filter Template Action -->
+        <record id="action_filter_templates" model="ir.actions.act_window">
+            <field name="name">Filter Templates</field>
+            <field name="res_model">wa_marketing_automation.filter_template</field>
+            <field name="view_mode">list,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No Filter Templates Yet
+                </p>
+                <p>
+                    Create reusable filter templates by saving your advanced filters.
+                    Templates make it easy to apply the same filtering criteria across
+                    multiple campaigns and time periods.
+                </p>
+            </field>
+        </record>
+
+        <!-- Quick Filter Actions for Common Scenarios -->
+        <record id="action_high_value_at_risk" model="ir.actions.server">
+            <field name="name">High-Value At-Risk Customers</field>
+            <field name="model_id" ref="model_wa_marketing_automation_advanced_filter"/>
+            <field name="state">code</field>
+            <field name="code">
+wizard = env['wa_marketing_automation.advanced_filter'].create({
+    'name': 'High-Value At-Risk Customers',
+    'rfm_segments': 'at_risk,cannot_lose_them',
+    'total_spent_min': 2000.0,
+    'churn_score_min': 60.0,
+    'segment_name': 'High-Value At-Risk Customers',
+})
+action = wizard.action_preview_customers()
+            </field>
+        </record>
+
+        <record id="action_engaged_champions" model="ir.actions.server">
+            <field name="name">Engaged Champions</field>
+            <field name="model_id" ref="model_wa_marketing_automation_advanced_filter"/>
+            <field name="state">code</field>
+            <field name="code">
+wizard = env['wa_marketing_automation.advanced_filter'].create({
+    'name': 'Engaged Champions',
+    'rfm_segments': 'champions',
+    'engagement_score_min': 70.0,
+    'churn_score_max': 30.0,
+    'segment_name': 'Engaged Champions',
+})
+action = wizard.action_preview_customers()
+            </field>
+        </record>
+
+    </data>
+</odoo>

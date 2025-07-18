@@ -1,0 +1,1254 @@
+import requests
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError, ValidationError
+from ..utils import show_notification
+
+
+class ResConfigSettings(models.TransientModel):
+    """
+    WhatsApp Marketing Automation Configuration Settings
+    
+    This model inherits from res.config.settings following Odoo's standard
+    configuration pattern to integrate with the unified settings interface.
+    """
+    _inherit = 'res.config.settings'
+
+    # =====================================
+    # WhatsApp API Configuration
+    # =====================================
+    
+    whatsapp_base_url = fields.Char(
+        string='WhatsApp Base API URL',
+        help='Base URL for WhatsApp API server (e.g., https://api.whatsapp.com)',
+        config_parameter='wa_marketing_automation.whatsapp_base_url',
+        default='http://localhost:8000',
+    )
+    
+    whatsapp_access_token = fields.Char(
+        string='Access Token',
+        help='API access token for WhatsApp service authentication',
+        config_parameter='wa_marketing_automation.whatsapp_access_token',
+    )
+    
+    whatsapp_send_path_url = fields.Char(
+        string='Send Message URL Path',
+        help='API endpoint path for sending messages',
+        config_parameter='wa_marketing_automation.whatsapp_send_path_url',
+        default='/send-message',
+    )
+    
+    whatsapp_health_check_path_url = fields.Char(
+        string='Health Check URL Path',
+        help='API endpoint path for health checks',
+        config_parameter='wa_marketing_automation.whatsapp_health_check_path_url',
+        default='/health',
+    )
+    
+    whatsapp_test_customer_id = fields.Many2one(
+        'res.partner',
+        string='Test Customer',
+        help='Customer record used for testing message templates',
+        config_parameter='wa_marketing_automation.whatsapp_test_customer_id',
+    )
+
+    # =====================================
+    # Analytics Configuration
+    # =====================================
+    
+    # Package Status
+    analytics_core_enabled = fields.Boolean(
+        string='Core Analytics',
+        help='Essential customer metrics including RFM segmentation, engagement tracking, journey mapping, and churn prediction',
+        config_parameter='wa_marketing_automation.analytics_core_enabled',
+        default=True,
+    )
+    
+    analytics_behavioral_enabled = fields.Boolean(
+        string='Behavioral Analytics',
+        help='Customer preference insights including values-driven analysis, eco-friendly scoring, and premium propensity',
+        config_parameter='wa_marketing_automation.analytics_behavioral_enabled',
+        default=False,
+    )
+    
+    analytics_commerce_enabled = fields.Boolean(
+        string='Digital Marketing Analytics',
+        help='Digital marketing insights including social media tracking, campaign attribution, mobile commerce, and payment preferences',
+        config_parameter='wa_marketing_automation.analytics_commerce_enabled',
+        default=False,
+    )
+
+    # Core Analytics
+    enable_rfm_analysis = fields.Boolean(
+        string='RFM Analysis',
+        help='Segment customers by purchase Recency (days since last order), Frequency (order count), and Monetary value (total spent) to identify your best customers',
+        config_parameter='wa_marketing_automation.enable_rfm_analysis',
+        default=True,
+        readonly=True,  # Always enabled as foundation
+    )
+    
+    enable_engagement_scoring = fields.Boolean(
+        string='Engagement Scoring',
+        help='Calculate customer engagement levels based on email opens/clicks, WhatsApp message interactions, and website visits to identify highly engaged customers',
+        config_parameter='wa_marketing_automation.enable_engagement_scoring',
+        default=True,
+    )
+    
+    enable_email_engagement = fields.Boolean(
+        string='Email Engagement',
+        help='Track email open rates, click-through rates, unsubscribe rates, and campaign performance metrics',
+        config_parameter='wa_marketing_automation.enable_email_engagement',
+        default=True,
+    )
+    
+    enable_whatsapp_engagement = fields.Boolean(
+        string='WhatsApp Engagement',
+        help='Monitor WhatsApp message delivery, read receipts, response rates, and conversation quality metrics',
+        config_parameter='wa_marketing_automation.enable_whatsapp_engagement',
+        default=True,
+    )
+    
+    enable_website_engagement = fields.Boolean(
+        string='Website Engagement',
+        help='Analyze page views, session duration, bounce rates, product views, and cart abandonment patterns',
+        config_parameter='wa_marketing_automation.enable_website_engagement',
+        default=True,
+    )
+    
+    enable_customer_journey = fields.Boolean(
+        string='Customer Journey Tracking',
+        help='Track customer progression through stages: New → Active → Loyal → Champion, or identify At Risk → Dormant → Lost customers',
+        config_parameter='wa_marketing_automation.enable_customer_journey',
+        default=True,
+    )
+    
+    enable_churn_prediction = fields.Boolean(
+        string='Churn Prediction',
+        help='Predict likelihood of customer loss based on declining purchase frequency, reduced engagement, and time since last interaction',
+        config_parameter='wa_marketing_automation.enable_churn_prediction',
+        default=True,
+    )
+    
+    enable_multichannel_behavior = fields.Boolean(
+        string='Multi-Channel Behavior',
+        help='Analyze how customers interact across email, WhatsApp, website, and in-store channels to optimize marketing mix',
+        config_parameter='wa_marketing_automation.enable_multichannel_behavior',
+        default=True,
+    )
+    
+    enable_cohort_analysis = fields.Boolean(
+        string='Cohort Analysis',
+        help='Group customers by signup date and track retention rates over time to measure marketing effectiveness and LTV',
+        config_parameter='wa_marketing_automation.enable_cohort_analysis',
+        default=True,
+    )
+
+    # Behavioral Analytics (Behavioral Package)
+    enable_values_analytics = fields.Boolean(
+        string='Values-Driven Analytics',
+        help='Identify customers who prioritize personal values (quality, ethics, social impact) over price when making purchase decisions',
+        config_parameter='wa_marketing_automation.enable_values_analytics',
+        default=False,
+    )
+    
+    enable_eco_friendly_score = fields.Boolean(
+        string='Eco-Friendly Score',
+        help='Calculate a 0-100 score based on green product purchases, sustainable shipping choices, and environmental campaign engagement',
+        config_parameter='wa_marketing_automation.enable_eco_friendly_score',
+        default=False,
+    )
+    
+    enable_premium_propensity = fields.Boolean(
+        string='Premium Propensity',
+        help='Calculate likelihood of premium/luxury product purchases based on average order value, brand preferences, and purchase category distribution',
+        config_parameter='wa_marketing_automation.enable_premium_propensity',
+        default=False,
+    )
+    
+    enable_social_responsibility = fields.Boolean(
+        string='Social Responsibility',
+        help='Track customer preference for socially responsible brands, fair-trade products, and charitable cause alignments through purchase patterns',
+        config_parameter='wa_marketing_automation.enable_social_responsibility',
+        default=False,
+    )
+
+    # Digital Marketing Analytics (Digital Marketing Package)
+    enable_social_commerce = fields.Boolean(
+        string='Social Media Analytics',
+        help='Track sales from Instagram, Facebook, TikTok, and other social platforms using UTM parameters and referral data',
+        config_parameter='wa_marketing_automation.enable_social_commerce',
+        default=False,
+    )
+    
+    enable_utm_tracking = fields.Boolean(
+        string='UTM Tracking',
+        help='Capture and analyze UTM source, medium, campaign, term, and content parameters to measure marketing campaign ROI',
+        config_parameter='wa_marketing_automation.enable_utm_tracking',
+        default=False,
+    )
+    
+    enable_social_engagement = fields.Boolean(
+        string='Social Engagement',
+        help='Monitor social media interaction rates, share counts, referral traffic, and conversion rates from social channels',
+        config_parameter='wa_marketing_automation.enable_social_engagement',
+        default=False,
+    )
+    
+    enable_bnpl_analytics = fields.Boolean(
+        string='BNPL Analytics',
+        help='Analyze Buy Now Pay Later adoption rates, payment completion rates, and average order values for installment purchases',
+        config_parameter='wa_marketing_automation.enable_bnpl_analytics',
+        default=False,
+    )
+    
+    enable_mobile_commerce = fields.Boolean(
+        string='Mobile Commerce',
+        help='Compare mobile app vs mobile web vs desktop conversion rates, cart sizes, and shopping session behaviors',
+        config_parameter='wa_marketing_automation.enable_mobile_commerce',
+        default=False,
+    )
+    
+    enable_device_preference = fields.Boolean(
+        string='Device Preference',
+        help='Identify primary device usage (iOS/Android/Desktop) and optimize marketing content for preferred platforms',
+        config_parameter='wa_marketing_automation.enable_device_preference',
+        default=False,
+    )
+
+    # =====================================
+    # WhatsApp API Methods
+    # =====================================
+    
+    def action_test_whatsapp_connection(self):
+        """Test the WhatsApp API connection"""
+        self.ensure_one()
+        
+        if not self.whatsapp_base_url:
+            return show_notification(
+                self.env,
+                title="Configuration Error",
+                message="Please configure the WhatsApp Base API URL first.",
+                type="warning",
+                direct_return=True,
+            )
+
+        try:
+            response = requests.get(
+                f"{self.whatsapp_base_url}{self.whatsapp_health_check_path_url}", 
+                timeout=10
+            )
+            response.raise_for_status()
+            return show_notification(
+                self.env,
+                title="Connection Success",
+                message="WhatsApp API connection test successful! ✅",
+                type="success",
+                direct_return=True,
+            )
+        except requests.exceptions.SSLError:
+            return show_notification(
+                self.env,
+                title="SSL Certificate Error",
+                message=(
+                    "SSL certificate issue detected:\n"
+                    "• Invalid or expired certificate\n"
+                    "• Try using http:// for local testing\n"
+                    "• Check certificate configuration"
+                ),
+                type="danger",
+                direct_return=True,
+            )
+        except requests.exceptions.Timeout:
+            return show_notification(
+                self.env,
+                title="Connection Timeout",
+                message=(
+                    "API server response timeout:\n"
+                    "• Server may be overloaded\n"
+                    "• Check network connectivity\n"
+                    "• Try again in a few moments"
+                ),
+                type="warning",
+                direct_return=True,
+            )
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            error_messages = {
+                404: "Endpoint not found - check health check path",
+                401: "Authentication failed - verify access token",
+                403: "Access forbidden - check token permissions",
+                500: "Server error - contact API provider",
+            }
+            
+            message = error_messages.get(
+                status_code, 
+                f"HTTP {status_code} error - check configuration"
+            )
+            
+            return show_notification(
+                self.env,
+                title="API Error",
+                message=message,
+                type="danger",
+                direct_return=True,
+            )
+        except requests.exceptions.ConnectionError:
+            return show_notification(
+                self.env,
+                title="Connection Failed",
+                message=(
+                    "Cannot connect to WhatsApp API:\n"
+                    "• Check internet connection\n"
+                    "• Verify API URL is correct\n"
+                    "• Ensure API server is running"
+                ),
+                type="danger",
+                direct_return=True,
+            )
+        except Exception as e:
+            return show_notification(
+                self.env,
+                title="Unexpected Error",
+                message="Error details: %s" % str(e),
+                type="danger",
+                direct_return=True,
+            )
+
+    # =====================================
+    # Advanced Analytics Configuration
+    # =====================================
+    
+    # Keywords Configuration
+    eco_friendly_keywords = fields.Char(
+        string='Eco-Friendly Keywords',
+        help='Comma-separated keywords for eco-friendly product detection',
+        config_parameter='wa_marketing_automation.eco_friendly_keywords',
+        default='eco,organic,sustainable,green,bio,natural',
+    )
+    
+    social_responsibility_keywords = fields.Char(
+        string='Social Responsibility Keywords',
+        help='Comma-separated keywords for social responsibility product detection',
+        config_parameter='wa_marketing_automation.social_responsibility_keywords',
+        default='fair,ethical,charity,community,social',
+    )
+    
+    bnpl_keywords = fields.Char(
+        string='BNPL Keywords',
+        help='Comma-separated keywords for Buy Now Pay Later detection',
+        config_parameter='wa_marketing_automation.bnpl_keywords',
+        default='installment,split,bnpl,klarna,afterpay,sezzle,affirm',
+    )
+    
+    # Premium Propensity Thresholds
+    premium_threshold_luxury = fields.Float(
+        string='Luxury Tier Threshold',
+        help='Minimum price for luxury tier (90 points)',
+        config_parameter='wa_marketing_automation.premium_threshold_luxury',
+        default=500.0,
+    )
+    
+    premium_threshold_premium = fields.Float(
+        string='Premium Tier Threshold',
+        help='Minimum price for premium tier (70 points)',
+        config_parameter='wa_marketing_automation.premium_threshold_premium',
+        default=200.0,
+    )
+    
+    premium_threshold_mid = fields.Float(
+        string='Mid-Range Tier Threshold',
+        help='Minimum price for mid-range tier (50 points)',
+        config_parameter='wa_marketing_automation.premium_threshold_mid',
+        default=100.0,
+    )
+    
+    premium_threshold_budget_plus = fields.Float(
+        string='Budget-Plus Tier Threshold',
+        help='Minimum price for budget-plus tier (30 points)',
+        config_parameter='wa_marketing_automation.premium_threshold_budget_plus',
+        default=50.0,
+    )
+    
+    # Loyalty Bonuses
+    eco_friendly_loyalty_bonus = fields.Float(
+        string='Eco-Friendly Loyalty Bonus',
+        help='Multiplier for eco-friendly scores for loyal customers',
+        config_parameter='wa_marketing_automation.eco_friendly_loyalty_bonus',
+        default=1.2,
+    )
+    
+    premium_loyalty_bonus = fields.Float(
+        string='Premium Loyalty Bonus',
+        help='Multiplier for premium scores for loyal customers',
+        config_parameter='wa_marketing_automation.premium_loyalty_bonus',
+        default=1.1,
+    )
+    
+    social_loyalty_bonus = fields.Float(
+        string='Social Responsibility Loyalty Bonus',
+        help='Multiplier for social responsibility scores for loyal customers',
+        config_parameter='wa_marketing_automation.social_loyalty_bonus',
+        default=1.2,
+    )
+    
+    # Default Values
+    values_default_score = fields.Float(
+        string='Default Values Score',
+        help='Default score for customers without purchase history',
+        config_parameter='wa_marketing_automation.values_default_score',
+        default=25.0,
+    )
+    
+    # Time Windows
+    rfm_analysis_period = fields.Integer(
+        string='RFM Analysis Period (Days)',
+        help='Number of days to consider for RFM analysis',
+        config_parameter='wa_marketing_automation.rfm_analysis_period',
+        default=365,
+    )
+    
+    email_engagement_period = fields.Integer(
+        string='Email Engagement Period (Days)',
+        help='Number of days to consider for email engagement calculation',
+        config_parameter='wa_marketing_automation.email_engagement_period',
+        default=90,
+    )
+    
+    website_engagement_period = fields.Integer(
+        string='Website Engagement Period (Days)',
+        help='Number of days to consider for website engagement calculation',
+        config_parameter='wa_marketing_automation.website_engagement_period',
+        default=90,
+    )
+    
+    # Engagement Scoring Parameters
+    email_points_per_message = fields.Integer(
+        string='Email Points per Message',
+        help='Points awarded per email message',
+        config_parameter='wa_marketing_automation.email_points_per_message',
+        default=5,
+    )
+    
+    website_points_per_order = fields.Integer(
+        string='Website Points per Order',
+        help='Points awarded per recent website order',
+        config_parameter='wa_marketing_automation.website_points_per_order',
+        default=15,
+    )
+    
+    website_base_points = fields.Integer(
+        string='Website Base Points',
+        help='Base points for website engagement',
+        config_parameter='wa_marketing_automation.website_base_points',
+        default=20,
+    )
+    
+    website_historical_points = fields.Integer(
+        string='Website Historical Points',
+        help='Points for having historical orders',
+        config_parameter='wa_marketing_automation.website_historical_points',
+        default=30,
+    )
+    
+    whatsapp_points_per_campaign = fields.Integer(
+        string='WhatsApp Points per Campaign',
+        help='Points awarded per WhatsApp campaign',
+        config_parameter='wa_marketing_automation.whatsapp_points_per_campaign',
+        default=10,
+    )
+    
+    whatsapp_base_points = fields.Integer(
+        string='WhatsApp Base Points',
+        help='Base points for WhatsApp engagement',
+        config_parameter='wa_marketing_automation.whatsapp_base_points',
+        default=30,
+    )
+    
+    # Engagement Channel Weights
+    email_engagement_weight = fields.Float(
+        string='Email Engagement Weight (%)',
+        help='Weight for email engagement in overall score',
+        config_parameter='wa_marketing_automation.email_engagement_weight',
+        default=40.0,
+    )
+    
+    website_engagement_weight = fields.Float(
+        string='Website Engagement Weight (%)',
+        help='Weight for website engagement in overall score',
+        config_parameter='wa_marketing_automation.website_engagement_weight',
+        default=35.0,
+    )
+    
+    whatsapp_engagement_weight = fields.Float(
+        string='WhatsApp Engagement Weight (%)',
+        help='Weight for WhatsApp engagement in overall score',
+        config_parameter='wa_marketing_automation.whatsapp_engagement_weight',
+        default=25.0,
+    )
+    
+    # Churn Prediction Weights
+    churn_rfm_weight = fields.Float(
+        string='Churn RFM Weight (%)',
+        help='Weight for RFM analysis in churn prediction',
+        config_parameter='wa_marketing_automation.churn_rfm_weight',
+        default=40.0,
+    )
+    
+    churn_engagement_weight = fields.Float(
+        string='Churn Engagement Weight (%)',
+        help='Weight for engagement scoring in churn prediction',
+        config_parameter='wa_marketing_automation.churn_engagement_weight',
+        default=30.0,
+    )
+    
+    churn_journey_weight = fields.Float(
+        string='Churn Journey Weight (%)',
+        help='Weight for customer journey in churn prediction',
+        config_parameter='wa_marketing_automation.churn_journey_weight',
+        default=20.0,
+    )
+    
+    churn_multichannel_weight = fields.Float(
+        string='Churn Multichannel Weight (%)',
+        help='Weight for multichannel behavior in churn prediction',
+        config_parameter='wa_marketing_automation.churn_multichannel_weight',
+        default=10.0,
+    )
+    
+    # Mobile Commerce Configuration
+    mobile_order_threshold = fields.Float(
+        string='Mobile Order Threshold',
+        help='Maximum order amount to consider as mobile commerce',
+        config_parameter='wa_marketing_automation.mobile_order_threshold',
+        default=200.0,
+    )
+    
+    mobile_hour_start = fields.Integer(
+        string='Mobile Hours Start',
+        help='Start hour for mobile commerce detection (24-hour format)',
+        config_parameter='wa_marketing_automation.mobile_hour_start',
+        default=9,
+    )
+    
+    mobile_hour_end = fields.Integer(
+        string='Mobile Hours End',
+        help='End hour for mobile commerce detection (24-hour format)',
+        config_parameter='wa_marketing_automation.mobile_hour_end',
+        default=18,
+    )
+    
+    mobile_device_preference_threshold = fields.Float(
+        string='Mobile Device Preference Threshold',
+        help='Multiplier threshold for device preference detection',
+        config_parameter='wa_marketing_automation.mobile_device_preference_threshold',
+        default=1.5,
+    )
+    
+    # Social Commerce Configuration
+    social_conversion_rate_multiplier = fields.Float(
+        string='Social Conversion Rate Multiplier',
+        help='Multiplier for social conversion rate calculation',
+        config_parameter='wa_marketing_automation.social_conversion_rate_multiplier',
+        default=0.8,
+    )
+    
+    mobile_conversion_rate_multiplier = fields.Float(
+        string='Mobile Conversion Rate Multiplier',
+        help='Multiplier for mobile conversion rate calculation',
+        config_parameter='wa_marketing_automation.mobile_conversion_rate_multiplier',
+        default=0.9,
+    )
+    
+    mobile_default_score = fields.Float(
+        string='Mobile Default Score',
+        help='Default score for mobile commerce when no data available',
+        config_parameter='wa_marketing_automation.mobile_default_score',
+        default=50.0,
+    )
+    
+    # Multichannel Consistency Scores
+    multichannel_3plus_score = fields.Float(
+        string='3+ Touchpoints Score',
+        help='Consistency score for 3+ touchpoints',
+        config_parameter='wa_marketing_automation.multichannel_3plus_score',
+        default=85.0,
+    )
+    
+    multichannel_2_score = fields.Float(
+        string='2 Touchpoints Score',
+        help='Consistency score for 2 touchpoints',
+        config_parameter='wa_marketing_automation.multichannel_2_score',
+        default=60.0,
+    )
+    
+    multichannel_1_score = fields.Float(
+        string='1 Touchpoint Score',
+        help='Consistency score for 1 touchpoint',
+        config_parameter='wa_marketing_automation.multichannel_1_score',
+        default=30.0,
+    )
+    
+    # Churn Risk Thresholds
+    churn_risk_very_high_threshold = fields.Float(
+        string='Very High Churn Risk Threshold',
+        help='Minimum score for very high churn risk classification',
+        config_parameter='wa_marketing_automation.churn_risk_very_high_threshold',
+        default=81.0,
+    )
+    
+    churn_risk_high_threshold = fields.Float(
+        string='High Churn Risk Threshold',
+        help='Minimum score for high churn risk classification',
+        config_parameter='wa_marketing_automation.churn_risk_high_threshold',
+        default=61.0,
+    )
+    
+    churn_risk_medium_threshold = fields.Float(
+        string='Medium Churn Risk Threshold',
+        help='Minimum score for medium churn risk classification',
+        config_parameter='wa_marketing_automation.churn_risk_medium_threshold',
+        default=41.0,
+    )
+    
+    churn_risk_low_threshold = fields.Float(
+        string='Low Churn Risk Threshold',
+        help='Minimum score for low churn risk classification',
+        config_parameter='wa_marketing_automation.churn_risk_low_threshold',
+        default=21.0,
+    )
+    
+    # Churn Risk Factors
+    churn_recency_365_risk = fields.Float(
+        string='Recency >365 Days Risk',
+        help='Risk score for customers with >365 days since last purchase',
+        config_parameter='wa_marketing_automation.churn_recency_365_risk',
+        default=100.0,
+    )
+    
+    churn_recency_180_risk = fields.Float(
+        string='Recency >180 Days Risk',
+        help='Risk score for customers with >180 days since last purchase',
+        config_parameter='wa_marketing_automation.churn_recency_180_risk',
+        default=65.0,
+    )
+    
+    churn_recency_90_risk = fields.Float(
+        string='Recency >90 Days Risk',
+        help='Risk score for customers with >90 days since last purchase',
+        config_parameter='wa_marketing_automation.churn_recency_90_risk',
+        default=35.0,
+    )
+    
+    churn_engagement_20_risk = fields.Float(
+        string='Engagement <20 Risk',
+        help='Risk score for customers with <20 engagement score',
+        config_parameter='wa_marketing_automation.churn_engagement_20_risk',
+        default=100.0,
+    )
+    
+    churn_engagement_40_risk = fields.Float(
+        string='Engagement <40 Risk',
+        help='Risk score for customers with <40 engagement score',
+        config_parameter='wa_marketing_automation.churn_engagement_40_risk',
+        default=75.0,
+    )
+    
+    churn_engagement_60_risk = fields.Float(
+        string='Engagement <60 Risk',
+        help='Risk score for customers with <60 engagement score',
+        config_parameter='wa_marketing_automation.churn_engagement_60_risk',
+        default=50.0,
+    )
+    
+    churn_multichannel_1_risk = fields.Float(
+        string='Single Channel Risk',
+        help='Risk score for customers with ≤1 touchpoint',
+        config_parameter='wa_marketing_automation.churn_multichannel_1_risk',
+        default=80.0,
+    )
+    
+    churn_multichannel_30_risk = fields.Float(
+        string='Low Consistency Risk',
+        help='Risk score for customers with <30 consistency score',
+        config_parameter='wa_marketing_automation.churn_multichannel_30_risk',
+        default=60.0,
+    )
+    
+    churn_multichannel_60_risk = fields.Float(
+        string='Medium Consistency Risk',
+        help='Risk score for customers with <60 consistency score',
+        config_parameter='wa_marketing_automation.churn_multichannel_60_risk',
+        default=30.0,
+    )
+    
+    # RFM Risk Scores
+    churn_rfm_lost_hibernating_risk = fields.Float(
+        string='Lost/Hibernating RFM Risk',
+        help='Risk score for lost/hibernating RFM segments',
+        config_parameter='wa_marketing_automation.churn_rfm_lost_hibernating_risk',
+        default=100.0,
+    )
+    
+    churn_rfm_at_risk_risk = fields.Float(
+        string='At Risk RFM Risk',
+        help='Risk score for cannot_lose_them/at_risk RFM segments',
+        config_parameter='wa_marketing_automation.churn_rfm_at_risk_risk',
+        default=75.0,
+    )
+    
+    churn_rfm_need_attention_risk = fields.Float(
+        string='Need Attention RFM Risk',
+        help='Risk score for about_to_sleep/need_attention RFM segments',
+        config_parameter='wa_marketing_automation.churn_rfm_need_attention_risk',
+        default=50.0,
+    )
+    
+    churn_rfm_new_customers_risk = fields.Float(
+        string='New Customers RFM Risk',
+        help='Risk score for promising/new_customers RFM segments',
+        config_parameter='wa_marketing_automation.churn_rfm_new_customers_risk',
+        default=25.0,
+    )
+    
+    # Journey Stage Risk Scores
+    churn_journey_dormant_risk = fields.Float(
+        string='Dormant Journey Risk',
+        help='Risk score for dormant journey stage',
+        config_parameter='wa_marketing_automation.churn_journey_dormant_risk',
+        default=100.0,
+    )
+    
+    churn_journey_consideration_risk = fields.Float(
+        string='Consideration Journey Risk',
+        help='Risk score for consideration journey stage',
+        config_parameter='wa_marketing_automation.churn_journey_consideration_risk',
+        default=50.0,
+    )
+    
+    # Social Commerce Platform Keywords
+    social_platform_keywords = fields.Char(
+        string='Social Platform Keywords',
+        help='JSON format platform keywords for social commerce detection',
+        config_parameter='wa_marketing_automation.social_platform_keywords',
+        default='{"facebook": ["facebook", "fb"], "instagram": ["instagram", "ig"], "twitter": ["twitter"], "linkedin": ["linkedin"], "tiktok": ["tiktok"], "youtube": ["youtube"], "other": ["social", "share", "referral"]}',
+    )
+    
+    # BNPL Usage Frequency Thresholds
+    bnpl_rarely_threshold = fields.Integer(
+        string='BNPL Rarely Threshold',
+        help='Maximum orders for rarely usage classification',
+        config_parameter='wa_marketing_automation.bnpl_rarely_threshold',
+        default=2,
+    )
+    
+    bnpl_sometimes_threshold = fields.Integer(
+        string='BNPL Sometimes Threshold',
+        help='Maximum orders for sometimes usage classification',
+        config_parameter='wa_marketing_automation.bnpl_sometimes_threshold',
+        default=5,
+    )
+    
+    bnpl_frequently_threshold = fields.Integer(
+        string='BNPL Frequently Threshold',
+        help='Maximum orders for frequently usage classification',
+        config_parameter='wa_marketing_automation.bnpl_frequently_threshold',
+        default=10,
+    )
+    
+    # Engagement Level Thresholds
+    engagement_very_high_threshold = fields.Float(
+        string='Very High Engagement Threshold',
+        help='Minimum score for very high engagement classification',
+        config_parameter='wa_marketing_automation.engagement_very_high_threshold',
+        default=81.0,
+    )
+    
+    engagement_high_threshold = fields.Float(
+        string='High Engagement Threshold',
+        help='Minimum score for high engagement classification',
+        config_parameter='wa_marketing_automation.engagement_high_threshold',
+        default=61.0,
+    )
+    
+    engagement_medium_threshold = fields.Float(
+        string='Medium Engagement Threshold',
+        help='Minimum score for medium engagement classification',
+        config_parameter='wa_marketing_automation.engagement_medium_threshold',
+        default=41.0,
+    )
+    
+    engagement_low_threshold = fields.Float(
+        string='Low Engagement Threshold',
+        help='Minimum score for low engagement classification',
+        config_parameter='wa_marketing_automation.engagement_low_threshold',
+        default=21.0,
+    )
+    
+    # Premium Propensity Scores
+    premium_score_luxury = fields.Float(
+        string='Luxury Tier Score',
+        help='Points awarded for luxury tier purchases',
+        config_parameter='wa_marketing_automation.premium_score_luxury',
+        default=90.0,
+    )
+    
+    premium_score_premium = fields.Float(
+        string='Premium Tier Score',
+        help='Points awarded for premium tier purchases',
+        config_parameter='wa_marketing_automation.premium_score_premium',
+        default=70.0,
+    )
+    
+    premium_score_mid = fields.Float(
+        string='Mid-Range Tier Score',
+        help='Points awarded for mid-range tier purchases',
+        config_parameter='wa_marketing_automation.premium_score_mid',
+        default=50.0,
+    )
+    
+    premium_score_budget_plus = fields.Float(
+        string='Budget-Plus Tier Score',
+        help='Points awarded for budget-plus tier purchases',
+        config_parameter='wa_marketing_automation.premium_score_budget_plus',
+        default=30.0,
+    )
+    
+    premium_score_budget = fields.Float(
+        string='Budget Tier Score',
+        help='Points awarded for budget tier purchases',
+        config_parameter='wa_marketing_automation.premium_score_budget',
+        default=10.0,
+    )
+    
+    # RFM Quintile Percentiles
+    rfm_quintile_1 = fields.Float(
+        string='RFM Quintile 1',
+        help='First quintile percentile for RFM scoring',
+        config_parameter='wa_marketing_automation.rfm_quintile_1',
+        default=0.2,
+    )
+    
+    rfm_quintile_2 = fields.Float(
+        string='RFM Quintile 2',
+        help='Second quintile percentile for RFM scoring',
+        config_parameter='wa_marketing_automation.rfm_quintile_2',
+        default=0.4,
+    )
+    
+    rfm_quintile_3 = fields.Float(
+        string='RFM Quintile 3',
+        help='Third quintile percentile for RFM scoring',
+        config_parameter='wa_marketing_automation.rfm_quintile_3',
+        default=0.6,
+    )
+    
+    rfm_quintile_4 = fields.Float(
+        string='RFM Quintile 4',
+        help='Fourth quintile percentile for RFM scoring',
+        config_parameter='wa_marketing_automation.rfm_quintile_4',
+        default=0.8,
+    )
+
+    # =====================================
+    # Package Selection Onchange Methods
+    # =====================================
+    
+    @api.onchange('analytics_core_enabled')
+    def _onchange_analytics_core_enabled(self):
+        """When Core Analytics is enabled/disabled, update related metrics"""
+        if self.analytics_core_enabled:
+            self.enable_engagement_scoring = True
+            self.enable_email_engagement = True
+            self.enable_whatsapp_engagement = True
+            self.enable_website_engagement = True
+            self.enable_customer_journey = True
+            self.enable_churn_prediction = True
+            self.enable_multichannel_behavior = True
+            self.enable_cohort_analysis = True
+        else:
+            # If core is disabled, disable all packages
+            self.analytics_behavioral_enabled = False
+            self.analytics_commerce_enabled = False
+            self.enable_engagement_scoring = False
+            self.enable_email_engagement = False
+            self.enable_whatsapp_engagement = False
+            self.enable_website_engagement = False
+            self.enable_customer_journey = False
+            self.enable_churn_prediction = False
+            self.enable_multichannel_behavior = False
+            self.enable_cohort_analysis = False
+            self.enable_values_analytics = False
+            self.enable_eco_friendly_score = False
+            self.enable_premium_propensity = False
+            self.enable_social_responsibility = False
+            self.enable_social_commerce = False
+            self.enable_utm_tracking = False
+            self.enable_social_engagement = False
+            self.enable_bnpl_analytics = False
+            self.enable_mobile_commerce = False
+            self.enable_device_preference = False
+    
+    @api.onchange('analytics_behavioral_enabled')
+    def _onchange_analytics_behavioral_enabled(self):
+        """When Behavioral Analytics is enabled/disabled, update related metrics"""
+        if self.analytics_behavioral_enabled:
+            # Enable core first
+            self.analytics_core_enabled = True
+            self._onchange_analytics_core_enabled()
+            # Enable behavioral metrics
+            self.enable_values_analytics = True
+            self.enable_eco_friendly_score = True
+            self.enable_premium_propensity = True
+            self.enable_social_responsibility = True
+        else:
+            # If behavioral is disabled, disable commerce too
+            self.analytics_commerce_enabled = False
+            self.enable_values_analytics = False
+            self.enable_eco_friendly_score = False
+            self.enable_premium_propensity = False
+            self.enable_social_responsibility = False
+            self.enable_social_commerce = False
+            self.enable_utm_tracking = False
+            self.enable_social_engagement = False
+            self.enable_bnpl_analytics = False
+            self.enable_mobile_commerce = False
+            self.enable_device_preference = False
+    
+    @api.onchange('analytics_commerce_enabled')
+    def _onchange_analytics_commerce_enabled(self):
+        """When Digital Marketing Analytics is enabled/disabled, update related metrics"""
+        if self.analytics_commerce_enabled:
+            # Enable behavioral first (which enables core)
+            self.analytics_behavioral_enabled = True
+            self._onchange_analytics_behavioral_enabled()
+            # Enable commerce metrics
+            self.enable_social_commerce = True
+            self.enable_utm_tracking = True
+            self.enable_social_engagement = True
+            self.enable_bnpl_analytics = True
+            self.enable_mobile_commerce = True
+            self.enable_device_preference = True
+        else:
+            # Disable commerce metrics only
+            self.enable_social_commerce = False
+            self.enable_utm_tracking = False
+            self.enable_social_engagement = False
+            self.enable_bnpl_analytics = False
+            self.enable_mobile_commerce = False
+            self.enable_device_preference = False
+    
+    # =====================================
+    # Analytics Package Methods
+    # =====================================
+    
+    def action_enable_core_package(self):
+        """Enable Core Analytics Package"""
+        self.write({
+            'analytics_core_enabled': True,
+            'enable_engagement_scoring': True,
+            'enable_email_engagement': True,
+            'enable_whatsapp_engagement': True,
+            'enable_website_engagement': True,
+            'enable_customer_journey': True,
+            'enable_churn_prediction': True,
+            'enable_multichannel_behavior': True,
+            'enable_cohort_analysis': True,
+        })
+        # Execute to save the configuration
+        self.execute()
+        # Show notification via bus
+        show_notification(
+            self.env,
+            title="Core Analytics Enabled",
+            message="Core Analytics Package has been activated with essential customer insights.",
+            type="success",
+        )
+        # Return reload action to refresh the form
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'res.config.settings',
+            'view_mode': 'form',
+            'target': 'inline',
+        }
+
+    def action_enable_behavioral_package(self):
+        """Enable Behavioral Analytics Package (includes Core)"""
+        # Enable all core + behavioral settings
+        self.write({
+            'analytics_core_enabled': True,
+            'enable_engagement_scoring': True,
+            'enable_email_engagement': True,
+            'enable_whatsapp_engagement': True,
+            'enable_website_engagement': True,
+            'enable_customer_journey': True,
+            'enable_churn_prediction': True,
+            'enable_multichannel_behavior': True,
+            'enable_cohort_analysis': True,
+            'analytics_behavioral_enabled': True,
+            'enable_values_analytics': True,
+            'enable_eco_friendly_score': True,
+            'enable_premium_propensity': True,
+            'enable_social_responsibility': True,
+        })
+        # Execute to save the configuration
+        self.execute()
+        # Show notification via bus
+        show_notification(
+            self.env,
+            title="Behavioral Analytics Enabled",
+            message="Behavioral Analytics Package activated with customer preference insights.",
+            type="success",
+        )
+        # Return reload action to refresh the form
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'res.config.settings',
+            'view_mode': 'form',
+            'target': 'inline',
+        }
+
+    def action_enable_commerce_package(self):
+        """Enable Digital Marketing Analytics Package (includes Core + Behavioral)"""
+        # Enable all core + behavioral + commerce settings
+        self.write({
+            'analytics_core_enabled': True,
+            'enable_engagement_scoring': True,
+            'enable_email_engagement': True,
+            'enable_whatsapp_engagement': True,
+            'enable_website_engagement': True,
+            'enable_customer_journey': True,
+            'enable_churn_prediction': True,
+            'enable_multichannel_behavior': True,
+            'enable_cohort_analysis': True,
+            'analytics_behavioral_enabled': True,
+            'enable_values_analytics': True,
+            'enable_eco_friendly_score': True,
+            'enable_premium_propensity': True,
+            'enable_social_responsibility': True,
+            'analytics_commerce_enabled': True,
+            'enable_social_commerce': True,
+            'enable_utm_tracking': True,
+            'enable_social_engagement': True,
+            'enable_bnpl_analytics': True,
+            'enable_mobile_commerce': True,
+            'enable_device_preference': True,
+        })
+        # Execute to save the configuration
+        self.execute()
+        # Show notification via bus
+        show_notification(
+            self.env,
+            title="Digital Marketing Analytics Enabled",
+            message="Digital Marketing Analytics Package activated with social media tracking, campaign attribution, and mobile commerce insights.",
+            type="success",
+        )
+        # Return reload action to refresh the form
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'res.config.settings',
+            'view_mode': 'form',
+            'target': 'inline',
+        }
+
+    def action_disable_all_optional(self):
+        """Disable all optional analytics features"""
+        self.write({
+            'analytics_core_enabled': True,  # Keep core enabled
+            'analytics_behavioral_enabled': False,
+            'analytics_commerce_enabled': False,
+            # Keep core analytics enabled
+            'enable_engagement_scoring': True,
+            'enable_email_engagement': True,
+            'enable_whatsapp_engagement': True,
+            'enable_website_engagement': True,
+            'enable_customer_journey': True,
+            'enable_churn_prediction': True,
+            'enable_multichannel_behavior': True,
+            'enable_cohort_analysis': True,
+            # Disable behavioral analytics
+            'enable_values_analytics': False,
+            'enable_eco_friendly_score': False,
+            'enable_premium_propensity': False,
+            'enable_social_responsibility': False,
+            # Disable commerce analytics
+            'enable_social_commerce': False,
+            'enable_utm_tracking': False,
+            'enable_social_engagement': False,
+            'enable_bnpl_analytics': False,
+            'enable_mobile_commerce': False,
+            'enable_device_preference': False,
+        })
+        # Execute to save the configuration
+        self.execute()
+        # Show notification via bus
+        show_notification(
+            self.env,
+            title="Optional Features Disabled",
+            message="Behavioral and Digital Marketing analytics disabled. Core analytics (RFM, Engagement, Journey, Churn) remain active.",
+            type="info",
+        )
+        # Return reload action to refresh the form
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'res.config.settings',
+            'view_mode': 'form',
+            'target': 'inline',
+        }
+
+    # =====================================
+    # Configuration Helpers
+    # =====================================
+    
+    @api.model
+    def get_whatsapp_config(self):
+        """Get WhatsApp configuration values"""
+        return {
+            'base_url': self.env['ir.config_parameter'].sudo().get_param('wa_marketing_automation.whatsapp_base_url', 'http://localhost:8000'),
+            'access_token': self.env['ir.config_parameter'].sudo().get_param('wa_marketing_automation.whatsapp_access_token', ''),
+            'send_path_url': self.env['ir.config_parameter'].sudo().get_param('wa_marketing_automation.whatsapp_send_path_url', '/send-message'),
+            'health_check_path_url': self.env['ir.config_parameter'].sudo().get_param('wa_marketing_automation.whatsapp_health_check_path_url', '/health'),
+            'test_customer_id': int(self.env['ir.config_parameter'].sudo().get_param('wa_marketing_automation.whatsapp_test_customer_id', 0)) or False,
+        }
+
+    @api.model
+    def get_analytics_config(self):
+        """Get analytics configuration values"""
+        params = self.env['ir.config_parameter'].sudo()
+        config = {
+            # Feature toggles
+            'enable_rfm_analysis': True,  # Always enabled
+            'enable_engagement_scoring': params.get_param('wa_marketing_automation.enable_engagement_scoring', 'True') == 'True',
+            'enable_customer_journey': params.get_param('wa_marketing_automation.enable_customer_journey', 'True') == 'True',
+            'enable_churn_prediction': params.get_param('wa_marketing_automation.enable_churn_prediction', 'True') == 'True',
+            'enable_multichannel_behavior': params.get_param('wa_marketing_automation.enable_multichannel_behavior', 'True') == 'True',
+            'enable_values_analytics': params.get_param('wa_marketing_automation.enable_values_analytics', 'False') == 'True',
+            'enable_social_commerce': params.get_param('wa_marketing_automation.enable_social_commerce', 'False') == 'True',
+            'enable_bnpl_analytics': params.get_param('wa_marketing_automation.enable_bnpl_analytics', 'False') == 'True',
+            'enable_mobile_commerce': params.get_param('wa_marketing_automation.enable_mobile_commerce', 'False') == 'True',
+            'enable_email_engagement': params.get_param('wa_marketing_automation.enable_email_engagement', 'True') == 'True',
+            'enable_website_engagement': params.get_param('wa_marketing_automation.enable_website_engagement', 'True') == 'True',
+            'enable_whatsapp_engagement': params.get_param('wa_marketing_automation.enable_whatsapp_engagement', 'True') == 'True',
+            
+            # Keywords
+            'eco_friendly_keywords': params.get_param('wa_marketing_automation.eco_friendly_keywords', 'eco,organic,sustainable,green,bio,natural').split(','),
+            'social_responsibility_keywords': params.get_param('wa_marketing_automation.social_responsibility_keywords', 'fair,ethical,charity,community,social').split(','),
+            'bnpl_keywords': params.get_param('wa_marketing_automation.bnpl_keywords', 'installment,split,bnpl,klarna,afterpay,sezzle,affirm').split(','),
+            
+            # Premium thresholds
+            'premium_threshold_luxury': float(params.get_param('wa_marketing_automation.premium_threshold_luxury', '500.0')),
+            'premium_threshold_premium': float(params.get_param('wa_marketing_automation.premium_threshold_premium', '200.0')),
+            'premium_threshold_mid': float(params.get_param('wa_marketing_automation.premium_threshold_mid', '100.0')),
+            'premium_threshold_budget_plus': float(params.get_param('wa_marketing_automation.premium_threshold_budget_plus', '50.0')),
+            
+            # Premium scores
+            'premium_score_luxury': float(params.get_param('wa_marketing_automation.premium_score_luxury', '90.0')),
+            'premium_score_premium': float(params.get_param('wa_marketing_automation.premium_score_premium', '70.0')),
+            'premium_score_mid': float(params.get_param('wa_marketing_automation.premium_score_mid', '50.0')),
+            'premium_score_budget_plus': float(params.get_param('wa_marketing_automation.premium_score_budget_plus', '30.0')),
+            'premium_score_budget': float(params.get_param('wa_marketing_automation.premium_score_budget', '10.0')),
+            
+            # Loyalty bonuses
+            'eco_friendly_loyalty_bonus': float(params.get_param('wa_marketing_automation.eco_friendly_loyalty_bonus', '1.2')),
+            'premium_loyalty_bonus': float(params.get_param('wa_marketing_automation.premium_loyalty_bonus', '1.1')),
+            'social_loyalty_bonus': float(params.get_param('wa_marketing_automation.social_loyalty_bonus', '1.2')),
+            
+            # Default values
+            'values_default_score': float(params.get_param('wa_marketing_automation.values_default_score', '25.0')),
+            
+            # Time periods
+            'rfm_analysis_period': int(params.get_param('wa_marketing_automation.rfm_analysis_period', '365')),
+            'email_engagement_period': int(params.get_param('wa_marketing_automation.email_engagement_period', '90')),
+            'website_engagement_period': int(params.get_param('wa_marketing_automation.website_engagement_period', '90')),
+            
+            # Engagement scoring
+            'email_points_per_message': int(params.get_param('wa_marketing_automation.email_points_per_message', '5')),
+            'website_points_per_order': int(params.get_param('wa_marketing_automation.website_points_per_order', '15')),
+            'website_base_points': int(params.get_param('wa_marketing_automation.website_base_points', '20')),
+            'website_historical_points': int(params.get_param('wa_marketing_automation.website_historical_points', '30')),
+            'whatsapp_points_per_campaign': int(params.get_param('wa_marketing_automation.whatsapp_points_per_campaign', '10')),
+            'whatsapp_base_points': int(params.get_param('wa_marketing_automation.whatsapp_base_points', '30')),
+            
+            # Engagement weights
+            'email_engagement_weight': float(params.get_param('wa_marketing_automation.email_engagement_weight', '40.0')),
+            'website_engagement_weight': float(params.get_param('wa_marketing_automation.website_engagement_weight', '35.0')),
+            'whatsapp_engagement_weight': float(params.get_param('wa_marketing_automation.whatsapp_engagement_weight', '25.0')),
+            
+            # Churn prediction weights
+            'churn_rfm_weight': float(params.get_param('wa_marketing_automation.churn_rfm_weight', '40.0')),
+            'churn_engagement_weight': float(params.get_param('wa_marketing_automation.churn_engagement_weight', '30.0')),
+            'churn_journey_weight': float(params.get_param('wa_marketing_automation.churn_journey_weight', '20.0')),
+            'churn_multichannel_weight': float(params.get_param('wa_marketing_automation.churn_multichannel_weight', '10.0')),
+            
+            # Churn risk thresholds
+            'churn_risk_very_high_threshold': float(params.get_param('wa_marketing_automation.churn_risk_very_high_threshold', '81.0')),
+            'churn_risk_high_threshold': float(params.get_param('wa_marketing_automation.churn_risk_high_threshold', '61.0')),
+            'churn_risk_medium_threshold': float(params.get_param('wa_marketing_automation.churn_risk_medium_threshold', '41.0')),
+            'churn_risk_low_threshold': float(params.get_param('wa_marketing_automation.churn_risk_low_threshold', '21.0')),
+            
+            # Churn risk factors
+            'churn_recency_365_risk': float(params.get_param('wa_marketing_automation.churn_recency_365_risk', '100.0')),
+            'churn_recency_180_risk': float(params.get_param('wa_marketing_automation.churn_recency_180_risk', '65.0')),
+            'churn_recency_90_risk': float(params.get_param('wa_marketing_automation.churn_recency_90_risk', '35.0')),
+            'churn_engagement_20_risk': float(params.get_param('wa_marketing_automation.churn_engagement_20_risk', '100.0')),
+            'churn_engagement_40_risk': float(params.get_param('wa_marketing_automation.churn_engagement_40_risk', '75.0')),
+            'churn_engagement_60_risk': float(params.get_param('wa_marketing_automation.churn_engagement_60_risk', '50.0')),
+            'churn_multichannel_1_risk': float(params.get_param('wa_marketing_automation.churn_multichannel_1_risk', '80.0')),
+            'churn_multichannel_30_risk': float(params.get_param('wa_marketing_automation.churn_multichannel_30_risk', '60.0')),
+            'churn_multichannel_60_risk': float(params.get_param('wa_marketing_automation.churn_multichannel_60_risk', '30.0')),
+            
+            # RFM risk scores
+            'churn_rfm_lost_hibernating_risk': float(params.get_param('wa_marketing_automation.churn_rfm_lost_hibernating_risk', '100.0')),
+            'churn_rfm_at_risk_risk': float(params.get_param('wa_marketing_automation.churn_rfm_at_risk_risk', '75.0')),
+            'churn_rfm_need_attention_risk': float(params.get_param('wa_marketing_automation.churn_rfm_need_attention_risk', '50.0')),
+            'churn_rfm_new_customers_risk': float(params.get_param('wa_marketing_automation.churn_rfm_new_customers_risk', '25.0')),
+            
+            # Journey stage risk scores
+            'churn_journey_dormant_risk': float(params.get_param('wa_marketing_automation.churn_journey_dormant_risk', '100.0')),
+            'churn_journey_consideration_risk': float(params.get_param('wa_marketing_automation.churn_journey_consideration_risk', '50.0')),
+            
+            # Mobile commerce
+            'mobile_order_threshold': float(params.get_param('wa_marketing_automation.mobile_order_threshold', '200.0')),
+            'mobile_hour_start': int(params.get_param('wa_marketing_automation.mobile_hour_start', '9')),
+            'mobile_hour_end': int(params.get_param('wa_marketing_automation.mobile_hour_end', '18')),
+            'mobile_device_preference_threshold': float(params.get_param('wa_marketing_automation.mobile_device_preference_threshold', '1.5')),
+            'mobile_conversion_rate_multiplier': float(params.get_param('wa_marketing_automation.mobile_conversion_rate_multiplier', '0.9')),
+            'mobile_default_score': float(params.get_param('wa_marketing_automation.mobile_default_score', '50.0')),
+            
+            # Social commerce
+            'social_conversion_rate_multiplier': float(params.get_param('wa_marketing_automation.social_conversion_rate_multiplier', '0.8')),
+            'social_platform_keywords': params.get_param('wa_marketing_automation.social_platform_keywords', '{"facebook": ["facebook", "fb"], "instagram": ["instagram", "ig"], "twitter": ["twitter"], "linkedin": ["linkedin"], "tiktok": ["tiktok"], "youtube": ["youtube"], "other": ["social", "share", "referral"]}'),
+            
+            # BNPL thresholds
+            'bnpl_rarely_threshold': int(params.get_param('wa_marketing_automation.bnpl_rarely_threshold', '2')),
+            'bnpl_sometimes_threshold': int(params.get_param('wa_marketing_automation.bnpl_sometimes_threshold', '5')),
+            'bnpl_frequently_threshold': int(params.get_param('wa_marketing_automation.bnpl_frequently_threshold', '10')),
+            
+            # Multichannel scores
+            'multichannel_3plus_score': float(params.get_param('wa_marketing_automation.multichannel_3plus_score', '85.0')),
+            'multichannel_2_score': float(params.get_param('wa_marketing_automation.multichannel_2_score', '60.0')),
+            'multichannel_1_score': float(params.get_param('wa_marketing_automation.multichannel_1_score', '30.0')),
+            
+            # Engagement thresholds
+            'engagement_very_high_threshold': float(params.get_param('wa_marketing_automation.engagement_very_high_threshold', '81.0')),
+            'engagement_high_threshold': float(params.get_param('wa_marketing_automation.engagement_high_threshold', '61.0')),
+            'engagement_medium_threshold': float(params.get_param('wa_marketing_automation.engagement_medium_threshold', '41.0')),
+            'engagement_low_threshold': float(params.get_param('wa_marketing_automation.engagement_low_threshold', '21.0')),
+            
+            # RFM quintiles
+            'rfm_quintile_1': float(params.get_param('wa_marketing_automation.rfm_quintile_1', '0.2')),
+            'rfm_quintile_2': float(params.get_param('wa_marketing_automation.rfm_quintile_2', '0.4')),
+            'rfm_quintile_3': float(params.get_param('wa_marketing_automation.rfm_quintile_3', '0.6')),
+            'rfm_quintile_4': float(params.get_param('wa_marketing_automation.rfm_quintile_4', '0.8')),
+        }
+        
+        return config
+
+    # =====================================
+    # Validation
+    # =====================================
+    
+    @api.constrains('whatsapp_base_url')
+    def _check_whatsapp_base_url(self):
+        """Validate WhatsApp API base URL format"""
+        for record in self:
+            if record.whatsapp_base_url and not record.whatsapp_base_url.startswith(('http://', 'https://')):
+                raise ValidationError(_("WhatsApp Base API URL must start with http:// or https://"))

@@ -126,6 +126,7 @@ class ResPartner(models.Model):
         ('medium', 'Medium (41-60)'),
         ('high', 'High (61-80)'),
         ('very_high', 'Very High (81-100)'),
+        ('unknown', 'Unknown (Disabled)'),
     ], string='Engagement Level', compute='_compute_engagement_metrics', store=True,
         help='Overall engagement level classification')
 
@@ -179,12 +180,13 @@ class ResPartner(models.Model):
         ('medium', 'Medium Risk (41-60)'),
         ('high', 'High Risk (61-80)'),
         ('very_high', 'Very High Risk (81-100)'),
+        ('unknown', 'Unknown (Disabled)'),
     ], string='Churn Risk Level', compute='_compute_churn_prediction', store=True,
         help='Churn risk classification')
 
     # Values-Driven Purchase Propensity
     sustainability_preference_score = fields.Float(
-        string='Sustainability Preference Score',
+        string='Eco-Friendly Score',
         compute='_compute_values_driven_propensity',
         store=True,
         help='Likelihood to purchase sustainable/eco-friendly products (0-100)',
@@ -290,6 +292,137 @@ class ResPartner(models.Model):
         store=True,
         help='Conversion rate on mobile devices (0-100)',
     )
+
+    # Configuration Visibility Fields
+    metrics_engagement_enabled = fields.Boolean(
+        string='Engagement Metrics Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether engagement scoring is enabled in configuration',
+    )
+    
+    metrics_churn_enabled = fields.Boolean(
+        string='Churn Prediction Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether churn prediction is enabled in configuration',
+    )
+    
+    metrics_journey_enabled = fields.Boolean(
+        string='Customer Journey Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether customer journey tracking is enabled in configuration',
+    )
+    
+    metrics_values_enabled = fields.Boolean(
+        string='Values Analytics Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether values-driven analytics is enabled in configuration',
+    )
+    
+    metrics_social_enabled = fields.Boolean(
+        string='Social Commerce Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether social commerce analytics is enabled in configuration',
+    )
+    
+    metrics_bnpl_enabled = fields.Boolean(
+        string='BNPL Analytics Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether BNPL analytics is enabled in configuration',
+    )
+    
+    metrics_mobile_enabled = fields.Boolean(
+        string='Mobile Commerce Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether mobile commerce analytics is enabled in configuration',
+    )
+    
+    metrics_multichannel_enabled = fields.Boolean(
+        string='Multi-Channel Enabled',
+        compute='_compute_metrics_configuration',
+        help='Whether multi-channel behavior analytics is enabled in configuration',
+    )
+
+    def _compute_metrics_configuration(self):
+        """Compute metrics configuration visibility flags"""
+        config = self.env['res.config.settings'].get_analytics_config()
+        
+        for partner in self:
+            partner.metrics_engagement_enabled = config.get('enable_engagement_scoring', True)
+            partner.metrics_churn_enabled = config.get('enable_churn_prediction', True)
+            partner.metrics_journey_enabled = config.get('enable_customer_journey', True)
+            partner.metrics_values_enabled = config.get('enable_values_analytics', False)
+            partner.metrics_social_enabled = config.get('enable_social_commerce', False)
+            partner.metrics_bnpl_enabled = config.get('enable_bnpl_analytics', False)
+            partner.metrics_mobile_enabled = config.get('enable_mobile_commerce', False)
+            partner.metrics_multichannel_enabled = config.get('enable_multichannel_behavior', True)
+
+    def _get_adaptive_churn_weights(self, config):
+        """Get adaptive churn prediction weights based on enabled features"""
+        base_factors = {
+            'rfm_analysis': config.get('churn_rfm_weight', 40),
+            'engagement_scoring': config.get('churn_engagement_weight', 30),
+            'customer_journey': config.get('churn_journey_weight', 20),
+            'multichannel_behavior': config.get('churn_multichannel_weight', 10)
+        }
+        
+        enabled_factors = {}
+        disabled_weight = 0
+        
+        # Check which factors are enabled
+        for factor, weight in base_factors.items():
+            if factor == 'rfm_analysis':
+                enabled_factors[factor] = weight  # Always enabled
+            elif factor == 'engagement_scoring' and config.get('enable_engagement_scoring', True):
+                enabled_factors[factor] = weight
+            elif factor == 'customer_journey' and config.get('enable_customer_journey', True):
+                enabled_factors[factor] = weight
+            elif factor == 'multichannel_behavior' and config.get('enable_multichannel_behavior', True):
+                enabled_factors[factor] = weight
+            else:
+                disabled_weight += weight
+        
+        # Redistribute disabled weight proportionally to enabled factors
+        if enabled_factors and disabled_weight > 0:
+            total_enabled_weight = sum(enabled_factors.values())
+            for factor in enabled_factors:
+                proportion = enabled_factors[factor] / total_enabled_weight
+                enabled_factors[factor] += disabled_weight * proportion
+        
+        return enabled_factors
+
+    def _get_adaptive_engagement_weights(self, config):
+        """Get adaptive engagement weights based on enabled features"""
+        base_factors = {
+            'email_engagement': config.get('engagement_email_weight', 40),
+            'website_engagement': config.get('engagement_website_weight', 35),
+            'whatsapp_engagement': config.get('engagement_whatsapp_weight', 25)
+        }
+        
+        enabled_factors = {}
+        disabled_weight = 0
+        
+        # Check which factors are enabled
+        for factor, weight in base_factors.items():
+            if factor == 'email_engagement' and config.get('enable_email_engagement', True):
+                enabled_factors[factor] = weight
+            elif factor == 'website_engagement' and config.get('enable_website_engagement', True):
+                enabled_factors[factor] = weight
+            elif factor == 'whatsapp_engagement' and config.get('enable_whatsapp_engagement', True):
+                enabled_factors[factor] = weight
+            else:
+                disabled_weight += weight
+        
+        # Ensure at least one factor is enabled
+        if not enabled_factors:
+            enabled_factors['email_engagement'] = 100  # Fallback
+        elif disabled_weight > 0:
+            # Redistribute disabled weight proportionally to enabled factors
+            total_enabled_weight = sum(enabled_factors.values())
+            for factor in enabled_factors:
+                proportion = enabled_factors[factor] / total_enabled_weight
+                enabled_factors[factor] += disabled_weight * proportion
+        
+        return enabled_factors
 
     @api.depends('date_of_birth')
     def _compute_age(self):
@@ -492,71 +625,90 @@ class ResPartner(models.Model):
 
     @api.depends('message_ids', 'sale_order_ids', 'opportunity_ids')
     def _compute_engagement_metrics(self):
-        """Compute engagement scores across all channels"""
+        """Compute engagement scores across all channels (adaptive based on configuration)"""
+        # Get metrics configuration
+        config = self.env['res.config.settings'].get_analytics_config()
+        
         for partner in self:
+            # Skip if engagement scoring is disabled
+            if not config.get('enable_engagement_scoring', True):
+                partner.email_engagement_score = 0.0
+                partner.website_engagement_score = 0.0
+                partner.whatsapp_engagement_score = 0.0
+                partner.overall_engagement_score = 0.0
+                partner.engagement_level = 'unknown'
+                continue
+            
             # Get data for scoring
             messages = partner.message_ids
             campaigns = self.env['wa_marketing_automation.campaign'].search([
                 ('customer_segmentation_id.selected_customers', 'in', partner.ids)
             ])
             
-            # Email engagement (based on messages and activities)
-            email_score = 0.0
-            if partner.email:
-                # Count email-related messages in last 90 days
-                ninety_days_ago = date.today() - timedelta(days=90)
+            # Calculate individual channel scores
+            scores = {}
+            
+            # Email engagement (if enabled)
+            if config.get('enable_email_engagement', True) and partner.email:
+                engagement_period = config.get('engagement_analysis_period', 90)
+                engagement_days_ago = date.today() - timedelta(days=engagement_period)
                 email_messages = messages.filtered(
-                    lambda m: m.date and m.date.date() >= ninety_days_ago and 
+                    lambda m: m.date and m.date.date() >= engagement_days_ago and 
                     m.message_type == 'email'
                 )
-                # Score based on email activity (0-100)
-                email_score = min(len(email_messages) * 5, 100)
+                email_multiplier = config.get('engagement_email_multiplier', 5)
+                scores['email_engagement'] = min(len(email_messages) * email_multiplier, 100)
+            else:
+                scores['email_engagement'] = 0.0
             
-            # Website engagement (based on sale orders and activities)
-            website_score = 0.0
-            if partner.customer_rank > 0:
-                # Recent orders indicate website engagement
+            # Website engagement (if enabled)
+            if config.get('enable_website_engagement', True) and partner.customer_rank > 0:
+                engagement_period = config.get('engagement_analysis_period', 90)
                 recent_orders = partner.sale_order_ids.filtered(
                     lambda o: o.date_order and 
-                    o.date_order.date() >= date.today() - timedelta(days=90)
+                    o.date_order.date() >= date.today() - timedelta(days=engagement_period)
                 )
-                # Score based on order frequency and recency
                 if recent_orders:
-                    website_score = min(len(recent_orders) * 15 + 20, 100)
+                    website_multiplier = config.get('engagement_website_multiplier', 15)
+                    website_base = config.get('engagement_website_base', 20)
+                    scores['website_engagement'] = min(len(recent_orders) * website_multiplier + website_base, 100)
                 elif partner.sale_order_ids:
-                    website_score = 30  # Has historical orders
+                    scores['website_engagement'] = config.get('engagement_website_historical', 30)  # Has historical orders
+                else:
+                    scores['website_engagement'] = 0.0
+            else:
+                scores['website_engagement'] = 0.0
             
-            # WhatsApp engagement (based on campaigns)
-            whatsapp_score = 0.0
-            if partner.mobile:
-                # Count WhatsApp campaigns sent to this customer
+            # WhatsApp engagement (if enabled)
+            if config.get('enable_whatsapp_engagement', True) and partner.mobile:
                 whatsapp_campaigns = campaigns.filtered(
                     lambda c: c.state in ('completed', 'running')
                 )
-                # Score based on campaign participation
                 if whatsapp_campaigns:
-                    whatsapp_score = min(len(whatsapp_campaigns) * 10 + 30, 100)
+                    whatsapp_multiplier = config.get('engagement_whatsapp_multiplier', 10)
+                    whatsapp_base = config.get('engagement_whatsapp_base', 30)
+                    scores['whatsapp_engagement'] = min(len(whatsapp_campaigns) * whatsapp_multiplier + whatsapp_base, 100)
+                else:
+                    scores['whatsapp_engagement'] = 0.0
+            else:
+                scores['whatsapp_engagement'] = 0.0
             
-            # Overall engagement (weighted average)
-            channels_with_score = 0
-            total_score = 0
+            # Calculate adaptive weighted overall score
+            weights = self._get_adaptive_engagement_weights(config)
+            total_weighted_score = 0.0
+            total_weight = 0.0
             
-            if partner.email:
-                channels_with_score += 1
-                total_score += email_score
-            if partner.customer_rank > 0:
-                channels_with_score += 1
-                total_score += website_score
-            if partner.mobile:
-                channels_with_score += 1
-                total_score += whatsapp_score
+            for metric, weight in weights.items():
+                if metric in scores and scores[metric] > 0:
+                    total_weighted_score += scores[metric] * (weight / 100)
+                    total_weight += weight / 100
             
-            overall_score = total_score / channels_with_score if channels_with_score > 0 else 0
+            overall_score = total_weighted_score / total_weight if total_weight > 0 else 0.0
             
-            # Set values
-            partner.email_engagement_score = email_score
-            partner.website_engagement_score = website_score
-            partner.whatsapp_engagement_score = whatsapp_score
+            # Set individual scores
+            partner.email_engagement_score = scores['email_engagement']
+            partner.website_engagement_score = scores['website_engagement']
+            partner.whatsapp_engagement_score = scores['whatsapp_engagement']
             partner.overall_engagement_score = overall_score
             
             # Determine engagement level
@@ -574,12 +726,19 @@ class ResPartner(models.Model):
     @api.depends('rfm_segment', 'days_since_last_purchase', 'customer_rank', 'sale_order_count')
     def _compute_journey_stage(self):
         """Compute customer journey stage based on purchase behavior"""
+        # Get metrics configuration
+        config = self.env['res.config.settings'].get_analytics_config()
+        
         for partner in self:
             # Check if sale module is available
             if not hasattr(partner, 'sale_order_count'):
                 partner.customer_journey_stage = 'awareness'
                 continue
                 
+            journey_active_threshold = config.get('journey_active_threshold', 90)
+            journey_loyalty_threshold = config.get('journey_loyalty_threshold', 180)
+            b2b_loyalty_orders = config.get('journey_b2b_loyalty_orders', 5)
+            
             if not partner.is_company:
                 if partner.customer_rank == 0:
                     # Never purchased
@@ -590,10 +749,10 @@ class ResPartner(models.Model):
                 elif partner.rfm_segment in ('champions', 'loyal_customers'):
                     # High-value loyal customers
                     partner.customer_journey_stage = 'advocacy'
-                elif partner.days_since_last_purchase <= 90:
+                elif partner.days_since_last_purchase <= journey_active_threshold:
                     # Active customers
                     partner.customer_journey_stage = 'purchase'
-                elif partner.days_since_last_purchase <= 180:
+                elif partner.days_since_last_purchase <= journey_loyalty_threshold:
                     # Recent customers building loyalty
                     partner.customer_journey_stage = 'loyalty'
                 else:
@@ -603,7 +762,7 @@ class ResPartner(models.Model):
                 # Company logic (B2B)
                 if partner.customer_rank == 0:
                     partner.customer_journey_stage = 'awareness'
-                elif partner.sale_order_count >= 5:
+                elif partner.sale_order_count >= b2b_loyalty_orders:
                     partner.customer_journey_stage = 'loyalty'
                 else:
                     partner.customer_journey_stage = 'purchase'
@@ -611,6 +770,9 @@ class ResPartner(models.Model):
     @api.depends('email', 'mobile', 'phone', 'message_ids', 'sale_order_ids')
     def _compute_multichannel_behavior(self):
         """Compute multi-channel behavior metrics"""
+        # Get metrics configuration
+        config = self.env['res.config.settings'].get_analytics_config()
+        
         for partner in self:
             # Check if sale module is available
             if not hasattr(partner, 'sale_order_ids'):
@@ -657,42 +819,100 @@ class ResPartner(models.Model):
 
     @api.depends('rfm_segment', 'days_since_last_purchase', 'overall_engagement_score', 'customer_journey_stage')
     def _compute_churn_prediction(self):
-        """Compute churn risk score using multiple factors"""
+        """Compute churn risk score using multiple factors (adaptive based on configuration)"""
+        # Get metrics configuration
+        config = self.env['res.config.settings'].get_analytics_config()
+        
         for partner in self:
+            # Skip if churn prediction is disabled
+            if not config.get('enable_churn_prediction', True):
+                partner.churn_risk_score = 0.0
+                partner.churn_risk_level = 'unknown'
+                continue
+                
             if not partner.is_company and partner.customer_rank > 0:
+                # Get adaptive weights for churn factors
+                weights = self._get_adaptive_churn_weights(config)
                 churn_score = 0.0
                 
-                # RFM-based risk (40% weight)
+                # RFM-based risk (always available)
+                rfm_factor = 0.0
                 if partner.rfm_segment in ('lost', 'hibernating'):
-                    churn_score += 40.0
+                    rfm_factor = config.get('churn_rfm_critical_risk', 100.0)
                 elif partner.rfm_segment in ('cannot_lose_them', 'at_risk'):
-                    churn_score += 30.0
+                    rfm_factor = config.get('churn_rfm_high_risk', 75.0)
                 elif partner.rfm_segment in ('about_to_sleep', 'need_attention'):
-                    churn_score += 20.0
+                    rfm_factor = config.get('churn_rfm_medium_risk', 50.0)
                 elif partner.rfm_segment in ('promising', 'new_customers'):
-                    churn_score += 10.0
+                    rfm_factor = config.get('churn_rfm_low_risk', 25.0)
                 
-                # Recency factor (30% weight)
-                if partner.days_since_last_purchase > 365:
-                    churn_score += 30.0
-                elif partner.days_since_last_purchase > 180:
-                    churn_score += 20.0
-                elif partner.days_since_last_purchase > 90:
-                    churn_score += 10.0
+                if 'rfm_analysis' in weights:
+                    churn_score += rfm_factor * (weights['rfm_analysis'] / 100)
                 
-                # Engagement factor (20% weight)
-                if partner.overall_engagement_score < 20:
-                    churn_score += 20.0
-                elif partner.overall_engagement_score < 40:
-                    churn_score += 15.0
-                elif partner.overall_engagement_score < 60:
-                    churn_score += 10.0
+                # Recency factor (always available)
+                recency_factor = 0.0
+                churn_long_period = config.get('churn_long_period', 365)
+                churn_medium_period = config.get('churn_medium_period', 180)
+                churn_short_period = config.get('churn_short_period', 90)
+                if partner.days_since_last_purchase > churn_long_period:
+                    recency_factor = config.get('churn_recency_high_risk', 100.0)
+                elif partner.days_since_last_purchase > churn_medium_period:
+                    recency_factor = config.get('churn_recency_medium_risk', 65.0)
+                elif partner.days_since_last_purchase > churn_short_period:
+                    recency_factor = config.get('churn_recency_low_risk', 35.0)
                 
-                # Journey stage factor (10% weight)
-                if partner.customer_journey_stage == 'dormant':
-                    churn_score += 10.0
-                elif partner.customer_journey_stage == 'consideration':
-                    churn_score += 5.0
+                # Use a separate recency weight if engagement is disabled
+                if 'engagement_scoring' not in weights:
+                    # Boost recency weight when engagement is not available
+                    enhanced_weights = dict(weights)
+                    if 'rfm_analysis' in enhanced_weights:
+                        recency_weight = 60  # Higher weight for recency
+                        enhanced_weights['rfm_analysis'] = 40
+                    else:
+                        recency_weight = 100
+                    churn_score += recency_factor * (recency_weight / 100)
+                else:
+                    churn_score += recency_factor * (weights.get('engagement_scoring', 0) / 100 * 0.5)  # Split engagement weight
+                
+                # Engagement factor (if enabled)
+                if 'engagement_scoring' in weights and config.get('enable_engagement_scoring', True):
+                    engagement_factor = 0.0
+                    churn_engagement_very_low = config.get('churn_engagement_very_low_threshold', 20)
+                    churn_engagement_low = config.get('churn_engagement_low_threshold', 40)
+                    churn_engagement_medium = config.get('churn_engagement_medium_threshold', 60)
+                    if partner.overall_engagement_score < churn_engagement_very_low:
+                        engagement_factor = config.get('churn_engagement_critical_risk', 100.0)
+                    elif partner.overall_engagement_score < churn_engagement_low:
+                        engagement_factor = config.get('churn_engagement_high_risk', 75.0)
+                    elif partner.overall_engagement_score < churn_engagement_medium:
+                        engagement_factor = config.get('churn_engagement_medium_risk', 50.0)
+                    
+                    churn_score += engagement_factor * (weights['engagement_scoring'] / 100 * 0.5)  # Split with recency
+                
+                # Journey stage factor (if enabled)
+                if 'customer_journey' in weights and config.get('enable_customer_journey', True):
+                    journey_factor = 0.0
+                    if partner.customer_journey_stage == 'dormant':
+                        journey_factor = 100.0
+                    elif partner.customer_journey_stage == 'consideration':
+                        journey_factor = 50.0
+                    
+                    churn_score += journey_factor * (weights['customer_journey'] / 100)
+                
+                # Multi-channel factor (if enabled)
+                if 'multichannel_behavior' in weights and config.get('enable_multichannel_behavior', True):
+                    multichannel_factor = 0.0
+                    min_touchpoints = config.get('churn_multichannel_min_touchpoints', 1)
+                    consistency_low = config.get('churn_multichannel_consistency_low', 30)
+                    consistency_medium = config.get('churn_multichannel_consistency_medium', 60)
+                    if partner.multichannel_touchpoints <= min_touchpoints:
+                        multichannel_factor = config.get('churn_multichannel_high_risk', 80.0)
+                    elif partner.multichannel_consistency_score < consistency_low:
+                        multichannel_factor = config.get('churn_multichannel_medium_risk', 60.0)
+                    elif partner.multichannel_consistency_score < consistency_medium:
+                        multichannel_factor = config.get('churn_multichannel_low_risk', 30.0)
+                    
+                    churn_score += multichannel_factor * (weights['multichannel_behavior'] / 100)
                 
                 partner.churn_risk_score = min(churn_score, 100.0)
                 
@@ -713,8 +933,17 @@ class ResPartner(models.Model):
 
     @api.depends('sale_order_ids.order_line.product_id', 'sale_order_ids.amount_total')
     def _compute_values_driven_propensity(self):
-        """Compute values-driven purchase propensity based on product preferences"""
+        """Compute values-driven purchase propensity based on product preferences (adaptive)"""
+        # Get metrics configuration
+        config = self.env['res.config.settings'].get_analytics_config()
+        
         for partner in self:
+            # Skip if values analytics is disabled
+            if not config.get('enable_values_analytics', False):
+                partner.sustainability_preference_score = 0.0
+                partner.premium_product_propensity = 0.0
+                partner.social_responsibility_score = 0.0
+                continue
             # Check if sale_order_ids field exists (sale module might not be installed)
             if not hasattr(partner, 'sale_order_ids'):
                 partner.sustainability_preference_score = 25.0
@@ -729,9 +958,10 @@ class ResPartner(models.Model):
                 
                 # Sustainability score (based on product categories and names)
                 sustainability_score = 0.0
-                sustainability_keywords = ['eco', 'organic', 'sustainable', 'green', 'bio', 'natural']
+                eco_keywords = config.get('eco_friendly_keywords', 'eco,organic,sustainable,green,bio,natural')
+                sustainability_keywords = eco_keywords.split(',') if isinstance(eco_keywords, str) else eco_keywords
                 sustainable_products = products.filtered(
-                    lambda p: any(keyword in p.name.lower() for keyword in sustainability_keywords) if p.name else False
+                    lambda p: any(keyword.strip() in p.name.lower() for keyword in sustainability_keywords) if p.name else False
                 )
                 if products:
                     sustainability_score = (len(sustainable_products) / len(products)) * 100
@@ -740,46 +970,65 @@ class ResPartner(models.Model):
                 premium_score = 0.0
                 if order_lines:
                     avg_price = sum(order_lines.mapped('price_unit')) / len(order_lines)
-                    # Score based on average price point (adjust thresholds as needed)
-                    if avg_price > 500:
-                        premium_score = 90.0
-                    elif avg_price > 200:
-                        premium_score = 70.0
-                    elif avg_price > 100:
-                        premium_score = 50.0
-                    elif avg_price > 50:
-                        premium_score = 30.0
+                    # Score based on average price point (configurable thresholds)
+                    luxury_threshold = config.get('premium_luxury_threshold', 500.0)
+                    premium_threshold = config.get('premium_premium_threshold', 200.0)
+                    midrange_threshold = config.get('premium_midrange_threshold', 100.0)
+                    budget_plus_threshold = config.get('premium_budget_plus_threshold', 50.0)
+                    
+                    if avg_price > luxury_threshold:
+                        premium_score = config.get('premium_luxury_score', 90.0)
+                    elif avg_price > premium_threshold:
+                        premium_score = config.get('premium_premium_score', 70.0)
+                    elif avg_price > midrange_threshold:
+                        premium_score = config.get('premium_midrange_score', 50.0)
+                    elif avg_price > budget_plus_threshold:
+                        premium_score = config.get('premium_budget_plus_score', 30.0)
                     else:
-                        premium_score = 10.0
+                        premium_score = config.get('premium_budget_score', 10.0)
                 
                 # Social responsibility score (based on brand preferences)
                 social_score = 0.0
-                social_keywords = ['fair', 'ethical', 'charity', 'community', 'social']
+                social_resp_keywords = config.get('social_responsibility_keywords', 'fair,ethical,charity,community,social')
+                social_keywords = social_resp_keywords.split(',') if isinstance(social_resp_keywords, str) else social_resp_keywords
                 social_products = products.filtered(
-                    lambda p: any(keyword in p.name.lower() for keyword in social_keywords) if p.name else False
+                    lambda p: any(keyword.strip() in p.name.lower() for keyword in social_keywords) if p.name else False
                 )
                 if products:
                     social_score = (len(social_products) / len(products)) * 100
                 
                 # Boost scores for loyal customers
                 if partner.rfm_segment in ('champions', 'loyal_customers'):
-                    sustainability_score = min(sustainability_score * 1.2, 100)
-                    premium_score = min(premium_score * 1.1, 100)
-                    social_score = min(social_score * 1.2, 100)
+                    eco_boost = config.get('eco_friendly_loyalty_boost', 1.2)
+                    premium_boost = config.get('premium_loyalty_boost', 1.1)
+                    social_boost = config.get('social_responsibility_loyalty_boost', 1.2)
+                    sustainability_score = min(sustainability_score * eco_boost, 100)
+                    premium_score = min(premium_score * premium_boost, 100)
+                    social_score = min(social_score * social_boost, 100)
                 
                 partner.sustainability_preference_score = sustainability_score
                 partner.premium_product_propensity = premium_score
                 partner.social_responsibility_score = social_score
             else:
                 # Default scores for customers without purchase history
-                partner.sustainability_preference_score = 25.0
-                partner.premium_product_propensity = 25.0
-                partner.social_responsibility_score = 25.0
+                partner.sustainability_preference_score = config.get('eco_friendly_default_score', 25.0)
+                partner.premium_product_propensity = config.get('premium_default_score', 25.0)
+                partner.social_responsibility_score = config.get('social_responsibility_default_score', 25.0)
 
     @api.depends('sale_order_ids.source_id', 'sale_order_ids.campaign_id', 'sale_order_ids.medium_id')
     def _compute_social_commerce_metrics(self):
-        """Compute social commerce integration metrics based on UTM sources"""
+        """Compute social commerce integration metrics based on UTM sources (adaptive)"""
+        # Get metrics configuration
+        config = self.env['res.config.settings'].get_analytics_config()
+        
         for partner in self:
+            # Skip if social commerce analytics is disabled
+            if not config.get('enable_social_commerce', False):
+                partner.social_media_source = 'none'
+                partner.social_referral_count = 0
+                partner.social_engagement_score = 0.0
+                partner.social_conversion_rate = 0.0
+                continue
             # Check if sale module is available
             if not hasattr(partner, 'sale_order_ids'):
                 partner.social_media_source = 'none'
@@ -796,28 +1045,43 @@ class ResPartner(models.Model):
                 social_order_count = 0
                 
                 # Check for social media sources in UTM data
+                fb_kw = config.get('social_facebook_keywords', 'facebook,fb')
+                facebook_keywords = fb_kw.split(',') if isinstance(fb_kw, str) else fb_kw
+                ig_kw = config.get('social_instagram_keywords', 'instagram,ig')
+                instagram_keywords = ig_kw.split(',') if isinstance(ig_kw, str) else ig_kw
+                tw_kw = config.get('social_twitter_keywords', 'twitter')
+                twitter_keywords = tw_kw.split(',') if isinstance(tw_kw, str) else tw_kw
+                li_kw = config.get('social_linkedin_keywords', 'linkedin')
+                linkedin_keywords = li_kw.split(',') if isinstance(li_kw, str) else li_kw
+                tt_kw = config.get('social_tiktok_keywords', 'tiktok')
+                tiktok_keywords = tt_kw.split(',') if isinstance(tt_kw, str) else tt_kw
+                yt_kw = config.get('social_youtube_keywords', 'youtube')
+                youtube_keywords = yt_kw.split(',') if isinstance(yt_kw, str) else yt_kw
+                ot_kw = config.get('social_other_keywords', 'social,share,referral')
+                other_keywords = ot_kw.split(',') if isinstance(ot_kw, str) else ot_kw
+                
                 for order in orders:
                     if order.source_id:
                         source_name = order.source_id.name.lower()
-                        if 'facebook' in source_name or 'fb' in source_name:
+                        if any(keyword.strip() in source_name for keyword in facebook_keywords):
                             social_sources.append('facebook')
                             social_order_count += 1
-                        elif 'instagram' in source_name or 'ig' in source_name:
+                        elif any(keyword.strip() in source_name for keyword in instagram_keywords):
                             social_sources.append('instagram')
                             social_order_count += 1
-                        elif 'twitter' in source_name:
+                        elif any(keyword.strip() in source_name for keyword in twitter_keywords):
                             social_sources.append('twitter')
                             social_order_count += 1
-                        elif 'linkedin' in source_name:
+                        elif any(keyword.strip() in source_name for keyword in linkedin_keywords):
                             social_sources.append('linkedin')
                             social_order_count += 1
-                        elif 'tiktok' in source_name:
+                        elif any(keyword.strip() in source_name for keyword in tiktok_keywords):
                             social_sources.append('tiktok')
                             social_order_count += 1
-                        elif 'youtube' in source_name:
+                        elif any(keyword.strip() in source_name for keyword in youtube_keywords):
                             social_sources.append('youtube')
                             social_order_count += 1
-                        elif any(social in source_name for social in ['social', 'share', 'referral']):
+                        elif any(keyword.strip() in source_name for keyword in other_keywords):
                             social_sources.append('other')
                             social_order_count += 1
                 
@@ -842,7 +1106,8 @@ class ResPartner(models.Model):
                 # Calculate social conversion rate (simplified)
                 if social_order_count > 0:
                     # Base conversion rate on social engagement
-                    partner.social_conversion_rate = min(social_engagement * 0.8, 100)
+                    social_conversion_multiplier = config.get('social_conversion_multiplier', 0.8)
+                    partner.social_conversion_rate = min(social_engagement * social_conversion_multiplier, 100)
                 else:
                     partner.social_conversion_rate = 0
                     
@@ -854,13 +1119,26 @@ class ResPartner(models.Model):
 
     @api.depends('sale_order_ids.payment_term_id', 'sale_order_ids.amount_total')
     def _compute_bnpl_mobile_behavior(self):
-        """Compute BNPL and mobile commerce behavior metrics"""
+        """Compute BNPL and mobile commerce behavior metrics (adaptive)"""
+        # Get metrics configuration
+        config = self.env['res.config.settings'].get_analytics_config()
+        
         for partner in self:
+            # Skip if both BNPL and mobile analytics are disabled
+            if not config.get('enable_bnpl_analytics', False) and not config.get('enable_mobile_commerce', False):
+                partner.bnpl_usage_frequency = 'never'
+                partner.bnpl_preference_score = 0.0
+                partner.mobile_device_preference = 'mixed'
+                partner.mobile_commerce_score = 0.0
+                partner.average_order_value_mobile = 0.0
+                partner.average_order_value_desktop = 0.0
+                partner.mobile_conversion_rate = 0.0
+                continue
             # Check if sale module is available
             if not hasattr(partner, 'sale_order_ids'):
                 partner.bnpl_usage_frequency = 'never'
                 partner.bnpl_preference_score = 0.0
-                partner.mobile_device_preference = 'unknown'
+                partner.mobile_device_preference = 'mixed'
                 partner.mobile_commerce_score = 0.0
                 partner.average_order_value_mobile = 0.0
                 partner.average_order_value_desktop = 0.0
@@ -872,22 +1150,27 @@ class ResPartner(models.Model):
                 
                 # BNPL Analysis (based on payment terms)
                 bnpl_orders = 0
-                bnpl_keywords = ['installment', 'split', 'bnpl', 'klarna', 'afterpay', 'sezzle', 'affirm']
+                bnpl_kw = config.get('bnpl_keywords', 'installment,split,bnpl,klarna,afterpay,sezzle,affirm')
+                bnpl_keywords = bnpl_kw.split(',') if isinstance(bnpl_kw, str) else bnpl_kw
                 
                 for order in orders:
                     if order.payment_term_id:
                         payment_term_name = order.payment_term_id.name.lower()
-                        if any(keyword in payment_term_name for keyword in bnpl_keywords):
+                        if any(keyword.strip() in payment_term_name for keyword in bnpl_keywords):
                             bnpl_orders += 1
                 
                 # Determine BNPL usage frequency
+                bnpl_rarely_threshold = config.get('bnpl_rarely_threshold', 2)
+                bnpl_sometimes_threshold = config.get('bnpl_sometimes_threshold', 5)
+                bnpl_frequently_threshold = config.get('bnpl_frequently_threshold', 10)
+                
                 if bnpl_orders == 0:
                     partner.bnpl_usage_frequency = 'never'
-                elif bnpl_orders <= 2:
+                elif bnpl_orders <= bnpl_rarely_threshold:
                     partner.bnpl_usage_frequency = 'rarely'
-                elif bnpl_orders <= 5:
+                elif bnpl_orders <= bnpl_sometimes_threshold:
                     partner.bnpl_usage_frequency = 'sometimes'
-                elif bnpl_orders <= 10:
+                elif bnpl_orders <= bnpl_frequently_threshold:
                     partner.bnpl_usage_frequency = 'frequently'
                 else:
                     partner.bnpl_usage_frequency = 'always'
@@ -913,7 +1196,11 @@ class ResPartner(models.Model):
                     order_hour = order.date_order.hour if order.date_order else 12
                     
                     # Mobile indicators: off-hours, smaller amounts, certain products
-                    if (order_hour < 9 or order_hour > 18) and order.amount_total < 200:
+                    mobile_start_hour = config.get('mobile_start_hour', 9)
+                    mobile_end_hour = config.get('mobile_end_hour', 18)
+                    mobile_amount_threshold = config.get('mobile_amount_threshold', 200.0)
+                    
+                    if (order_hour < mobile_start_hour or order_hour > mobile_end_hour) and order.amount_total < mobile_amount_threshold:
                         mobile_orders += 1
                         mobile_total += order.amount_total
                     else:
@@ -926,12 +1213,15 @@ class ResPartner(models.Model):
                     mobile_score = (mobile_orders / total_orders) * 100
                     partner.mobile_commerce_score = mobile_score
                 else:
-                    partner.mobile_commerce_score = 50  # Default neutral score
+                    partner.mobile_commerce_score = config.get('mobile_commerce_default_score', 50.0)  # Default neutral score
                 
                 # Determine device preference
-                if mobile_orders > desktop_orders * 1.5:
+                mobile_preference_ratio = config.get('mobile_preference_ratio', 1.5)
+                desktop_preference_ratio = config.get('desktop_preference_ratio', 1.5)
+                
+                if mobile_orders > desktop_orders * mobile_preference_ratio:
                     partner.mobile_device_preference = 'smartphone'
-                elif desktop_orders > mobile_orders * 1.5:
+                elif desktop_orders > mobile_orders * desktop_preference_ratio:
                     partner.mobile_device_preference = 'desktop'
                 elif mobile_orders > desktop_orders:
                     partner.mobile_device_preference = 'tablet'
@@ -945,14 +1235,15 @@ class ResPartner(models.Model):
                 # Calculate mobile conversion rate (simplified)
                 if mobile_orders > 0:
                     # Base on mobile engagement and order frequency
-                    partner.mobile_conversion_rate = min(partner.mobile_commerce_score * 0.9, 100)
+                    mobile_conversion_multiplier = config.get('mobile_conversion_multiplier', 0.9)
+                    partner.mobile_conversion_rate = min(partner.mobile_commerce_score * mobile_conversion_multiplier, 100)
                 else:
                     partner.mobile_conversion_rate = 0
                     
             else:
                 partner.bnpl_usage_frequency = 'never'
                 partner.bnpl_preference_score = 0
-                partner.mobile_commerce_score = 50
+                partner.mobile_commerce_score = config.get('mobile_commerce_default_score', 50.0)
                 partner.mobile_device_preference = 'mixed'
                 partner.average_order_value_mobile = 0
                 partner.average_order_value_desktop = 0
