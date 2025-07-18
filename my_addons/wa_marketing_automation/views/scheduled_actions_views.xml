@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
-    <!-- Tree view for Campaign Scheduled Actions -->
+    <!-- List view for Campaign Scheduled Actions -->
     <record id="view_campaign_scheduled_actions_list_view" model="ir.ui.view">
         <field name="name">campaign.scheduled.actions.list</field>
         <field name="model">ir.cron</field>
@@ -136,5 +135,4 @@
                 Campaign:" jobs that run repeatedly. </p>
         </field>
     </record>
-
 </odoo> 

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Sample customers with analytics data -->
+        <record id="sample_customer_1" model="res.partner">
+            <field name="name">John Doe</field>
+            <field name="email">john.doe@example.com</field>
+            <field name="mobile">+1234567890</field>
+            <field name="customer_rank">1</field>
+            <field name="date_of_birth">1985-05-15</field>
+            <field name="is_company">False</field>
+        </record>
+        
+        <record id="sample_customer_2" model="res.partner">
+            <field name="name">Jane Smith</field>
+            <field name="email">jane.smith@example.com</field>
+            <field name="mobile">+1234567891</field>
+            <field name="customer_rank">1</field>
+            <field name="date_of_birth">1990-08-20</field>
+            <field name="is_company">False</field>
+        </record>
+        
+        <record id="sample_customer_3" model="res.partner">
+            <field name="name">Bob Johnson</field>
+            <field name="email">bob.johnson@example.com</field>
+            <field name="mobile">+1234567892</field>
+            <field name="customer_rank">1</field>
+            <field name="date_of_birth">1982-12-10</field>
+            <field name="is_company">False</field>
+        </record>
+        
+        <record id="sample_customer_4" model="res.partner">
+            <field name="name">Alice Wilson</field>
+            <field name="email">alice.wilson@example.com</field>
+            <field name="mobile">+1234567893</field>
+            <field name="customer_rank">1</field>
+            <field name="date_of_birth">1992-03-25</field>
+            <field name="is_company">False</field>
+        </record>
+        
+        <record id="sample_customer_5" model="res.partner">
+            <field name="name">Charlie Brown</field>
+            <field name="email">charlie.brown@example.com</field>
+            <field name="mobile">+1234567894</field>
+            <field name="customer_rank">1</field>
+            <field name="date_of_birth">1988-09-12</field>
+            <field name="is_company">False</field>
+        </record>
+        
+        <!-- Sample sale orders if sale module is available -->
+        <record id="sample_order_1" model="sale.order">
+            <field name="partner_id" ref="sample_customer_1"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-01-15</field>
+            <field name="amount_total">150.00</field>
+        </record>
+        
+        <record id="sample_order_2" model="sale.order">
+            <field name="partner_id" ref="sample_customer_2"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-02-20</field>
+            <field name="amount_total">250.00</field>
+        </record>
+        
+        <record id="sample_order_3" model="sale.order">
+            <field name="partner_id" ref="sample_customer_1"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-03-10</field>
+            <field name="amount_total">200.00</field>
+        </record>
+        
+        <record id="sample_order_4" model="sale.order">
+            <field name="partner_id" ref="sample_customer_3"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-04-05</field>
+            <field name="amount_total">300.00</field>
+        </record>
+        
+        <record id="sample_order_5" model="sale.order">
+            <field name="partner_id" ref="sample_customer_2"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-05-15</field>
+            <field name="amount_total">180.00</field>
+        </record>
+        
+        <!-- Recent orders for better analytics -->
+        <record id="sample_order_6" model="sale.order">
+            <field name="partner_id" ref="sample_customer_4"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-06-01</field>
+            <field name="amount_total">400.00</field>
+        </record>
+        
+        <record id="sample_order_7" model="sale.order">
+            <field name="partner_id" ref="sample_customer_5"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-07-01</field>
+            <field name="amount_total">500.00</field>
+        </record>
+        
+        <record id="sample_order_8" model="sale.order">
+            <field name="partner_id" ref="sample_customer_1"/>
+            <field name="state">sale</field>
+            <field name="date_order">2024-07-10</field>
+            <field name="amount_total">350.00</field>
+        </record>
+        
+    </data>
+</odoo>

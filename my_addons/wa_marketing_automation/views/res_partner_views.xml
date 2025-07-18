@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Partner Form View - Add Date of Birth, Age, and RFM fields -->
+    <record id="view_partner_form_dob" model="ir.ui.view">
+        <field name="name">res.partner.form.dob</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <field name="category_id" position="after">
+                <field name="date_of_birth" invisible="is_company" />
+                <field name="age_display" invisible="is_company or not date_of_birth" />
+            </field>
+        </field>
+    </record>
+
+    <!-- Partner Form View - Add Advanced Analytics Pages -->
+    <record id="view_partner_form_advanced_analytics" model="ir.ui.view">
+        <field name="name">res.partner.form.advanced.analytics</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales_purchases']" position="after">
+                <!-- Advanced Analytics Tab with Sub-tabs -->
+                <page name="advanced_analytics" string="Analytics" invisible="is_company">
+                    <notebook>
+                        <!-- RFM Analysis Sub-tab -->
+                        <page name="rfm_analysis" string="RFM Analysis"
+                            invisible="not customer_rank">
+                            <group name="rfm_overview">
+                                <group name="rfm_scores" string="RFM Scores">
+                                    <field name="rfm_segment" widget="badge"
+                                        decoration-success="rfm_segment in ('champions', 'loyal_customers')"
+                                        decoration-warning="rfm_segment in ('potential_loyalists', 'promising', 'need_attention')"
+                                        decoration-danger="rfm_segment in ('at_risk', 'cannot_lose_them', 'hibernating', 'lost')" />
+                                    <field name="rfm_score" />
+                                    <field name="recency_score" />
+                                    <field name="frequency_score" />
+                                    <field name="monetary_score" />
+                                </group>
+                                <group name="rfm_data" string="Purchase Data">
+                                    <field name="days_since_last_purchase" />
+                                    <field name="purchase_count" />
+                                    <field name="total_spent" />
+                                </group>
+                            </group>
+                            <group name="rfm_help">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>RFM Analysis Explained:</strong><br />
+                                        <ul>
+                                        <li><strong>Recency (R):</strong> How recently this customer
+                                    made a purchase (1-5 scale)</li>
+                                        <li><strong>Frequency (F):</strong> How often this customer
+                                    makes purchases (1-5 scale)</li>
+                                        <li><strong>Monetary (M):</strong> How much this customer
+                                    spends (1-5 scale)</li>
+                                    </ul>
+                                        <strong>
+                                    Segments:</strong> Champions (best), Loyal Customers, Potential
+                                    Loyalists, New Customers, At Risk, Cannot Lose Them (high value
+                                    but inactive), Lost (worst) </div>
+                            </group>
+                        </page>
+
+                        <!-- Engagement Analytics Sub-tab -->
+                        <page name="engagement_analytics" string="Engagement">
+                            <group name="engagement_overview">
+                                <group name="engagement_scores" string="Engagement Scores">
+                                    <field name="engagement_level" widget="badge"
+                                        decoration-success="engagement_level == 'very_high'"
+                                        decoration-info="engagement_level == 'high'"
+                                        decoration-warning="engagement_level == 'medium'"
+                                        decoration-danger="engagement_level in ('low', 'very_low')" />
+                                    <field name="overall_engagement_score" />
+                                    <field name="email_engagement_score" />
+                                    <field name="website_engagement_score" />
+                                    <field name="whatsapp_engagement_score" />
+                                </group>
+                                <group name="journey_multichannel"
+                                    string="Journey &amp; Multi-Channel">
+                                    <field name="customer_journey_stage" widget="badge"
+                                        decoration-success="customer_journey_stage in ('advocacy', 'loyalty')"
+                                        decoration-info="customer_journey_stage == 'purchase'"
+                                        decoration-warning="customer_journey_stage in ('consideration', 'awareness')"
+                                        decoration-danger="customer_journey_stage == 'dormant'" />
+                                    <field name="multichannel_touchpoints" />
+                                    <field name="preferred_channel" />
+                                    <field name="multichannel_consistency_score" />
+                                </group>
+                            </group>
+                            <group name="engagement_help">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Engagement Analytics Explained:</strong>
+                                    <br />
+                                    <ul>
+                                        <li><strong>Overall Engagement:</strong> Combined score
+                                            across all channels (0-100)</li>
+                                        <li><strong>Journey Stage:</strong> Current position in
+                                            customer lifecycle</li>
+                                        <li><strong>Multi-Channel:</strong> Number of channels
+                                            customer uses</li>
+                                        <li><strong>Preferred Channel:</strong> Primary
+                                            communication preference</li>
+                                    </ul>
+                                </div>
+                            </group>
+                        </page>
+
+                        <!-- Churn Prediction Sub-tab -->
+                        <page name="churn_prediction" string="Churn Risk"
+                            invisible="not customer_rank">
+                            <group name="churn_overview">
+                                <group name="churn_scores" string="Churn Risk Assessment">
+                                    <field name="churn_risk_level" widget="badge"
+                                        decoration-success="churn_risk_level in ('very_low', 'low')"
+                                        decoration-warning="churn_risk_level == 'medium'"
+                                        decoration-danger="churn_risk_level in ('high', 'very_high')" />
+                                    <field name="churn_risk_score" />
+                                </group>
+                                <group name="churn_factors" string="Contributing Factors">
+                                    <field name="rfm_segment" readonly="1" />
+                                    <field name="days_since_last_purchase" readonly="1" />
+                                    <field name="overall_engagement_score" readonly="1" />
+                                    <field name="customer_journey_stage" readonly="1" />
+                                </group>
+                            </group>
+                            <group name="churn_help">
+                                <div class="alert alert-warning" role="alert">
+                                    <strong>Churn Prediction Explained:</strong>
+                                    <br />
+                                    <ul>
+                                        <li><strong>Risk Score:</strong> Probability of churning in
+                                            next 90 days (0-100)</li>
+                                        <li><strong>Factors:</strong> RFM segment (40%), Recency
+                                            (30%), Engagement (20%), Journey Stage (10%)</li>
+                                        <li><strong>Action:</strong> High risk customers need
+                                            immediate retention efforts</li>
+                                    </ul>
+                                </div>
+                            </group>
+                        </page>
+
+                        <!-- Values-Driven Propensity Sub-tab -->
+                        <page name="values_propensity" string="Values &amp; Preferences"
+                            invisible="not customer_rank">
+                            <group name="values_overview">
+                                <group name="values_scores" string="Purchase Propensity">
+                                    <field name="sustainability_preference_score" />
+                                    <field name="premium_product_propensity" />
+                                    <field name="social_responsibility_score" />
+                                </group>
+                            </group>
+                            <group name="values_help">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Values-Driven Analytics Explained:</strong><br />
+                                        <ul>
+                                        <li><strong>Sustainability Score:</strong> Preference for
+                                    eco-friendly products (0-100)</li>
+                                        <li><strong>Premium Propensity:</strong> Likelihood to buy
+                                    premium products (0-100)</li>
+                                        <li><strong>Social Responsibility:</strong> Preference for
+                                    ethical brands (0-100)</li>
+                                    </ul>
+                                        <strong>
+                                    Usage:</strong> Target customers with products matching their
+                                    values </div>
+                            </group>
+                        </page>
+
+                        <!-- Social Commerce Sub-tab -->
+                        <page name="social_commerce" string="Social Commerce"
+                            invisible="not customer_rank">
+                            <group name="social_overview">
+                                <group name="social_sources" string="Social Media Sources">
+                                    <field name="social_media_source" widget="badge"
+                                        decoration-success="social_media_source != 'none'"
+                                        decoration-muted="social_media_source == 'none'" />
+                                    <field name="social_referral_count" />
+                                    <field name="social_engagement_score" />
+                                    <field name="social_conversion_rate" />
+                                </group>
+                            </group>
+                            <group name="social_help">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Social Commerce Analytics Explained:</strong><br />
+                                        <ul>
+                                        <li><strong>Social Media Source:</strong> Primary social
+                                    platform driving purchases</li>
+                                        <li><strong>Social Referral Count:</strong> Number of
+                                    purchases from social media</li>
+                                        <li><strong>Social Engagement Score:</strong> Engagement
+                                    level with social content (0-100)</li>
+                                        <li><strong>Social Conversion Rate:</strong> Conversion rate
+                                    from social media traffic (0-100)</li>
+                                    </ul>
+                                        <strong>
+                                    Usage:</strong> Optimize social media campaigns and content
+                                    strategy </div>
+                            </group>
+                        </page>
+
+                        <!-- BNPL & Mobile Commerce Sub-tab -->
+                        <page name="bnpl_mobile" string="BNPL &amp; Mobile"
+                            invisible="not customer_rank">
+                            <group name="bnpl_mobile_overview">
+                                <group name="bnpl_behavior" string="Buy Now Pay Later (BNPL)">
+                                    <field name="bnpl_usage_frequency" widget="badge"
+                                        decoration-success="bnpl_usage_frequency in ('frequently', 'always')"
+                                        decoration-warning="bnpl_usage_frequency in ('sometimes', 'rarely')"
+                                        decoration-muted="bnpl_usage_frequency == 'never'" />
+                                    <field name="bnpl_preference_score" />
+                                </group>
+                                <group name="mobile_behavior" string="Mobile Commerce">
+                                    <field name="mobile_device_preference" widget="badge"
+                                        decoration-info="mobile_device_preference == 'smartphone'"
+                                        decoration-success="mobile_device_preference == 'tablet'"
+                                        decoration-warning="mobile_device_preference == 'desktop'"
+                                        decoration-muted="mobile_device_preference == 'mixed'" />
+                                    <field name="mobile_commerce_score" />
+                                    <field name="mobile_conversion_rate" />
+                                </group>
+                            </group>
+                            <group name="order_values">
+                                <group name="mobile_orders" string="Mobile Orders">
+                                    <field name="average_order_value_mobile" />
+                                </group>
+                                <group name="desktop_orders" string="Desktop Orders">
+                                    <field name="average_order_value_desktop" />
+                                </group>
+                            </group>
+                            <group name="bnpl_mobile_help">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>BNPL &amp; Mobile Commerce Explained:</strong><br />
+                                        <ul>
+                                        <li><strong>BNPL Usage:</strong> How often customer uses Buy
+                                    Now Pay Later options</li>
+                                        <li><strong>Mobile Device Preference:</strong> Preferred
+                                    device for shopping</li>
+                                        <li><strong>Mobile Commerce Score:</strong> Mobile vs
+                                    desktop shopping behavior (0-100)</li>
+                                        <li><strong>Average Order Values:</strong> Spending patterns
+                                    by device type</li>
+                                    </ul>
+                                        <strong>
+                                    Usage:</strong> Optimize mobile experience and payment options </div>
+                            </group>
+                        </page>
+                    </notebook>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Partner List View - Add Advanced Analytics columns -->
+    <record id="view_partner_list_advanced_analytics" model="ir.ui.view">
+        <field name="name">res.partner.list.advanced.analytics</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree" />
+        <field name="arch" type="xml">
+            <field name="vat" position="after">
+                <!-- Demographics -->
+                <field name="date_of_birth" optional="hide" />
+                <field name="age" optional="hide" />
+
+                <!-- RFM Analysis -->
+                <field name="rfm_segment" optional="hide" widget="badge"
+                    decoration-success="rfm_segment in ('champions', 'loyal_customers')"
+                    decoration-warning="rfm_segment in ('potential_loyalists', 'promising', 'need_attention')"
+                    decoration-danger="rfm_segment in ('at_risk', 'cannot_lose_them', 'hibernating', 'lost')" />
+                <field name="rfm_score" optional="hide" />
+                <field name="days_since_last_purchase" optional="hide" />
+                <field name="purchase_count" optional="hide" />
+                <field name="total_spent" optional="hide" />
+
+                <!-- Engagement Analytics -->
+                <field name="engagement_level" optional="hide" widget="badge"
+                    decoration-success="engagement_level == 'very_high'"
+                    decoration-info="engagement_level == 'high'"
+                    decoration-warning="engagement_level == 'medium'"
+                    decoration-danger="engagement_level in ('low', 'very_low')" />
+                <field name="overall_engagement_score" optional="hide" />
+                <field name="customer_journey_stage" optional="hide" widget="badge"
+                    decoration-success="customer_journey_stage in ('advocacy', 'loyalty')"
+                    decoration-info="customer_journey_stage == 'purchase'"
+                    decoration-warning="customer_journey_stage in ('consideration', 'awareness')"
+                    decoration-danger="customer_journey_stage == 'dormant'" />
+                <field name="preferred_channel" optional="hide" />
+                <field name="multichannel_touchpoints" optional="hide" />
+
+                <!-- Churn Prediction -->
+                <field name="churn_risk_level" optional="hide" widget="badge"
+                    decoration-success="churn_risk_level in ('very_low', 'low')"
+                    decoration-warning="churn_risk_level == 'medium'"
+                    decoration-danger="churn_risk_level in ('high', 'very_high')" />
+                <field name="churn_risk_score" optional="hide" />
+
+                <!-- Values-Driven Propensity -->
+                <field name="sustainability_preference_score" optional="hide" />
+                <field name="premium_product_propensity" optional="hide" />
+                <field name="social_responsibility_score" optional="hide" />
+
+                <!-- Social Commerce -->
+                <field name="social_media_source" optional="hide" widget="badge"
+                    decoration-success="social_media_source != 'none'"
+                    decoration-muted="social_media_source == 'none'" />
+                <field name="social_referral_count" optional="hide" />
+                <field name="social_engagement_score" optional="hide" />
+                <field name="social_conversion_rate" optional="hide" />
+
+                <!-- BNPL & Mobile Commerce -->
+                <field name="bnpl_usage_frequency" optional="hide" widget="badge"
+                    decoration-success="bnpl_usage_frequency in ('frequently', 'always')"
+                    decoration-warning="bnpl_usage_frequency in ('sometimes', 'rarely')"
+                    decoration-muted="bnpl_usage_frequency == 'never'" />
+                <field name="bnpl_preference_score" optional="hide" />
+                <field name="mobile_device_preference" optional="hide" widget="badge"
+                    decoration-info="mobile_device_preference == 'smartphone'"
+                    decoration-success="mobile_device_preference == 'tablet'"
+                    decoration-warning="mobile_device_preference == 'desktop'"
+                    decoration-muted="mobile_device_preference == 'mixed'" />
+                <field name="mobile_commerce_score" optional="hide" />
+                <field name="mobile_conversion_rate" optional="hide" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

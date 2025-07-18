@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Force computation of analytics fields for all existing customers -->
+        <function model="res.partner" name="_force_analytics_computation">
+            <value model="res.partner" search="[('customer_rank', '>', 0)]"/>
+        </function>
+    </data>
+</odoo>

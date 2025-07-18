@@ -8,7 +8,8 @@ This module provides a complete WhatsApp marketing automation platform with adva
 
 ## ✨ Key Features
 
-- **🎯 Advanced Customer Segmentation**: Manual and rule-based customer targeting
+### Core Marketing Automation
+- **🎯 Advanced Customer Segmentation**: Manual and rule-based customer targeting with 100+ predefined segments
 - **📅 Flexible Campaign Scheduling**: Immediate, scheduled, and recurring campaigns
 - **📝 Dynamic Message Templates**: Personalized messages with product recommendations
 - **🛍️ Product Integration**: Smart product recommendations with custom formatting
@@ -16,6 +17,17 @@ This module provides a complete WhatsApp marketing automation platform with adva
 - **🔗 CRM Integration**: Automatic lead generation and opportunity management
 - **⚡ Automation**: Scheduled actions and workflow automation
 - **🛡️ Security**: Secure API integration with comprehensive validation
+
+### Advanced Analytics & Intelligence (New!)
+- **🧠 Engagement Analytics**: Multi-channel engagement scoring across email, WhatsApp, and website
+- **🔮 Churn Prediction**: AI-powered 90-day churn probability with risk assessment
+- **📈 Customer Journey Mapping**: Automatic lifecycle stage identification (Awareness → Advocacy)
+- **🎯 RFM Analysis**: Recency, Frequency, Monetary segmentation with automated scoring
+- **📊 Cohort Analysis**: Time-based customer behavior tracking with retention insights
+- **🌱 Values-Driven Analytics**: Sustainability, premium, and social responsibility propensity
+- **📱 Social Commerce Integration**: Social media source tracking and conversion optimization
+- **💳 BNPL & Mobile Commerce**: Buy Now Pay Later and mobile behavior analysis
+- **🔄 Multi-Channel Behavior**: Touchpoint tracking and channel preference identification
 
 ## 🚀 Quick Start
 
@@ -26,21 +38,35 @@ Get started in just 5 minutes:
 3. **Build Campaign** - Create message template and select products
 4. **Test & Launch** - Preview messages and start your campaign
 
-[📖 **Follow the Quick Start Guide →**](QUICK_START_GUIDE.md)
+[📖 **Follow the Quick Start Guide →**](docs/QUICK_START_GUIDE.md)
 
 ## 📚 Documentation
 
 ### 📋 User Guides
 
-- [**Complete User Guide**](USER_GUIDE.md) - Comprehensive guide with all features, setup instructions, and best practices
-- [**Visual Step-by-Step Guide**](VISUAL_STEP_BY_STEP_GUIDE.md) - Visual guide with flowcharts, sequence diagrams, and step-by-step instructions
-- [**Quick Start Guide**](QUICK_START_GUIDE.md) - Get started in 5 minutes
-- [**Features Summary**](FEATURES_SUMMARY.md) - Overview of all capabilities
+- [**Quick Start Guide**](docs/QUICK_START_GUIDE.md) - Get started in 5 minutes
+- [**Advanced Analytics User Guide**](docs/ADVANCED_ANALYTICS_USER_GUIDE.md) - Complete guide to all analytics features
+- [**Customer Demographics Reports Guide**](docs/CUSTOMER_DEMOGRAPHICS_REPORTS_USER_GUIDE.md) - Comprehensive guide to demographic analysis and reporting
+- [**Segmentation from Reports Guide**](docs/CUSTOMER_SEGMENTATION_FROM_REPORTS_GUIDE.md) - How to create segments using Odoo reports
+- [**Segmentation Quick Reference**](docs/SEGMENTATION_QUICK_REFERENCE.md) - Copy-paste ready segment rules
 
 ### 🛠️ Technical Documentation
 
-- [**Templating Examples**](TEMPLATING_EXAMPLES.md) - Advanced message template examples
-- [**Utils Guide**](UTILS_GUIDE.md) - Technical implementation and utility functions
+- [**Templating Examples**](docs/TEMPLATING_EXAMPLES.md) - Advanced message template examples
+- [**Utils Guide**](docs/UTILS_GUIDE.md) - Technical implementation and utility functions
+
+### 📊 Advanced Analytics & Reports
+
+- **Engagement Analytics** - Multi-channel engagement scoring and optimization
+- **Churn Prediction** - AI-powered customer retention insights
+- **Customer Journey Mapping** - Lifecycle stage tracking and optimization
+- **RFM Analysis** - Recency, Frequency, Monetary value segmentation
+- **Cohort Analysis** - Time-based customer behavior and retention tracking
+- **Values-Driven Analytics** - Sustainability, premium, and social responsibility insights
+- **Social Commerce Analytics** - Social media source tracking and conversion optimization
+- **BNPL & Mobile Commerce** - Modern payment and device behavior analysis
+- **Customer Demographics Analysis** - Age-based insights and purchase patterns
+- **Integration with Odoo Reports** - Leverage sales, invoice, and CRM data
 
 ### 📊 Visual Guides
 
@@ -67,6 +93,12 @@ The documentation includes interactive diagrams showing:
 ├─────────────────────────────────────────────────────┤
 │            WhatsApp API Integration                 │
 ├─────────────────────────────────────────────────────┤
+│           Advanced Analytics Engine                 │
+├─────────────────────────────────────────────────────┤
+│ Engagement │ Churn Pred │ Journey │ RFM │ Cohort    │
+├─────────────────────────────────────────────────────┤
+│ Social Commerce │ BNPL Analytics │ Values-Driven   │
+├─────────────────────────────────────────────────────┤
 │              Analytics & Logging                   │
 └─────────────────────────────────────────────────────┘
 ```
@@ -77,6 +109,9 @@ The documentation includes interactive diagrams showing:
 - **Customer Segmentation**: Target audience definition and filtering
 - **Configuration**: WhatsApp API setup and management
 - **API Logs**: Performance monitoring and error tracking
+- **Customer Demographics Report**: Age-based analytics and insights
+- **Cohort Analysis Report**: Time-based customer behavior tracking
+- **Extended Partner Model**: 25+ new analytics fields for comprehensive customer intelligence
 
 ## 🔧 Installation
 
@@ -164,6 +199,8 @@ Order now by replying to this message!
 - Cart abandonment recovery
 - New product announcements
 - Seasonal marketing campaigns
+- Age-based product targeting
+- RFM-based customer loyalty programs
 
 ### Service Businesses
 
@@ -171,6 +208,8 @@ Order now by replying to this message!
 - Service promotions
 - Customer feedback collection
 - Event notifications
+- Birthday and anniversary campaigns
+- Demographic-specific service offerings
 
 ### B2B Marketing
 
@@ -178,6 +217,33 @@ Order now by replying to this message!
 - Customer onboarding
 - Account management touchpoints
 - Product update notifications
+- Company size-based segmentation
+- Industry-specific campaigns
+
+## 📊 Customer Insights & Segmentation
+
+### Advanced Analytics
+
+Our module now includes comprehensive customer analytics:
+
+- **Demographic Analysis**: Age distribution, purchase patterns by age group
+- **RFM Segmentation**: Identify Champions, At-Risk, and New customers
+- **Lifetime Value**: Track CLV by demographics and segments
+- **Purchase Patterns**: Frequency, recency, and monetary analysis
+
+### Smart Segmentation
+
+Create targeted segments using data from:
+
+- **Odoo Reports**: Sales, invoices, CRM pipeline
+- **Custom Demographics**: Age, location, behavior
+- **Combined Criteria**: Mix demographic and behavioral data
+
+Example segments:
+- High-value millennials (age 28-43 with spend > $5000)
+- Birthday month customers with recent purchases
+- At-risk champions (high value but declining activity)
+- Geographic campaigns by state or city
 
 ## 📊 Analytics & Monitoring
 
@@ -239,10 +305,12 @@ Settings → Technical → Logging → Add logger for 'wa_marketing_automation'
 
 ### Resources
 
-- [User Guide](USER_GUIDE.md) - Complete documentation
-- [Quick Start](QUICK_START_GUIDE.md) - Fast setup guide
-- [Features Summary](FEATURES_SUMMARY.md) - Capabilities overview
-- [Templating Examples](TEMPLATING_EXAMPLES.md) - Template examples
+- [Quick Start](docs/QUICK_START_GUIDE.md) - Fast setup guide
+- [Advanced Analytics](docs/ADVANCED_ANALYTICS_USER_GUIDE.md) - Complete analytics guide
+- [Customer Demographics Reports](docs/CUSTOMER_DEMOGRAPHICS_REPORTS_USER_GUIDE.md) - Demographics analysis
+- [Segmentation Guide](docs/CUSTOMER_SEGMENTATION_FROM_REPORTS_GUIDE.md) - Segment creation
+- [Segmentation Quick Reference](docs/SEGMENTATION_QUICK_REFERENCE.md) - Copy-paste segments
+- [Templating Examples](docs/TEMPLATING_EXAMPLES.md) - Template examples
 
 ## 📄 License
 
@@ -259,10 +327,11 @@ This module is licensed under LGPL-3. See the LICENSE file for details.
 
 ## 🚀 Get Started Now!
 
-Ready to transform your customer engagement with WhatsApp marketing automation?
+Ready to transform your customer engagement with advanced WhatsApp marketing automation?
 
-1. [**Quick Start Guide**](QUICK_START_GUIDE.md) - Get running in 5 minutes
-2. [**User Guide**](USER_GUIDE.md) - Complete setup and feature guide
-3. [**Features Summary**](FEATURES_SUMMARY.md) - Explore all capabilities
+1. [**Quick Start Guide**](docs/QUICK_START_GUIDE.md) - Get running in 5 minutes
+2. [**Advanced Analytics Guide**](docs/ADVANCED_ANALYTICS_USER_GUIDE.md) - Unlock powerful customer insights
+3. [**Customer Demographics Reports**](docs/CUSTOMER_DEMOGRAPHICS_REPORTS_USER_GUIDE.md) - Analyze your customer base
+4. [**Create Smart Segments**](docs/CUSTOMER_SEGMENTATION_FROM_REPORTS_GUIDE.md) - Target the right customers
 
-_Transform your customer communication with intelligent WhatsApp marketing automation!_
+_Transform your customer communication with intelligent WhatsApp marketing automation powered by advanced analytics!_

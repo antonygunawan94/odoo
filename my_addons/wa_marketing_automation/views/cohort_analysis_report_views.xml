@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Cohort Analysis Report List View -->
+    <record id="view_cohort_analysis_report_list" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.cohort_analysis_report.list</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <list string="Cohort Analysis Report" create="false" edit="false" delete="false">
+                <field name="cohort_period_month" />
+                <field name="period_number" />
+                <field name="customers_acquired" />
+                <field name="customers_active" />
+                <field name="retention_rate" decoration-success="retention_rate >= 70"
+                    decoration-warning="retention_rate >= 40 and retention_rate &lt; 70"
+                    decoration-danger="retention_rate &lt; 40" />
+                <field name="total_revenue" />
+                <field name="average_revenue_per_customer" />
+                <field name="cumulative_revenue" />
+                <field name="avg_engagement_score" />
+                <field name="churn_risk_customers" decoration-danger="churn_risk_customers > 0" />
+                <field name="customer_lifetime_value" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Cohort Analysis Report Form View -->
+    <record id="view_cohort_analysis_report_form" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.cohort_analysis_report.form</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <form string="Cohort Analysis Report" create="false" edit="false" delete="false">
+                <sheet>
+                    <group>
+                        <group name="cohort_info" string="Cohort Information">
+                            <field name="cohort_period_month" />
+                            <field name="period_number" />
+                            <field name="cohort_age_months" />
+                            <field name="customers_acquired" />
+                        </group>
+                        <group name="performance_metrics" string="Performance Metrics">
+                            <field name="customers_active" />
+                            <field name="retention_rate" widget="percentage" />
+                            <field name="avg_engagement_score" />
+                            <field name="avg_rfm_score" />
+                        </group>
+                    </group>
+
+                    <group name="revenue_metrics" string="Revenue Metrics">
+                        <group>
+                            <field name="total_revenue" />
+                            <field name="average_revenue_per_customer" />
+                        </group>
+                        <group>
+                            <field name="cumulative_revenue" />
+                            <field name="customer_lifetime_value" />
+                        </group>
+                    </group>
+
+                    <group name="customer_distribution" string="Customer Journey Distribution">
+                        <group>
+                            <field name="awareness_customers" />
+                            <field name="consideration_customers" />
+                            <field name="purchase_customers" />
+                        </group>
+                        <group>
+                            <field name="loyalty_customers" />
+                            <field name="advocacy_customers" />
+                            <field name="dormant_customers" />
+                        </group>
+                    </group>
+
+                    <group name="risk_assessment" string="Risk Assessment">
+                        <field name="churn_risk_customers" />
+                    </group>
+
+                    <div class="alert alert-info" role="alert">
+                        <strong>Cohort Analysis Insights:</strong>
+                        <br />
+                        <ul>
+                            <li><strong>Retention Rate:</strong> Percentage of customers from this
+                                cohort still active in this period</li>
+                            <li><strong>Period Number:</strong> Number of months since customer
+                                acquisition (0 = acquisition month)</li>
+                            <li><strong>Customer Lifetime Value:</strong> Average revenue per
+                                customer over their entire relationship</li>
+                            <li><strong>Churn Risk:</strong> Number of customers at high risk of
+                                churning</li>
+                        </ul>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Cohort Analysis Report Search View -->
+    <record id="view_cohort_analysis_report_search" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.cohort_analysis_report.search</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <search string="Cohort Analysis Report">
+                <field name="cohort_period_month" />
+                <field name="period_number" />
+                <field name="customers_acquired" />
+                <field name="retention_rate" />
+
+                <filter name="recent_cohorts" string="Recent Cohorts (Last 12 Months)"
+                    domain="[('cohort_period', '>=', (context_today() - datetime.timedelta(days=365)).strftime('%Y-%m-%d'))]" />
+                <filter name="high_retention" string="High Retention (&gt;= 70%)"
+                    domain="[('retention_rate', '>=', 70)]" />
+                <filter name="low_retention" string="Low Retention (&lt; 40%)"
+                    domain="[('retention_rate', '&lt;', 40)]" />
+                <filter name="high_churn_risk" string="High Churn Risk"
+                    domain="[('churn_risk_customers', '>', 0)]" />
+
+                <separator />
+
+                <group expand="1" string="Group By">
+                    <filter name="group_by_cohort" string="Cohort Period"
+                        context="{'group_by': 'cohort_period_month'}" />
+                    <filter name="group_by_period" string="Period Number"
+                        context="{'group_by': 'period_number'}" />
+                    <filter name="group_by_retention" string="Retention Rate"
+                        context="{'group_by': 'retention_rate'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Cohort Analysis Report Pivot View -->
+    <record id="view_cohort_analysis_report_pivot" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.cohort_analysis_report.pivot</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <pivot string="Cohort Analysis Pivot" sample="1">
+                <field name="cohort_period_month" type="row" />
+                <field name="period_number" type="col" />
+                <field name="retention_rate" type="measure" />
+                <field name="customers_active" type="measure" />
+                <field name="total_revenue" type="measure" />
+                <field name="customer_lifetime_value" type="measure" />
+                <field name="avg_engagement_score" type="measure" />
+                <field name="churn_risk_customers" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Cohort Analysis Report Graph View -->
+    <record id="view_cohort_analysis_report_graph" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.cohort_analysis_report.graph</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <graph string="Cohort Analysis Charts" sample="1">
+                <field name="period_number" />
+                <field name="retention_rate" type="measure" />
+                <field name="total_revenue" type="measure" />
+                <field name="customer_lifetime_value" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <!-- Cohort Analysis Report Action -->
+    <record id="action_cohort_analysis_report" model="ir.actions.act_window">
+        <field name="name">Cohort Analysis Report</field>
+        <field name="res_model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="view_id" ref="view_cohort_analysis_report_list" />
+        <field name="context">{'search_default_recent_cohorts': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Cohort Analysis Report
+            </p>
+            <p> Track customer behavior over time by analyzing cohorts (groups of customers acquired
+                in the same period). <br />
+                    <strong>Key Insights:</strong>
+                    <ul>
+                    <li><strong>Retention Rates:</strong> How many customers stay active over time</li>
+                    <li><strong>Revenue Patterns:</strong> How revenue evolves for each cohort</li>
+                    <li><strong>Customer Lifetime Value:</strong> Average value of customers by
+                acquisition period</li>
+                    <li><strong>Churn Risk:</strong> Early warning signs of customer attrition</li>
+                </ul>
+            </p>
+            <p> Use this report to: <ul>
+                    <li>Identify the most valuable customer acquisition periods</li>
+                    <li>Understand customer lifecycle patterns</li>
+                    <li>Optimize retention strategies</li>
+                    <li>Predict future revenue from existing cohorts</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+
+    <!-- Cohort Retention Heatmap View (Custom) -->
+    <record id="view_cohort_retention_heatmap" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.cohort_retention_heatmap</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <pivot string="Cohort Retention Heatmap" sample="1">
+                <field name="cohort_period_month" type="row" />
+                <field name="period_number" type="col" />
+                <field name="retention_rate" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Revenue Cohort Analysis View -->
+    <record id="view_cohort_revenue_analysis" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.cohort_revenue_analysis</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <graph string="Revenue Cohort Analysis" type="line" sample="1">
+                <field name="period_number" />
+                <field name="cumulative_revenue" type="measure" />
+                <field name="cohort_period_month" type="row" />
+            </graph>
+        </field>
+    </record>
+
+    <!-- CLV Trend Analysis View -->
+    <record id="view_clv_trend_analysis" model="ir.ui.view">
+        <field name="name">wa_marketing_automation.clv_trend_analysis</field>
+        <field name="model">wa_marketing_automation.cohort_analysis_report</field>
+        <field name="arch" type="xml">
+            <graph string="Customer Lifetime Value Trends" type="bar" sample="1">
+                <field name="cohort_period_month" />
+                <field name="customer_lifetime_value" type="measure" />
+                <field name="customers_acquired" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+</odoo>

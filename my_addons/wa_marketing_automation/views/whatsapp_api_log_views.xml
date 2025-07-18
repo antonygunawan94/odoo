@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <record id="wa_marketing_automation_whatsapp_api_log_action" model="ir.actions.act_window">
         <field name="name">WhatsApp API Log</field>
         <field name="res_model">wa_marketing_automation.whatsapp_api_log</field>

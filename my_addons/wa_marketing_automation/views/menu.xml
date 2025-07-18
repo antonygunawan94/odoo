@@ -23,6 +23,48 @@
         action="wa_marketing_automation.wa_marketing_automation_whatsapp_api_log_action"
     />
 
+    <!-- Reports Menu -->
+    <menuitem id="wa_marketing_automation_menu_reports"
+        name="Reports"
+        parent="wa_marketing_automation_menu_base"
+        sequence="50"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_customer_demographics_report"
+        name="Customer Demographics Analysis"
+        parent="wa_marketing_automation_menu_reports"
+        action="wa_marketing_automation.action_customer_demographics_report"
+        sequence="10"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_age_distribution"
+        name="Age Distribution Analysis"
+        parent="wa_marketing_automation_menu_reports"
+        action="wa_marketing_automation.action_customer_age_distribution"
+        sequence="20"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_rfm_analysis"
+        name="RFM Analysis"
+        parent="wa_marketing_automation_menu_reports"
+        action="wa_marketing_automation.action_customer_rfm_analysis"
+        sequence="30"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_churn_risk"
+        name="Churn Risk Analysis"
+        parent="wa_marketing_automation_menu_reports"
+        action="wa_marketing_automation.action_customer_churn_risk"
+        sequence="40"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_cohort_analysis"
+        name="Cohort Analysis"
+        parent="wa_marketing_automation_menu_reports"
+        action="wa_marketing_automation.action_cohort_analysis_report"
+        sequence="50"
+    />
+
     <menuitem id="wa_marketing_automation_menu_scheduled_actions"
         name="Scheduled Actions"
         parent="wa_marketing_automation_menu_base"

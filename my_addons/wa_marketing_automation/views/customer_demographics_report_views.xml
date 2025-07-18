@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Customer Demographics Report List View -->
+    <record id="view_customer_demographics_report_list" model="ir.ui.view">
+        <field name="name">customer.demographics.report.list</field>
+        <field name="model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="arch" type="xml">
+            <list string="Customer Demographics Analysis" create="false" edit="false">
+                <field name="name" />
+                <field name="age" optional="show" />
+                <field name="age_group" optional="show" />
+                <field name="country_id" optional="hide" />
+                <field name="city" optional="hide" />
+                <field name="last_purchase_date" optional="show" />
+                <field name="days_since_last_purchase" optional="show" />
+                <field name="recency_segment" optional="show" />
+                <field name="total_orders" optional="show" />
+                <field name="frequency_segment" optional="hide" />
+                <field name="total_spent" optional="show" sum="Total Revenue" />
+                <field name="average_order_value" optional="hide" />
+                <field name="monetary_segment" optional="hide" />
+                <field name="customer_score" optional="show" />
+                <field name="whatsapp_campaigns_sent" optional="hide" />
+                <field name="whatsapp_engagement_rate" optional="hide" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Customer Demographics Report Form View -->
+    <record id="view_customer_demographics_report_form" model="ir.ui.view">
+        <field name="name">customer.demographics.report.form</field>
+        <field name="model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="arch" type="xml">
+            <form string="Customer Demographics Analysis" create="false" edit="false">
+                <header>
+                    <button name="action_view_partner" string="View Customer" type="object"
+                        class="oe_highlight" />
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Customer Information">
+                            <field name="name" />
+                            <field name="partner_id" />
+                            <field name="date_of_birth" />
+                            <field name="age" />
+                            <field name="age_group" />
+                        </group>
+                        <group string="Geographic Information">
+                            <field name="country_id" />
+                            <field name="state_id" />
+                            <field name="city" />
+                            <field name="company_id" />
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="Purchase Behavior (RFM Analysis)">
+                            <field name="last_purchase_date" />
+                            <field name="days_since_last_purchase" />
+                            <field name="recency_segment" />
+                            <field name="total_orders" />
+                            <field name="frequency_segment" />
+                            <field name="total_spent" />
+                            <field name="average_order_value" />
+                            <field name="monetary_segment" />
+                            <field name="customer_score" />
+                        </group>
+                        <group string="Marketing Insights">
+                            <field name="whatsapp_campaigns_sent" />
+                            <field name="whatsapp_campaigns_opened" />
+                            <field name="whatsapp_engagement_rate" />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Customer Demographics Report Search View -->
+    <record id="view_customer_demographics_report_search" model="ir.ui.view">
+        <field name="name">customer.demographics.report.search</field>
+        <field name="model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="arch" type="xml">
+            <search string="Customer Demographics Analysis">
+                <field name="name" />
+                <field name="age_group" />
+                <field name="country_id" />
+                <field name="city" />
+                <field name="recency_segment" />
+                <field name="frequency_segment" />
+                <field name="monetary_segment" />
+
+                <separator />
+
+                <!-- Filters -->
+                <filter string="Active Customers" name="active"
+                    domain="[('recency_segment', '=', 'active')]" />
+                <filter string="Recent Customers" name="recent"
+                    domain="[('recency_segment', '=', 'recent')]" />
+                <filter string="Dormant Customers" name="dormant"
+                    domain="[('recency_segment', '=', 'dormant')]" />
+                <filter string="Lost Customers" name="lost"
+                    domain="[('recency_segment', '=', 'lost')]" />
+                <filter string="New Customers" name="new" domain="[('recency_segment', '=', 'new')]" />
+
+                <separator />
+
+                <filter string="High Value Customers" name="high_value"
+                    domain="[('monetary_segment', '=', 'high_value')]" />
+                <filter string="High Frequency Customers" name="high_frequency"
+                    domain="[('frequency_segment', '=', 'high')]" />
+                <filter string="Top Scored Customers" name="top_scored"
+                    domain="[('customer_score', '>=', 7)]" />
+
+                <separator />
+
+                <filter string="Age 18-25" name="age_18_25" domain="[('age_group', '=', '18-25')]" />
+                <filter string="Age 26-35" name="age_26_35" domain="[('age_group', '=', '26-35')]" />
+                <filter string="Age 36-50" name="age_36_50" domain="[('age_group', '=', '36-50')]" />
+                <filter string="Age 51-65" name="age_51_65" domain="[('age_group', '=', '51-65')]" />
+                <filter string="Age 65+" name="age_65_plus" domain="[('age_group', '=', '65+')]" />
+
+                <separator />
+
+                <filter string="Churn Risk" name="churn_risk"
+                    domain="[('recency_segment', 'in', ['dormant', 'lost']), ('frequency_segment', 'in', ['high', 'medium']), ('monetary_segment', 'in', ['high_value', 'medium_value'])]" />
+
+                <group expand="1" string="Group By">
+                    <filter string="Age Group" name="group_by_age_group"
+                        context="{'group_by': 'age_group'}" />
+                    <filter string="Country" name="group_by_country"
+                        context="{'group_by': 'country_id'}" />
+                    <filter string="Recency Segment" name="group_by_recency"
+                        context="{'group_by': 'recency_segment'}" />
+                    <filter string="Frequency Segment" name="group_by_frequency"
+                        context="{'group_by': 'frequency_segment'}" />
+                    <filter string="Monetary Segment" name="group_by_monetary"
+                        context="{'group_by': 'monetary_segment'}" />
+                    <filter string="Customer Score" name="group_by_score"
+                        context="{'group_by': 'customer_score'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Customer Demographics Report Pivot View -->
+    <record id="view_customer_demographics_report_pivot" model="ir.ui.view">
+        <field name="name">customer.demographics.report.pivot</field>
+        <field name="model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="arch" type="xml">
+            <pivot string="Customer Demographics Analysis">
+                <field name="age_group" type="row" />
+                <field name="recency_segment" type="col" />
+                <field name="partner_id" type="measure" />
+                <field name="total_spent" type="measure" />
+                <field name="average_order_value" type="measure" />
+                <field name="customer_score" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Customer Demographics Report Graph View -->
+    <record id="view_customer_demographics_report_graph" model="ir.ui.view">
+        <field name="name">customer.demographics.report.graph</field>
+        <field name="model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="arch" type="xml">
+            <graph string="Customer Demographics Analysis" type="bar">
+                <field name="age_group" />
+                <field name="partner_id" type="measure" />
+                <field name="total_spent" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <!-- Age Distribution Graph View -->
+    <record id="view_customer_demographics_age_distribution_graph" model="ir.ui.view">
+        <field name="name">customer.demographics.age.distribution.graph</field>
+        <field name="model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="view_customer_demographics_report_graph" />
+        <field name="arch" type="xml">
+            <graph position="attributes">
+                <attribute name="type">pie</attribute>
+            </graph>
+        </field>
+    </record>
+
+    <!-- RFM Analysis Graph View -->
+    <record id="view_customer_demographics_rfm_graph" model="ir.ui.view">
+        <field name="name">customer.demographics.rfm.graph</field>
+        <field name="model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="arch" type="xml">
+            <graph string="RFM Analysis" type="bar">
+                <field name="recency_segment" />
+                <field name="frequency_segment" />
+                <field name="customer_score" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <!-- Action for Customer Demographics Report -->
+    <record id="action_customer_demographics_report" model="ir.actions.act_window">
+        <field name="name">Customer Demographics Analysis</field>
+        <field name="res_model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="view_mode">pivot,graph,list,form</field>
+        <field name="search_view_id" ref="view_customer_demographics_report_search" />
+        <field name="context">{'search_default_group_by_age_group': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Customer Demographics Analysis Report
+            </p>
+            <p>
+                This report provides comprehensive analysis of your customers based on age
+                demographics,
+                purchase behavior (RFM analysis), and marketing engagement.
+            </p>
+            <p> Use this report to: <ul>
+                    <li>Identify customer segments by age and behavior</li>
+                    <li>Track purchase recency, frequency, and monetary value</li>
+                    <li>Find customers at risk of churn</li>
+                    <li>Analyze WhatsApp marketing effectiveness</li>
+                    <li>Optimize marketing campaigns by demographics</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+
+    <!-- Action for Age Distribution Analysis -->
+    <record id="action_customer_age_distribution" model="ir.actions.act_window">
+        <field name="name">Age Distribution Analysis</field>
+        <field name="res_model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="view_mode">graph,pivot</field>
+        <field name="view_id" ref="view_customer_demographics_age_distribution_graph" />
+        <field name="search_view_id" ref="view_customer_demographics_report_search" />
+        <field name="context">{'search_default_group_by_age_group': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Age Distribution Analysis
+            </p>
+            <p>
+                Visual analysis of your customer base by age groups.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action for RFM Analysis -->
+    <record id="action_customer_rfm_analysis" model="ir.actions.act_window">
+        <field name="name">RFM Analysis</field>
+        <field name="res_model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="view_id" ref="view_customer_demographics_rfm_graph" />
+        <field name="search_view_id" ref="view_customer_demographics_report_search" />
+        <field name="context">{'search_default_group_by_recency': 1,
+            'search_default_group_by_frequency': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                RFM Analysis (Recency, Frequency, Monetary)
+            </p>
+            <p> Analyze customer segments based on: <ul>
+                    <li><strong>Recency:</strong> How recently they purchased</li>
+                    <li><strong>Frequency:</strong> How often they purchase</li>
+                    <li><strong>Monetary:</strong> How much they spend</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+
+    <!-- Action for Churn Risk Analysis -->
+    <record id="action_customer_churn_risk" model="ir.actions.act_window">
+        <field name="name">Churn Risk Analysis</field>
+        <field name="res_model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_customer_demographics_report_search" />
+        <field name="context">{'search_default_churn_risk': 1}</field>
+        <field name="domain">[('recency_segment', 'in', ['dormant', 'lost']), ('frequency_segment',
+            'in', ['high', 'medium']), ('monetary_segment', 'in', ['high_value', 'medium_value'])]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Churn Risk Analysis
+            </p>
+            <p> Identify high-value customers at risk of churn based on: <ul>
+                    <li>Long time since last purchase (dormant/lost)</li>
+                    <li>Previously high purchase frequency</li>
+                    <li>High monetary value</li>
+                </ul>
+            </p>
+            <p>
+                These customers are prime candidates for re-engagement campaigns.
+            </p>
+        </field>
+    </record>
+
+</odoo>

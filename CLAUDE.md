@@ -3,6 +3,13 @@
 ## Project Overview
 This is an Odoo 18.0 ERP system with custom modules and UI theme enhancements. The project includes WhatsApp marketing automation capabilities and modern UI themes.
 
+## Important Odoo 18.0 Changes
+- **Tree View → List View**: In Odoo 18.0, the `<tree>` XML tag has been renamed to `<list>` in view definitions
+- **View Mode**: Use `view_mode="list,form"` instead of `view_mode="tree,form"`
+- **View Names**: Update view names from `*.tree.*` to `*.list.*` (e.g., `res.partner.tree.dob` → `res.partner.list.dob`)
+- **View IDs**: Base view IDs remain unchanged for backward compatibility (e.g., `base.view_partner_tree` still exists)
+- **Migration Note**: All custom modules migrating from Odoo 17 to 18 need to update tree views to list views
+
 ## Project Structure
 ```
 odoo/
@@ -43,6 +50,12 @@ source venv/bin/activate
 ```
 
 ## Development Workflow
+
+### Important Note for Claude Code Assistant
+⚠️ **IMPORTANT**: When testing changes, DO NOT run `make run-dev` or `python odoo-bin` commands directly as they will timeout after 2 minutes. Instead, notify the user to test the changes manually. The assistant should focus on:
+1. Making code changes
+2. Running module updates (`make run-update`)
+3. Asking the user to test the running server at `http://localhost:8070`
 
 ### Starting Development Server
 ```bash
@@ -322,11 +335,21 @@ make run-update
 2. **Database connection**: Verify PostgreSQL service and credentials
 3. **Permission errors**: Check file permissions and user access
 4. **Import errors**: Ensure virtual environment is activated
+5. **XML validation error**: "Element odoo has extra content: data" means XML structure issues
+   - All XML view files must have structure: `<odoo><data>...</data></odoo>`
+6. **CSV security file error**: "No matching record found for external id" in CSV files
+   - CSV files don't support `#` comments - remove lines entirely, don't try to comment them out
 
 ### Development Tools
 - Use `make run-shell` for interactive debugging
 - Enable developer mode with --dev=all flag
 - Check logs for detailed error information
+
+### Server Command Timeouts
+**IMPORTANT**: Server commands (like `make run-dev`, `make run-update`) may timeout after 2 minutes when run through automated tools. If testing module changes:
+1. Notify developer about changes that need testing
+2. Run commands manually in terminal for better reliability
+3. Use `make run-update -d odoo` with database parameter for module updates
 
 ## References
 - **Odoo Documentation**: https://www.odoo.com/documentation/18.0/
