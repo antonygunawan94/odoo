@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        
+        <!-- Default Customer Age Groups for Indonesian Beauty Clinic -->
+        
+        <record id="age_group_minor" model="wa_marketing_automation.customer_age_group_config">
+            <field name="group_code">young</field>
+            <field name="display_name">Young (Under 18)</field>
+            <field name="min_age">0</field>
+            <field name="max_age">17</field>
+            <field name="sequence">10</field>
+            <field name="active">True</field>
+            <field name="group_color">#E8F4FD</field>
+            <field name="group_description">Young customers under 18 years old. Requires parental consent for services. Focus on gentle, age-appropriate treatments and education about skincare basics.</field>
+        </record>
+
+        <record id="age_group_youth" model="wa_marketing_automation.customer_age_group_config">
+            <field name="group_code">18_25</field>
+            <field name="display_name">Youth (18-25)</field>
+            <field name="min_age">18</field>
+            <field name="max_age">25</field>
+            <field name="sequence">20</field>
+            <field name="active">True</field>
+            <field name="group_color">#FFE6CC</field>
+            <field name="group_description">Young adults starting their careers. Digital-native, budget-conscious, interested in acne treatment, basic skincare, and preventive care. High social media engagement.</field>
+        </record>
+
+        <record id="age_group_young_adult" model="wa_marketing_automation.customer_age_group_config">
+            <field name="group_code">26_35</field>
+            <field name="display_name">Young Adult (26-35)</field>
+            <field name="min_age">26</field>
+            <field name="max_age">35</field>
+            <field name="sequence">30</field>
+            <field name="active">True</field>
+            <field name="group_color">#FFCCDD</field>
+            <field name="group_description">Career-building professionals, often starting families. Interested in anti-aging prevention, professional appearance maintenance, and stress-related skin issues. Growing disposable income.</field>
+        </record>
+
+        <record id="age_group_adult" model="wa_marketing_automation.customer_age_group_config">
+            <field name="group_code">36_45</field>
+            <field name="display_name">Adult (36-45)</field>
+            <field name="min_age">36</field>
+            <field name="max_age">45</field>
+            <field name="sequence">40</field>
+            <field name="active">True</field>
+            <field name="group_color">#E6CCFF</field>
+            <field name="group_description">Established professionals with families. Peak earning years, willing to invest in quality treatments. Focus on anti-aging, skin rejuvenation, and maintaining professional appearance.</field>
+        </record>
+
+        <record id="age_group_mature" model="wa_marketing_automation.customer_age_group_config">
+            <field name="group_code">46_55</field>
+            <field name="display_name">Mature Professional (46-55)</field>
+            <field name="min_age">46</field>
+            <field name="max_age">55</field>
+            <field name="sequence">50</field>
+            <field name="active">True</field>
+            <field name="group_color">#CCFFCC</field>
+            <field name="group_description">Mature professionals with higher disposable income. Interested in advanced anti-aging treatments, skin tightening, and premium services. Values quality and experience over price.</field>
+        </record>
+
+        <record id="age_group_senior" model="wa_marketing_automation.customer_age_group_config">
+            <field name="group_code">56_65</field>
+            <field name="display_name">Senior (56-64)</field>
+            <field name="min_age">56</field>
+            <field name="max_age">64</field>
+            <field name="sequence">60</field>
+            <field name="active">True</field>
+            <field name="group_color">#FFFFCC</field>
+            <field name="group_description">Pre-retirement customers with time and resources for self-care. Focus on gentle treatments, skin health maintenance, and age-appropriate procedures. Values personal attention and comfort.</field>
+        </record>
+
+        <record id="age_group_elder" model="wa_marketing_automation.customer_age_group_config">
+            <field name="group_code">65_plus</field>
+            <field name="display_name">Elder (65+)</field>
+            <field name="min_age">65</field>
+            <field name="max_age" eval="False"></field>
+            <field name="sequence">70</field>
+            <field name="active">True</field>
+            <field name="group_color">#F0F0F0</field>
+            <field name="group_description">Retirement-age customers focused on skin health and comfort. Prefer gentle, non-invasive treatments. Values trust, comfort, and personalized care. Often interested in age spot treatment and skin maintenance.</field>
+        </record>
+
+    </data>
+</odoo>

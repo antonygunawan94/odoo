@@ -11,7 +11,7 @@ class CustomerDemographicsReport(models.Model):
     _name = "wa_marketing_automation.customer_demographics_report"
     _description = "Customer Demographics Analysis Report"
     _auto = False
-    _order = "age_group, last_purchase_date DESC"
+    _order = "customer_age_group_display, last_purchase_date DESC"
 
     # Customer Info
     partner_id = fields.Many2one('res.partner', string='Customer', readonly=True)
@@ -19,14 +19,10 @@ class CustomerDemographicsReport(models.Model):
     
     # Age Demographics
     age = fields.Integer(string='Age', readonly=True)
-    age_group = fields.Selection([
-        ('18-25', '18-25 years'),
-        ('26-35', '26-35 years'),
-        ('36-50', '36-50 years'),
-        ('51-65', '51-65 years'),
-        ('65+', '65+ years'),
-        ('unknown', 'Unknown Age')
-    ], string='Age Group', readonly=True)
+    
+    # Dynamic Age Groups (using configurable age groups)
+    customer_age_group = fields.Char(string='Customer Age Group', readonly=True)
+    customer_age_group_display = fields.Char(string='Age Group Details', readonly=True)
     
     date_of_birth = fields.Date(string='Date of Birth', readonly=True)
     
@@ -60,13 +56,9 @@ class CustomerDemographicsReport(models.Model):
         ('none', 'No orders')
     ], string='Frequency Segment', readonly=True)
     
-    # Monetary Segmentation
-    monetary_segment = fields.Selection([
-        ('high_value', 'High Value (Top 20%)'),
-        ('medium_value', 'Medium Value (Middle 60%)'),
-        ('low_value', 'Low Value (Bottom 20%)'),
-        ('no_value', 'No Value')
-    ], string='Monetary Segment', readonly=True)
+    # Customer Spending Tier (dynamic from configuration)
+    customer_spending_tier = fields.Char(string='Customer Spending Tier', readonly=True)
+    customer_spending_tier_name = fields.Char(string='Spending Tier Name', readonly=True)
     
     # Customer Scoring
     customer_score = fields.Float(string='Customer Score', readonly=True, help="RFM Score (1-10)")
@@ -99,17 +91,12 @@ class CustomerDemographicsReport(models.Model):
                         ELSE NULL
                     END as age,
                     
-                    CASE 
-                        WHEN rp.date_of_birth IS NULL THEN 'unknown'
-                        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, rp.date_of_birth)) BETWEEN 18 AND 25 THEN '18-25'
-                        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, rp.date_of_birth)) BETWEEN 26 AND 35 THEN '26-35'
-                        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, rp.date_of_birth)) BETWEEN 36 AND 50 THEN '36-50'
-                        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, rp.date_of_birth)) BETWEEN 51 AND 65 THEN '51-65'
-                        WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, rp.date_of_birth)) > 65 THEN '65+'
-                        ELSE 'unknown'
-                    END as age_group,
                     
                     rp.date_of_birth as date_of_birth,
+                    
+                    -- Dynamic Age Groups (using configurable age groups)
+                    rp.customer_age_group as customer_age_group,
+                    rp.customer_age_group_display as customer_age_group_display,
                     
                     -- Geographic Info
                     rp.country_id as country_id,
@@ -150,13 +137,15 @@ class CustomerDemographicsReport(models.Model):
                         ELSE 'none'  -- Score 0
                     END as frequency_segment,
                     
-                    -- Monetary Segmentation (based on corrected RFM monetary_score)
-                    CASE 
-                        WHEN COALESCE(rp.monetary_score, 0) >= 4 THEN 'high_value'   -- Score 4-5
-                        WHEN COALESCE(rp.monetary_score, 0) >= 2 THEN 'medium_value' -- Score 2-3
-                        WHEN COALESCE(rp.monetary_score, 0) = 1 THEN 'low_value'     -- Score 1
-                        ELSE 'no_value'  -- Score 0
-                    END as monetary_segment,
+                    -- Customer Spending Tier (dynamic from configuration)
+                    COALESCE(rp.customer_spending_tier, 'UNCLASSIFIED') as customer_spending_tier,
+                    -- Dynamic tier names from configuration table
+                    COALESCE(
+                        (SELECT stc.display_name 
+                         FROM wa_marketing_automation_customer_spending_tier_config stc 
+                         WHERE stc.tier_code = rp.customer_spending_tier AND stc.active = true),
+                        'Unclassified'
+                    ) as customer_spending_tier_name,
                     
                     -- Customer Score (use corrected RFM score directly)
                     COALESCE(rp.rfm_score, 0) as customer_score,
@@ -184,26 +173,8 @@ class CustomerDemographicsReport(models.Model):
                     GROUP BY so.partner_id
                 ) sales_data ON rp.id = sales_data.partner_id
                 
-                -- TODO: WhatsApp Marketing Data (temporarily disabled due to Many2many relationship complexity)
-                -- Need to properly handle the selected_customers Many2many field from customer_segmentation
-                -- Will add back after basic report is working
-                -- LEFT JOIN (
-                --     SELECT 
-                --         cs_partner.res_partner_id as partner_id,
-                --         COUNT(DISTINCT wc.id) as campaigns_sent,
-                --         COUNT(DISTINCT CASE WHEN wal.success = true THEN wc.id END) as campaigns_opened
-                --     FROM wa_marketing_automation_customer_segmentation cs
-                --     JOIN wa_marketing_automation_customer_segmentation_res_partner_rel cs_partner 
-                --         ON cs.id = cs_partner.wa_marketing_automation_customer_segmentation_id
-                --     JOIN wa_marketing_automation_campaign wc ON cs.id = wc.customer_segmentation_id
-                --     LEFT JOIN wa_marketing_automation_whatsapp_api_log wal ON wc.id = wal.campaign_id
-                --     WHERE wc.state = 'sent'
-                --     GROUP BY cs_partner.res_partner_id
-                -- ) wa_data ON rp.id = wa_data.partner_id
-                
                 WHERE rp.is_company = false
                 AND rp.active = true
-                -- AND rp.customer_rank > 0  -- Temporarily relaxed to show all contacts
             )
         """)
         
@@ -211,27 +182,53 @@ class CustomerDemographicsReport(models.Model):
 
     @api.model
     def get_age_distribution(self):
-        """Get age distribution data for dashboard"""
+        """Get age distribution data for dashboard - use dynamic age groups"""
+        # This method is deprecated - use get_customer_age_group_distribution instead
+        return self.get_customer_age_group_distribution()
+
+    @api.model
+    def get_spending_tier_distribution(self):
+        """Get spending tier distribution data for dashboard"""
         self.flush_model()
         query = """
             SELECT 
-                age_group,
+                customer_spending_tier,
+                customer_spending_tier_name,
                 COUNT(*) as customer_count,
                 SUM(total_spent) as total_revenue,
                 AVG(total_spent) as avg_spent_per_customer,
-                AVG(customer_score) as avg_customer_score
+                AVG(customer_score) as avg_customer_score,
+                MIN(total_spent) as min_spending,
+                MAX(total_spent) as max_spending
             FROM wa_marketing_automation_customer_demographics_report
-            WHERE age_group != 'unknown'
-            GROUP BY age_group
-            ORDER BY 
-                CASE age_group
-                    WHEN '18-25' THEN 1
-                    WHEN '26-35' THEN 2
-                    WHEN '36-50' THEN 3
-                    WHEN '51-65' THEN 4
-                    WHEN '65+' THEN 5
-                    ELSE 6
-                END
+            WHERE customer_spending_tier != 'UNCLASSIFIED'
+            GROUP BY customer_spending_tier, customer_spending_tier_name
+            ORDER BY avg_spent_per_customer DESC
+        """
+        
+        self._cr.execute(query)
+        return self._cr.dictfetchall()
+
+    @api.model
+    def get_customer_age_group_distribution(self):
+        """Get customer age group distribution using configurable age groups"""
+        self.flush_model()
+        query = """
+            SELECT 
+                customer_age_group,
+                customer_age_group_display,
+                COUNT(*) as customer_count,
+                SUM(total_spent) as total_revenue,
+                AVG(total_spent) as avg_spent_per_customer,
+                AVG(customer_score) as avg_customer_score,
+                AVG(age) as avg_age,
+                MIN(age) as min_age,
+                MAX(age) as max_age,
+                ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) as percentage_of_total
+            FROM wa_marketing_automation_customer_demographics_report
+            WHERE customer_age_group != 'UNCLASSIFIED' AND customer_age_group IS NOT NULL
+            GROUP BY customer_age_group, customer_age_group_display
+            ORDER BY avg_age ASC
         """
         
         self._cr.execute(query)
@@ -245,12 +242,13 @@ class CustomerDemographicsReport(models.Model):
             SELECT 
                 recency_segment,
                 frequency_segment,
-                monetary_segment,
+                customer_spending_tier,
+                customer_spending_tier_name,
                 COUNT(*) as customer_count,
                 SUM(total_spent) as total_revenue,
                 AVG(customer_score) as avg_score
             FROM wa_marketing_automation_customer_demographics_report
-            GROUP BY recency_segment, frequency_segment, monetary_segment
+            GROUP BY recency_segment, frequency_segment, customer_spending_tier, customer_spending_tier_name
             ORDER BY avg_score DESC
         """
         
@@ -265,15 +263,17 @@ class CustomerDemographicsReport(models.Model):
             SELECT 
                 partner_id,
                 name,
-                age_group,
+                customer_age_group_display,
                 days_since_last_purchase,
                 total_orders,
                 total_spent,
-                customer_score
+                customer_score,
+                customer_spending_tier,
+                customer_spending_tier_name
             FROM wa_marketing_automation_customer_demographics_report
             WHERE recency_segment IN ('dormant', 'lost')
             AND frequency_segment IN ('high', 'medium')
-            AND monetary_segment IN ('high_value', 'medium_value')
+            AND customer_spending_tier NOT IN ('UNCLASSIFIED', 'entry', 'basic')  -- Exclude entry/basic tiers
             ORDER BY customer_score DESC, days_since_last_purchase DESC
             LIMIT 100
         """

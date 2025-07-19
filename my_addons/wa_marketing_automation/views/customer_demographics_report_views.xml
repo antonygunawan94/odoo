@@ -9,7 +9,8 @@
             <list string="Customer Demographics Analysis" create="false" edit="false">
                 <field name="name" />
                 <field name="age" optional="show" />
-                <field name="age_group" optional="show" />
+                <field name="customer_age_group" optional="show" />
+                <field name="customer_age_group_display" optional="show" />
                 <field name="country_id" optional="hide" />
                 <field name="city" optional="hide" />
                 <field name="last_purchase_date" optional="show" />
@@ -19,7 +20,8 @@
                 <field name="frequency_segment" optional="hide" />
                 <field name="total_spent" optional="show" sum="Total Revenue" />
                 <field name="average_order_value" optional="hide" />
-                <field name="monetary_segment" optional="hide" />
+                <field name="customer_spending_tier" optional="hide" />
+                <field name="customer_spending_tier_name" optional="show" />
                 <field name="customer_score" optional="show" />
                 <field name="whatsapp_campaigns_sent" optional="hide" />
                 <field name="whatsapp_engagement_rate" optional="hide" />
@@ -44,7 +46,8 @@
                             <field name="partner_id" />
                             <field name="date_of_birth" />
                             <field name="age" />
-                            <field name="age_group" />
+                            <field name="customer_age_group" />
+                            <field name="customer_age_group_display" />
                         </group>
                         <group string="Geographic Information">
                             <field name="country_id" />
@@ -63,7 +66,8 @@
                             <field name="frequency_segment" />
                             <field name="total_spent" />
                             <field name="average_order_value" />
-                            <field name="monetary_segment" />
+                            <field name="customer_spending_tier_name" />
+                            <field name="customer_spending_tier" />
                             <field name="customer_score" />
                         </group>
                         <group string="Marketing Insights">
@@ -84,12 +88,14 @@
         <field name="arch" type="xml">
             <search string="Customer Demographics Analysis">
                 <field name="name" />
-                <field name="age_group" />
+                <field name="customer_age_group" />
+                <field name="customer_age_group_display" />
                 <field name="country_id" />
                 <field name="city" />
                 <field name="recency_segment" />
                 <field name="frequency_segment" />
-                <field name="monetary_segment" />
+                <field name="customer_spending_tier_name" />
+                <field name="customer_spending_tier" />
 
                 <separator />
 
@@ -106,37 +112,46 @@
 
                 <separator />
 
-                <filter string="High Value Customers" name="high_value"
-                    domain="[('monetary_segment', '=', 'high_value')]" />
+                <filter string="Premium Customers (VIP-Premium)" name="premium_customers"
+                    domain="[('customer_spending_tier', 'in', ['vip', 'premium'])]" />
+                <filter string="High Value Customers (VIP-Gold)" name="high_value_customers"
+                    domain="[('customer_spending_tier', 'in', ['vip', 'premium', 'gold'])]" />
+                <filter string="Mid-Tier Customers (Silver-Bronze)" name="mid_tier_customers"
+                    domain="[('customer_spending_tier', 'in', ['silver', 'bronze'])]" />
+                <filter string="Budget Customers (Standard-Entry)" name="budget_customers"
+                    domain="[('customer_spending_tier', 'in', ['standard', 'basic', 'entry'])]" />
                 <filter string="High Frequency Customers" name="high_frequency"
                     domain="[('frequency_segment', '=', 'high')]" />
                 <filter string="Top Scored Customers" name="top_scored"
                     domain="[('customer_score', '>=', 7)]" />
 
                 <separator />
-
-                <filter string="Age 18-25" name="age_18_25" domain="[('age_group', '=', '18-25')]" />
-                <filter string="Age 26-35" name="age_26_35" domain="[('age_group', '=', '26-35')]" />
-                <filter string="Age 36-50" name="age_36_50" domain="[('age_group', '=', '36-50')]" />
-                <filter string="Age 51-65" name="age_51_65" domain="[('age_group', '=', '51-65')]" />
-                <filter string="Age 65+" name="age_65_plus" domain="[('age_group', '=', '65+')]" />
+                
+                <!-- Dynamic Age Group Filters -->
+                <filter string="Young (Under 18)" name="age_young" domain="[('customer_age_group', '=', 'young')]" />
+                <filter string="Youth (18-25)" name="age_youth" domain="[('customer_age_group', '=', '18_25')]" />
+                <filter string="Young Adult (26-35)" name="age_young_adult" domain="[('customer_age_group', '=', '26_35')]" />
+                <filter string="Adult (36-45)" name="age_adult" domain="[('customer_age_group', '=', '36_45')]" />
+                <filter string="Mature (46-55)" name="age_mature" domain="[('customer_age_group', '=', '46_55')]" />
+                <filter string="Senior (56-64)" name="age_senior" domain="[('customer_age_group', '=', '56_65')]" />
+                <filter string="Elder (65+)" name="age_elder" domain="[('customer_age_group', '=', '65_plus')]" />
 
                 <separator />
 
                 <filter string="Churn Risk" name="churn_risk"
-                    domain="[('recency_segment', 'in', ['dormant', 'lost']), ('frequency_segment', 'in', ['high', 'medium']), ('monetary_segment', 'in', ['high_value', 'medium_value'])]" />
+                    domain="[('recency_segment', 'in', ['dormant', 'lost']), ('frequency_segment', 'in', ['high', 'medium']), ('customer_spending_tier', 'not in', ['UNCLASSIFIED', 'entry', 'basic'])]" />
 
                 <group expand="1" string="Group By">
-                    <filter string="Age Group" name="group_by_age_group"
-                        context="{'group_by': 'age_group'}" />
+                    <filter string="Customer Age Group" name="group_by_customer_age_group"
+                        context="{'group_by': 'customer_age_group_display'}" />
                     <filter string="Country" name="group_by_country"
                         context="{'group_by': 'country_id'}" />
                     <filter string="Recency Segment" name="group_by_recency"
                         context="{'group_by': 'recency_segment'}" />
                     <filter string="Frequency Segment" name="group_by_frequency"
                         context="{'group_by': 'frequency_segment'}" />
-                    <filter string="Monetary Segment" name="group_by_monetary"
-                        context="{'group_by': 'monetary_segment'}" />
+                    <filter string="Spending Tier" name="group_by_spending_tier"
+                        context="{'group_by': 'customer_spending_tier_name'}" />
                     <filter string="Customer Score" name="group_by_score"
                         context="{'group_by': 'customer_score'}" />
                 </group>
@@ -150,7 +165,7 @@
         <field name="model">wa_marketing_automation.customer_demographics_report</field>
         <field name="arch" type="xml">
             <pivot string="Customer Demographics Analysis">
-                <field name="age_group" type="row" />
+                <field name="customer_age_group_display" type="row" />
                 <field name="recency_segment" type="col" />
                 <field name="partner_id" type="measure" />
                 <field name="total_spent" type="measure" />
@@ -166,7 +181,7 @@
         <field name="model">wa_marketing_automation.customer_demographics_report</field>
         <field name="arch" type="xml">
             <graph string="Customer Demographics Analysis" type="bar">
-                <field name="age_group" />
+                <field name="customer_age_group_display" />
                 <field name="partner_id" type="measure" />
                 <field name="total_spent" type="measure" />
             </graph>
@@ -205,7 +220,7 @@
         <field name="res_model">wa_marketing_automation.customer_demographics_report</field>
         <field name="view_mode">pivot,graph,list,form</field>
         <field name="search_view_id" ref="view_customer_demographics_report_search" />
-        <field name="context">{'search_default_group_by_age_group': 1}</field>
+        <field name="context">{'search_default_group_by_customer_age_group': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Customer Demographics Analysis Report
@@ -233,7 +248,7 @@
         <field name="view_mode">graph,pivot</field>
         <field name="view_id" ref="view_customer_demographics_age_distribution_graph" />
         <field name="search_view_id" ref="view_customer_demographics_report_search" />
-        <field name="context">{'search_default_group_by_age_group': 1}</field>
+        <field name="context">{'search_default_group_by_customer_age_group': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Age Distribution Analysis
@@ -274,7 +289,7 @@
         <field name="search_view_id" ref="view_customer_demographics_report_search" />
         <field name="context">{'search_default_churn_risk': 1}</field>
         <field name="domain">[('recency_segment', 'in', ['dormant', 'lost']), ('frequency_segment',
-            'in', ['high', 'medium']), ('monetary_segment', 'in', ['high_value', 'medium_value'])]</field>
+            'in', ['high', 'medium']), ('customer_spending_tier', 'not in', ['UNCLASSIFIED', 'entry', 'basic'])]</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Churn Risk Analysis
@@ -282,11 +297,38 @@
             <p> Identify high-value customers at risk of churn based on: <ul>
                     <li>Long time since last purchase (dormant/lost)</li>
                     <li>Previously high purchase frequency</li>
-                    <li>High monetary value</li>
+                    <li>Higher spending tiers (VIP-Bronze, excluding entry/basic tiers)</li>
                 </ul>
             </p>
             <p>
                 These customers are prime candidates for re-engagement campaigns.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action for Spending Tier Distribution Analysis -->
+    <record id="action_customer_spending_tier_distribution" model="ir.actions.act_window">
+        <field name="name">Spending Tier Distribution</field>
+        <field name="res_model">wa_marketing_automation.customer_demographics_report</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="search_view_id" ref="view_customer_demographics_report_search" />
+        <field name="context">{'search_default_group_by_spending_tier': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Customer Spending Tier Distribution
+            </p>
+            <p>
+                Analyze customer distribution across spending tiers (VIP, Premium, Gold, etc.) to understand:
+                <ul>
+                    <li>Customer count per spending tier</li>
+                    <li>Revenue contribution by tier</li>
+                    <li>Average spending patterns</li>
+                    <li>Customer value distribution</li>
+                </ul>
+            </p>
+            <p>
+                Use this analysis to optimize marketing strategies and identify opportunities 
+                for customer tier advancement.
             </p>
         </field>
     </record>

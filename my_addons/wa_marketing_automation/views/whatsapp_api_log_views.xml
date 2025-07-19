@@ -79,12 +79,10 @@
                 <filter string="Test Execution" name="filter_test"
                     domain="[('execution_type', '=', 'test')]" />
                 <separator />
-                <filter string="Today" name="filter_today"
-                    domain="[('at', '>=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))), ('at', '&lt;=', datetime.datetime.combine(context_today(), datetime.time(23,59,59)))]" />
-                <filter string="This Week" name="filter_week"
-                    domain="[('at', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')), ('at', '&lt;=', (context_today() + datetime.timedelta(days=6-context_today().weekday())).strftime('%Y-%m-%d'))]" />
+                <filter string="Recent (Last 7 Days)" name="filter_recent"
+                    domain="[('at', '>=', '2025-07-12')]" />
                 <filter string="This Month" name="filter_month"
-                    domain="[('at', '&gt;=', context_today().strftime('%Y-%m-01')), ('at', '&lt;=', (context_today().replace(day=1) + datetime.timedelta(days=32)).replace(day=1) - datetime.timedelta(days=1))]" />
+                    domain="[('at', '>=', '2025-07-01')]" />
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_status" context="{'group_by': 'status'}" />
                     <filter string="Campaign" name="group_campaign"

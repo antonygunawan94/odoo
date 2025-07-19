@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Customer Spending Tier Configuration Form View -->
+    <record id="view_customer_spending_tier_config_form" model="ir.ui.view">
+        <field name="name">Customer Spending Tier Configuration Form</field>
+        <field name="model">wa_marketing_automation.customer_spending_tier_config</field>
+        <field name="arch" type="xml">
+            <form string="Customer Spending Tier Configuration">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="tier_code" placeholder="Tier Code (e.g., vip, premium, gold)" required="1" />
+                        </h1>
+                        <h2>
+                            <field name="display_name" placeholder="Tier Display Name (e.g., Premium, High Value)" required="1" />
+                        </h2>
+                    </div>
+                    
+                    <group>
+                        <group string="Spending Thresholds (IDR)">
+                            <field name="min_spending_amount" widget="monetary" />
+                            <field name="max_spending_amount" widget="monetary" />
+                            <field name="sequence" />
+                        </group>
+                        <group string="Configuration">
+                            <field name="active" />
+                            <field name="tier_color" widget="color" />
+                        </group>
+                    </group>
+                    
+                    <group string="Tier Analytics">
+                        <group>
+                            <field name="customer_count" readonly="1" />
+                            <field name="total_tier_revenue" widget="monetary" readonly="1" />
+                        </group>
+                        <group>
+                            <field name="average_spending" widget="monetary" readonly="1" />
+                        </group>
+                    </group>
+                    
+                    <field name="tier_description" 
+                           placeholder="Describe this customer spending tier - its characteristics, target customers, and business value..." />
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Customer Spending Tier Configuration List View -->
+    <record id="view_customer_spending_tier_config_list" model="ir.ui.view">
+        <field name="name">Customer Spending Tier Configuration List</field>
+        <field name="model">wa_marketing_automation.customer_spending_tier_config</field>
+        <field name="arch" type="xml">
+            <list string="Customer Spending Tiers" 
+                  default_order="sequence, min_spending_amount desc"
+                  create="true"
+                  edit="false"
+                  delete="true"
+                  decoration-muted="not active">
+                <field name="sequence" widget="handle" />
+                <field name="tier_code" />
+                <field name="display_name" />
+                <field name="min_spending_amount" widget="monetary" />
+                <field name="max_spending_amount" widget="monetary" />
+                <field name="customer_count" readonly="1" />
+                <field name="tier_color" widget="color" optional="hide" />
+                <field name="active" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Customer Spending Tier Configuration Search View -->
+    <record id="view_customer_spending_tier_config_search" model="ir.ui.view">
+        <field name="name">Customer Spending Tier Configuration Search</field>
+        <field name="model">wa_marketing_automation.customer_spending_tier_config</field>
+        <field name="arch" type="xml">
+            <search string="Search Customer Spending Tiers">
+                <field name="tier_code" />
+                <field name="display_name" />
+                <field name="min_spending_amount" />
+                <field name="max_spending_amount" />
+                
+                <filter string="Active Tiers" 
+                        name="active_tiers" 
+                        domain="[('active', '=', True)]" />
+                <filter string="Inactive Tiers" 
+                        name="inactive_tiers" 
+                        domain="[('active', '=', False)]" />
+                
+                <separator />
+                <filter string="Premium Tiers" 
+                        name="premium_tiers" 
+                        domain="[('min_spending_amount', '>=', 2000000)]" />
+                
+                <group expand="0" string="Group By">
+                    <filter string="Active Status" 
+                            name="group_by_active" 
+                            context="{'group_by': 'active'}" />
+                    <filter string="Spending Range" 
+                            name="group_by_spending_range" 
+                            context="{'group_by': 'min_spending_amount'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Customer Spending Tier Configuration Action -->
+    <record id="action_customer_spending_tier_config" model="ir.actions.act_window">
+        <field name="name">Customer Spending Tier Configuration</field>
+        <field name="res_model">wa_marketing_automation.customer_spending_tier_config</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_customer_spending_tier_config_list" />
+        <field name="search_view_id" ref="view_customer_spending_tier_config_search" />
+        <field name="context">{'search_default_active_tiers': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first customer spending tier!
+            </p>
+            <p>
+                Configure spending-based customer tiers to segment customers by their total purchase amounts.
+                These tiers will be used throughout analytics and reporting to provide business insights.
+            </p>
+            <p>
+                <strong>Getting Started:</strong>
+                <ul>
+                    <li>Create tiers like VIP, Premium, Gold, Silver, Bronze, etc.</li>
+                    <li>Set minimum and maximum spending amounts in Indonesian Rupiah (IDR)</li>
+                    <li>Use these tiers for customer segmentation and targeted marketing</li>
+                    <li>Monitor tier analytics to understand customer value distribution</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+
+</odoo>

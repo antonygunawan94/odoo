@@ -9,15 +9,17 @@
     "data": [
         "security/ir.model.access.csv",
         "data/ir_cron_data.xml",
+        "data/default_age_groups.xml",
         "data/sample_customers.xml",
         "data/force_analytics_computation.xml",
         "data/server_actions.xml",
         "views/campaign_views.xml",
         "views/customer_segmentation_views.xml",
-        "views/configuration_views.xml",
         "views/whatsapp_api_log_views.xml",
         "views/scheduled_actions_views.xml",
         "views/res_partner_views.xml",
+        "views/customer_spending_tier_config_views.xml",
+        "views/customer_age_group_config_views.xml",
         "views/customer_demographics_report_views.xml",  # Fixed with type="html"
         "views/cohort_analysis_report_views.xml",
         "views/advanced_analytics_filter_views.xml",

@@ -1,1 +1,1 @@
-from . import campaign, configuration, customer_segmentation, whatsapp_api_log, res_partner, customer_demographics_report, cohort_analysis_report, advanced_analytics_filter, res_config_settings
+from . import campaign, configuration, customer_segmentation, whatsapp_api_log, res_partner, customer_demographics_report, cohort_analysis_report, advanced_analytics_filter, res_config_settings, customer_spending_tier_config, customer_age_group_config

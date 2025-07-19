@@ -46,6 +46,18 @@ class CohortAnalysisReport(models.Model):
     cohort_age_months = fields.Integer(string='Cohort Age (Months)', readonly=True, help='Age of cohort in months')
     customer_lifetime_value = fields.Float(string='Customer Lifetime Value', readonly=True, help='Average CLV for this cohort')
     
+    # Dynamic segmentation fields - populated based on active configurations
+    spending_tier_breakdown = fields.Text(string='Spending Tier Breakdown', readonly=True, help='JSON breakdown of customers by spending tier')
+    age_group_breakdown = fields.Text(string='Age Group Breakdown', readonly=True, help='JSON breakdown of customers by age group')
+    
+    # Most common tiers for quick reference
+    top_spending_tier = fields.Char(string='Top Spending Tier', readonly=True, help='Most common spending tier in this cohort')
+    top_age_group = fields.Char(string='Top Age Group', readonly=True, help='Most common age group in this cohort')
+    
+    # Computed display fields
+    spending_tier_display = fields.Html(string='Spending Tier Distribution', compute='_compute_segmentation_display', store=False)
+    age_group_display = fields.Html(string='Age Group Distribution', compute='_compute_segmentation_display', store=False)
+    
     def init(self):
         """Initialize the cohort analysis report view"""
         tools.drop_view_if_exists(self.env.cr, self._table)
@@ -203,6 +215,102 @@ class CohortAnalysisReport(models.Model):
                         THEN 1 
                     END) as dormant_customers,
                     
+                    -- Dynamic segmentation analysis
+                    (
+                        SELECT json_object_agg(
+                            stc.display_name, 
+                            tier_counts.customer_count
+                        )
+                        FROM (
+                            SELECT 
+                                rp_tier.customer_spending_tier as tier_code,
+                                COUNT(*) as customer_count
+                            FROM res_partner rp_tier
+                            WHERE rp_tier.id IN (
+                                SELECT partner_id FROM customer_activity ca_inner 
+                                WHERE ca_inner.cohort_period = ca.cohort_period 
+                                AND ca_inner.period_number = ca.period_number 
+                                AND ca_inner.is_active = 1
+                            )
+                            AND rp_tier.customer_spending_tier IS NOT NULL
+                            AND rp_tier.customer_spending_tier != 'UNCLASSIFIED'
+                            GROUP BY rp_tier.customer_spending_tier
+                        ) tier_counts
+                        JOIN wa_marketing_automation_customer_spending_tier_config stc 
+                            ON stc.tier_code = tier_counts.tier_code AND stc.active = true
+                    ) as spending_tier_breakdown,
+                    
+                    (
+                        SELECT json_object_agg(
+                            agc.display_name, 
+                            age_counts.customer_count
+                        )
+                        FROM (
+                            SELECT 
+                                rp_age.customer_age_group as age_code,
+                                COUNT(*) as customer_count
+                            FROM res_partner rp_age
+                            WHERE rp_age.id IN (
+                                SELECT partner_id FROM customer_activity ca_inner 
+                                WHERE ca_inner.cohort_period = ca.cohort_period 
+                                AND ca_inner.period_number = ca.period_number 
+                                AND ca_inner.is_active = 1
+                            )
+                            AND rp_age.customer_age_group IS NOT NULL
+                            AND rp_age.customer_age_group != 'UNCLASSIFIED'
+                            GROUP BY rp_age.customer_age_group
+                        ) age_counts
+                        JOIN wa_marketing_automation_customer_age_group_config agc 
+                            ON agc.group_code = age_counts.age_code AND agc.active = true
+                    ) as age_group_breakdown,
+                    
+                    -- Most common tier and age group
+                    (
+                        SELECT stc.display_name
+                        FROM (
+                            SELECT 
+                                rp_tier.customer_spending_tier as tier_code,
+                                COUNT(*) as customer_count
+                            FROM res_partner rp_tier
+                            WHERE rp_tier.id IN (
+                                SELECT partner_id FROM customer_activity ca_inner 
+                                WHERE ca_inner.cohort_period = ca.cohort_period 
+                                AND ca_inner.period_number = ca.period_number 
+                                AND ca_inner.is_active = 1
+                            )
+                            AND rp_tier.customer_spending_tier IS NOT NULL
+                            AND rp_tier.customer_spending_tier != 'UNCLASSIFIED'
+                            GROUP BY rp_tier.customer_spending_tier
+                            ORDER BY COUNT(*) DESC
+                            LIMIT 1
+                        ) top_tier
+                        JOIN wa_marketing_automation_customer_spending_tier_config stc 
+                            ON stc.tier_code = top_tier.tier_code AND stc.active = true
+                    ) as top_spending_tier,
+                    
+                    (
+                        SELECT agc.display_name
+                        FROM (
+                            SELECT 
+                                rp_age.customer_age_group as age_code,
+                                COUNT(*) as customer_count
+                            FROM res_partner rp_age
+                            WHERE rp_age.id IN (
+                                SELECT partner_id FROM customer_activity ca_inner 
+                                WHERE ca_inner.cohort_period = ca.cohort_period 
+                                AND ca_inner.period_number = ca.period_number 
+                                AND ca_inner.is_active = 1
+                            )
+                            AND rp_age.customer_age_group IS NOT NULL
+                            AND rp_age.customer_age_group != 'UNCLASSIFIED'
+                            GROUP BY rp_age.customer_age_group
+                            ORDER BY COUNT(*) DESC
+                            LIMIT 1
+                        ) top_age
+                        JOIN wa_marketing_automation_customer_age_group_config agc 
+                            ON agc.group_code = top_age.age_code AND agc.active = true
+                    ) as top_age_group,
+                    
                     -- Cohort age
                     period_number as cohort_age_months,
                     
@@ -220,3 +328,37 @@ class CohortAnalysisReport(models.Model):
                 ORDER BY cohort_period, period_number
             )
         """ % self._table)
+
+    @api.depends('spending_tier_breakdown', 'age_group_breakdown')
+    def _compute_segmentation_display(self):
+        """Convert JSON segmentation data to user-friendly HTML display"""
+        import json
+        
+        for record in self:
+            # Display spending tier breakdown
+            if record.spending_tier_breakdown:
+                try:
+                    tier_data = json.loads(record.spending_tier_breakdown)
+                    tier_html = "<ul>"
+                    for tier_name, count in tier_data.items():
+                        tier_html += f"<li><strong>{tier_name}:</strong> {count} customers</li>"
+                    tier_html += "</ul>"
+                    record.spending_tier_display = tier_html
+                except (json.JSONDecodeError, TypeError):
+                    record.spending_tier_display = "<p>No spending tier data</p>"
+            else:
+                record.spending_tier_display = "<p>No spending tier data</p>"
+            
+            # Display age group breakdown
+            if record.age_group_breakdown:
+                try:
+                    age_data = json.loads(record.age_group_breakdown)
+                    age_html = "<ul>"
+                    for age_name, count in age_data.items():
+                        age_html += f"<li><strong>{age_name}:</strong> {count} customers</li>"
+                    age_html += "</ul>"
+                    record.age_group_display = age_html
+                except (json.JSONDecodeError, TypeError):
+                    record.age_group_display = "<p>No age group data</p>"
+            else:
+                record.age_group_display = "<p>No age group data</p>"

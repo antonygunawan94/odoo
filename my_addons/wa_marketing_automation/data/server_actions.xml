@@ -56,5 +56,26 @@ all_customers = env['res.partner'].search([('customer_rank', '>', 0), ('is_compa
 all_customers._force_analytics_computation()
             </field>
         </record>
+
+        <!-- Server Action: Clean All Display Names -->
+        <record id="action_clean_all_display_names" model="ir.actions.server">
+            <field name="name">Clean All Display Names (Age Groups + Spending Tiers)</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="binding_model_id" ref="base.model_res_partner"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+# Force recomputation of ALL customer display fields to ensure clean formatting
+all_customers = env['res.partner'].search([('customer_rank', '>', 0), ('is_company', '=', False)])
+for customer in all_customers:
+    # Fix age group display names
+    customer._compute_customer_age_group()
+    # Fix spending tier display names  
+    customer._compute_customer_spending_tier()
+    
+# Also refresh the customer demographics report view
+env['wa_marketing_automation.customer_demographics_report'].flush_model()
+            </field>
+        </record>
     </data>
 </odoo>

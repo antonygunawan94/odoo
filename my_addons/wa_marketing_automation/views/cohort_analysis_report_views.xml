@@ -11,9 +11,7 @@
                 <field name="period_number" string="Period" width="70px" />
                 <field name="customers_acquired" string="Acquired" width="80px" />
                 <field name="customers_active" string="Active" width="70px" />
-                <field name="retention_rate" string="Retention %" width="90px" decoration-success="retention_rate >= 70"
-                    decoration-warning="retention_rate >= 40 and retention_rate &lt; 70"
-                    decoration-danger="retention_rate &lt; 40" />
+                <field name="retention_rate" string="Retention %" width="90px" />
                 <field name="total_revenue" string="Revenue" width="100px" />
                 <field name="average_revenue_per_customer" string="Avg Rev/Cust" width="110px" />
                 <field name="cumulative_revenue" string="Cumulative Rev" width="120px" />
@@ -70,6 +68,21 @@
                         </group>
                     </group>
 
+                    <group name="segmentation_overview" string="Customer Segmentation Overview">
+                        <group>
+                            <field name="top_spending_tier" />
+                            <field name="top_age_group" />
+                        </group>
+                    </group>
+
+                    <group name="spending_tier_distribution" string="Spending Tier Distribution" col="1">
+                        <field name="spending_tier_display" nolabel="1" />
+                    </group>
+
+                    <group name="age_group_distribution" string="Age Group Distribution" col="1">
+                        <field name="age_group_display" nolabel="1" />
+                    </group>
+
                     <group name="risk_assessment" string="Risk Assessment">
                         <field name="churn_risk_customers" />
                     </group>
@@ -91,6 +104,14 @@
                             <li><strong>High Risk:</strong> Number of customers likely to churn</li>
                             <li><strong>Cumulative Rev:</strong> Total revenue from cohort up to this period</li>
                         </ul>
+                        <br />
+                        <strong>Segmentation Analysis:</strong>
+                        <ul>
+                            <li><strong>Spending Tiers:</strong> Dynamic distribution using configured spending tiers (VIP, Premium, Gold, etc.)</li>
+                            <li><strong>Age Groups:</strong> Dynamic distribution using configured age groups (Young, 18-25, 26-35, etc.)</li>
+                            <li><strong>Top Segments:</strong> Most common spending tier and age group for quick insights</li>
+                            <li><strong>Journey Stages:</strong> Customer lifecycle stage distribution</li>
+                        </ul>
                     </div>
                 </sheet>
             </form>
@@ -107,15 +128,28 @@
                 <field name="period_number" />
                 <field name="customers_acquired" />
                 <field name="retention_rate" />
+                <field name="top_spending_tier" />
+                <field name="top_age_group" />
 
                 <filter name="recent_cohorts" string="Recent Cohorts (Last 12 Months)"
-                    domain="[('cohort_period', '>=', (context_today() - datetime.timedelta(days=365)).strftime('%Y-%m-%d'))]" />
-                <filter name="high_retention" string="High Retention (&gt;= 70%)"
+                    domain="[('cohort_period', '>=', '2024-01-01')]" />
+                <filter name="high_retention" string="High Retention (70%+)"
                     domain="[('retention_rate', '>=', 70)]" />
-                <filter name="low_retention" string="Low Retention (&lt; 40%)"
+                <filter name="low_retention" string="Low Retention (Under 40%)"
                     domain="[('retention_rate', '&lt;', 40)]" />
                 <filter name="high_churn_risk" string="High Churn Risk"
                     domain="[('churn_risk_customers', '>', 0)]" />
+
+                <separator />
+
+                <filter name="has_tier_data" string="Has Spending Tier Data"
+                    domain="[('spending_tier_breakdown', '!=', False)]" />
+                <filter name="has_age_data" string="Has Age Group Data"
+                    domain="[('age_group_breakdown', '!=', False)]" />
+                <filter name="vip_tier" string="VIP Top Tier"
+                    domain="[('top_spending_tier', 'ilike', 'VIP')]" />
+                <filter name="premium_tier" string="Premium Top Tier"
+                    domain="[('top_spending_tier', 'ilike', 'Premium')]" />
 
                 <separator />
 

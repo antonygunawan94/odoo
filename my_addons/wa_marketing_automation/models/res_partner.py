@@ -91,6 +91,49 @@ class ResPartner(models.Model):
     ], string='RFM Segment', compute='_compute_rfm_scores', store=True,
         help='Customer segment based on RFM analysis')
 
+    # Customer Spending Tier (Dynamic Configuration-Based)
+    @api.model
+    def _get_customer_spending_tier_selection(self):
+        """Get dynamic customer spending tier selection from configuration"""
+        spending_tier_config = self.env['wa_marketing_automation.customer_spending_tier_config']
+        return spending_tier_config.get_spending_tier_selection_options()
+
+    customer_spending_tier = fields.Selection(
+        selection='_get_customer_spending_tier_selection',
+        string='Customer Spending Tier',
+        compute='_compute_customer_spending_tier',
+        store=True,
+        help='Customer tier based on total spending amount using configurable thresholds'
+    )
+
+    customer_spending_tier_display = fields.Char(
+        string='Spending Tier Details',
+        compute='_compute_customer_spending_tier',
+        store=True,
+        help='Formatted display of customer spending tier with amount'
+    )
+
+    # Age Group Fields
+    def _get_customer_age_group_selection(self):
+        """Get selection options from age group configuration"""
+        age_group_config = self.env['wa_marketing_automation.customer_age_group_config']
+        return age_group_config.get_age_group_selection()
+
+    customer_age_group = fields.Selection(
+        selection='_get_customer_age_group_selection',
+        string='Customer Age Group',
+        compute='_compute_customer_age_group',
+        store=True,
+        help='Customer age group based on current age using configurable thresholds'
+    )
+    
+    customer_age_group_display = fields.Char(
+        string='Age Group Details',
+        compute='_compute_customer_age_group',
+        store=True,
+        help='Formatted display of customer age group with age range'
+    )
+
     # Engagement Score Fields
     email_engagement_score = fields.Float(
         string='Email Engagement Score',
@@ -631,6 +674,55 @@ class ResPartner(models.Model):
         
         # Lost: Low across all dimensions
         return 'lost'
+
+    @api.depends('total_spent')
+    def _compute_customer_spending_tier(self):
+        """Compute customer spending tier using dynamic spending-based configuration"""
+        spending_tier_config = self.env['wa_marketing_automation.customer_spending_tier_config']
+        
+        for partner in self:
+            if not partner.is_company and partner.customer_rank > 0:
+                # Get spending tier dynamically from configuration
+                tier_code = spending_tier_config.get_spending_tier_for_amount(partner.total_spent)
+                partner.customer_spending_tier = tier_code
+                
+                # Get tier details for display
+                tier = spending_tier_config.search([('tier_code', '=', tier_code)], limit=1)
+                if tier:
+                    # Format spending amount with Indonesian Rupiah formatting
+                    from ..utils import format_price_with_currency
+                    formatted_amount = format_price_with_currency(partner.total_spent, 'IDR')
+                    # Use display name only for business-friendly presentation
+                    partner.customer_spending_tier_display = f"{tier.display_name} ({formatted_amount})"
+                else:
+                    partner.customer_spending_tier_display = f"Unclassified (Rp {partner.total_spent:,.0f})"
+            else:
+                # Non-customers or companies
+                partner.customer_spending_tier = 'UNCLASSIFIED'
+                partner.customer_spending_tier_display = 'Not Classified'
+
+    @api.depends('age')
+    def _compute_customer_age_group(self):
+        """Compute customer age group using dynamic age-based configuration"""
+        age_group_config = self.env['wa_marketing_automation.customer_age_group_config']
+        
+        for partner in self:
+            if not partner.is_company and partner.customer_rank > 0 and partner.age > 0:
+                # Get age group dynamically from configuration
+                group_code = age_group_config.get_age_group_for_age(partner.age)
+                partner.customer_age_group = group_code
+                
+                # Get group details for display
+                group = age_group_config.search([('group_code', '=', group_code)], limit=1)
+                if group:
+                    # Use display name only for business-friendly presentation
+                    partner.customer_age_group_display = group.display_name
+                else:
+                    partner.customer_age_group_display = "Unclassified"
+            else:
+                # Non-customers, companies, or no age data
+                partner.customer_age_group = 'UNCLASSIFIED'
+                partner.customer_age_group_display = 'Unclassified'
 
     def get_rfm_thresholds_display(self):
         """Get current RFM thresholds formatted for user display"""
@@ -1209,15 +1301,12 @@ class ResPartner(models.Model):
             
             # Website engagement (if enabled)
             if config.get('enable_website_engagement', True) and partner.customer_rank > 0:
-                # TODO: Implement real website engagement tracking
-                # Currently disabled because sale orders ≠ website engagement
-                # Customers can buy offline, by phone, in-store, etc.
-                # Real website engagement should measure:
-                # - Page views, session time, content consumption
-                # - Website visits without purchases
-                # - Click-through rates, form submissions
-                # 
-                # For now, set to 0 until proper website analytics are available
+                # LIMITATION: Website engagement tracking requires direct website analytics data
+                # Cannot reliably infer website engagement from sales orders because:
+                # - Customers can purchase offline, by phone, or in-store
+                # - Order timing and amounts don't correlate with website activity
+                # - Real engagement requires: page views, session time, click-through rates
+                # Set to 0 until proper website analytics integration is available
                 scores['website_engagement'] = 0.0
             else:
                 scores['website_engagement'] = 0.0
@@ -1772,15 +1861,12 @@ class ResPartner(models.Model):
                 else:
                     partner.bnpl_preference_score = 0
                 
-                # Mobile Commerce Analysis - DISABLED DUE TO FUNDAMENTAL FLAWS
-                # TODO: Implement real mobile analytics when device tracking is available
-                # Current issues (same as website engagement issue):
-                # - Order timing ≠ mobile usage (customers can order offline, by phone, in-store, etc.)
-                # - Order amount ≠ device type (small orders don't necessarily mean mobile)
-                # - Heuristic assumptions are unreliable and create misleading metrics
-                # 
-                # Real mobile commerce tracking should measure:
-                # - Actual device detection from web sessions
+                # LIMITATION: Mobile commerce analysis requires actual device detection
+                # Cannot reliably infer mobile usage from order patterns because:
+                # - Order timing ≠ mobile usage (customers order via multiple channels)
+                # - Order amount ≠ device type (small orders don't mean mobile usage)
+                # - Heuristic assumptions create misleading business metrics
+                # Real mobile tracking requires: device detection from web sessions
                 # - Mobile app usage analytics  
                 # - User agent strings from real web traffic
                 # - Mobile-specific conversion funnels

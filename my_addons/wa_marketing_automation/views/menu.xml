@@ -26,6 +26,29 @@
         sequence="20"
     />
 
+    <!-- Configuration Submenu -->
+    <menuitem id="wa_marketing_automation_menu_configuration"
+        name="Configuration"
+        parent="wa_marketing_automation_menu_base"
+        sequence="90"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_customer_spending_tier_config"
+        name="Customer Spending Tiers"
+        parent="wa_marketing_automation_menu_configuration"
+        action="wa_marketing_automation.action_customer_spending_tier_config"
+        sequence="20"
+        groups="base.group_user"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_customer_age_group_config"
+        name="Customer Age Groups"
+        parent="wa_marketing_automation_menu_configuration"
+        action="wa_marketing_automation.action_customer_age_group_config"
+        sequence="30"
+        groups="base.group_user"
+    />
+
     <menuitem id="wa_marketing_automation_menu_whatsapp_api_log"
         name="WhatsApp API Logs"
         parent="wa_marketing_automation_menu_campaign"
@@ -52,6 +75,13 @@
         parent="wa_marketing_automation_menu_reports"
         action="wa_marketing_automation.action_customer_age_distribution"
         sequence="20"
+    />
+
+    <menuitem id="wa_marketing_automation_menu_spending_tier_distribution"
+        name="Spending Tier Distribution"
+        parent="wa_marketing_automation_menu_reports"
+        action="wa_marketing_automation.action_customer_spending_tier_distribution"
+        sequence="25"
     />
 
     <menuitem id="wa_marketing_automation_menu_rfm_analysis"
@@ -82,12 +112,12 @@
         sequence="30"
     />
 
-    <!-- Configuration Menu - Opens Settings > General Settings > WhatsApp Marketing Automation -->
+    <!-- General Settings - Opens Settings > General Settings > WhatsApp Marketing Automation -->
     <menuitem id="wa_marketing_automation_menu_config"
-        name="Configuration"
-        parent="wa_marketing_automation_menu_base"
+        name="General Settings"
+        parent="wa_marketing_automation_menu_configuration"
         action="wa_marketing_automation.action_wa_marketing_config"
-        sequence="100"
+        sequence="10"
     />
 
     <menuitem id="wa_marketing_automation_menu_advanced_filter"
