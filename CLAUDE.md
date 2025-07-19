@@ -378,6 +378,99 @@ Each category should have clear business value and use cases documented.
 
 This ensures all analytics metrics are accessible to business users while maintaining technical accuracy.
 
+## Analytics Metrics Development Guidelines
+
+### CRITICAL: Avoid Heuristic-Based Metrics
+
+When developing new analytics metrics, **NEVER** use indirect heuristics or assumptions. Always use direct, reliable data sources that actually measure what you claim to be measuring.
+
+#### ❌ Examples of BAD Metric Logic (Heuristics to Avoid):
+
+1. **Website Engagement Based on Order Timing**:
+   ```python
+   # WRONG - Orders ≠ Website Activity
+   # Customers can order offline, by phone, in-store, etc.
+   website_engagement = "recent orders with small amounts"
+   ```
+
+2. **Mobile Commerce Based on Order Amount**:
+   ```python
+   # WRONG - Order amount ≠ Device type
+   # Small orders don't necessarily mean mobile usage
+   mobile_usage = "orders under $50 on weekends"
+   ```
+
+3. **Channel Preference Based on Contact Method**:
+   ```python
+   # WRONG - Contact availability ≠ Preference
+   # Having a phone number doesn't mean they prefer calls
+   preferred_channel = "has phone number = prefers phone"
+   ```
+
+#### ✅ Examples of GOOD Metric Logic (Direct Data Sources):
+
+1. **Email Engagement Based on Actual Email Data**:
+   ```python
+   # CORRECT - Use actual email interaction data
+   email_messages = partner.message_ids.filtered(lambda m: m.message_type == 'email')
+   opens_clicks = email_messages.mapped('email_opens') + email_messages.mapped('email_clicks')
+   ```
+
+2. **WhatsApp Success Based on Business Results**:
+   ```python
+   # CORRECT - Use won CRM opportunities with WhatsApp source
+   won_whatsapp_deals = crm_leads.filtered(lambda l: 
+       l.probability == 100 and 
+       l.source_id.name.startswith('WhatsApp Campaign')
+   )
+   ```
+
+3. **Website Engagement Based on Actual Website Activity**:
+   ```python
+   # CORRECT - Use actual website tracking data (when available)
+   website_sessions = website_tracking_data.filter(partner_id=partner.id)
+   page_views = website_sessions.sum('page_views')
+   ```
+
+#### Development Validation Checklist
+
+Before implementing any new metric, ask these questions:
+
+1. **Direct Measurement**: Does this metric directly measure what it claims to measure?
+2. **Data Source Reliability**: Is the data source actually representative of the behavior?
+3. **Business Logic Validation**: Would a business user agree this logic makes sense?
+4. **False Positive Check**: Could this metric be high/low for reasons unrelated to what we're measuring?
+5. **Transparency**: Can we clearly explain to a business user how this is calculated?
+
+#### Fundamental Rules for Analytics Metrics
+
+1. **Business Results > Activity Tracking**: Prefer metrics based on actual business outcomes (sales, conversions) over activity assumptions
+2. **Direct Data > Heuristics**: Always use direct data sources when available
+3. **Disable Rather Than Mislead**: If reliable data isn't available, disable the metric with clear documentation rather than using unreliable heuristics
+4. **Validate Assumptions**: Test edge cases and validate that the metric behaves as expected in real scenarios
+5. **Provide Transparency**: Every metric must have a clear calculation transparency display
+
+#### Code Review Focus Areas
+
+When reviewing analytics code, pay special attention to:
+
+- Any logic that assumes behavior based on indirect indicators
+- Metrics that use order timing/amounts to infer non-purchase behaviors  
+- Channel preference logic based on contact information availability
+- Any calculation that uses "heuristic" or "assumption" in comments
+- Metrics without clear, direct data source documentation
+
+#### Documentation Requirements
+
+Every new metric must include:
+- Clear explanation of data sources used
+- Business logic validation reasoning
+- Calculation transparency method
+- Known limitations and edge cases
+- Examples of when the metric might be misleading
+
+This approach ensures analytics remain trustworthy and actionable for business decision-making.
+
 ## Database Configuration
 - **Host**: localhost (default)
 - **Port**: 5432 (PostgreSQL default)

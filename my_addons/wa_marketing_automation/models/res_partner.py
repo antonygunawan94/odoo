@@ -573,10 +573,19 @@ class ResPartner(models.Model):
         if value == 0 or (reverse and value >= 9999):
             return 1
         
-        for i, threshold in enumerate(thresholds):
-            if value <= threshold:
-                return i + 1
-        return 5
+        if reverse:
+            # For recency: lower values (fewer days) get higher scores
+            # thresholds are in descending order from _calculate_quintiles
+            for i in range(len(thresholds) - 1, -1, -1):
+                if value <= thresholds[i]:
+                    return i + 1
+            return 1  # If value > all thresholds, worst score
+        else:
+            # For frequency/monetary: higher values get higher scores
+            for i, threshold in enumerate(thresholds):
+                if value <= threshold:
+                    return i + 1
+            return 5  # If value > all thresholds, best score
 
     def _get_rfm_segment(self, r, f, m):
         """Determine RFM segment based on individual scores"""
@@ -623,6 +632,543 @@ class ResPartner(models.Model):
         # Lost: Low across all dimensions
         return 'lost'
 
+    def get_rfm_thresholds_display(self):
+        """Get current RFM thresholds formatted for user display"""
+        # Get all active customers for threshold calculation
+        all_customers = self.env['res.partner'].search([
+            ('is_company', '=', False),
+            ('customer_rank', '>', 0),
+            ('active', '=', True)
+        ])
+        
+        if not all_customers:
+            return "No customer data available for threshold calculation"
+        
+        # Calculate the same thresholds used in scoring
+        recency_values = [p.days_since_last_purchase for p in all_customers if p.days_since_last_purchase < 9999]
+        frequency_values = [p.purchase_count for p in all_customers if p.purchase_count > 0]
+        monetary_values = [p.total_spent for p in all_customers if p.total_spent > 0]
+        
+        recency_thresholds = self._calculate_quintiles(recency_values, reverse=True)
+        frequency_thresholds = self._calculate_quintiles(frequency_values)
+        monetary_thresholds = self._calculate_quintiles(monetary_values)
+        
+        # Format thresholds for display
+        def format_currency(amount):
+            return f"${amount:,.0f}" if amount > 0 else "$0"
+        
+        def format_days(days):
+            if days == 0:
+                return "0 days"
+            elif days <= 30:
+                return f"{days} days"
+            elif days <= 365:
+                return f"{days} days ({days//30}+ months)"
+            else:
+                return f"{days} days ({days//365}+ years)"
+        
+        display_text = f"""
+<strong>📊 Current RFM Scoring Thresholds</strong><br/>
+<em>Based on {len(all_customers)} active customers</em><br/><br/>
+
+<strong>🕒 Recency (Days Since Last Purchase):</strong><br/>
+• Score 5 (Best): ≤ {format_days(recency_thresholds[4])}<br/>
+• Score 4: {format_days(recency_thresholds[4]+1)} - {format_days(recency_thresholds[3])}<br/>
+• Score 3: {format_days(recency_thresholds[3]+1)} - {format_days(recency_thresholds[2])}<br/>
+• Score 2: {format_days(recency_thresholds[2]+1)} - {format_days(recency_thresholds[1])}<br/>
+• Score 1 (Worst): > {format_days(recency_thresholds[1])}<br/><br/>
+
+<strong>🛒 Frequency (Purchases in Last 12 Months):</strong><br/>
+• Score 5 (Best): > {frequency_thresholds[3]} purchases<br/>
+• Score 4: {frequency_thresholds[2]+1} - {frequency_thresholds[3]} purchases<br/>
+• Score 3: {frequency_thresholds[1]+1} - {frequency_thresholds[2]} purchases<br/>
+• Score 2: {frequency_thresholds[0]+1} - {frequency_thresholds[1]} purchases<br/>
+• Score 1 (Worst): ≤ {frequency_thresholds[0]} purchases<br/><br/>
+
+<strong>💰 Monetary (Total Spent in Last 12 Months):</strong><br/>
+• Score 5 (Best): > {format_currency(monetary_thresholds[3])}<br/>
+• Score 4: {format_currency(monetary_thresholds[2]+1)} - {format_currency(monetary_thresholds[3])}<br/>
+• Score 3: {format_currency(monetary_thresholds[1]+1)} - {format_currency(monetary_thresholds[2])}<br/>
+• Score 2: {format_currency(monetary_thresholds[0]+1)} - {format_currency(monetary_thresholds[1])}<br/>
+• Score 1 (Worst): ≤ {format_currency(monetary_thresholds[0])}<br/><br/>
+
+<em>📈 Thresholds update automatically as your customer base grows</em>
+"""
+        return display_text
+
+    rfm_thresholds_display = fields.Html(
+        string='RFM Thresholds',
+        compute='_compute_rfm_thresholds_display',
+        help='Current RFM scoring thresholds for transparency'
+    )
+
+    @api.depends_context('uid')
+    def _compute_rfm_thresholds_display(self):
+        """Compute RFM thresholds display for the current customer base"""
+        for partner in self:
+            partner.rfm_thresholds_display = self.get_rfm_thresholds_display()
+
+    def get_engagement_calculation_display(self):
+        """Get engagement calculation details formatted for user display"""
+        config = self.env['res.config.settings'].get_analytics_config()
+        
+        # Get configuration values
+        engagement_period = config.get('engagement_analysis_period', 90)
+        email_multiplier = config.get('engagement_email_multiplier', 5)
+        website_multiplier = config.get('engagement_website_multiplier', 15)
+        website_base = config.get('engagement_website_base', 20)
+        website_historical = config.get('engagement_website_historical', 30)
+        whatsapp_deal_multiplier = config.get('engagement_whatsapp_deal_multiplier', 25)
+        whatsapp_revenue_bonus = config.get('engagement_whatsapp_revenue_bonus', 0.001)
+        whatsapp_base_score = config.get('engagement_whatsapp_base_score', 30)
+        whatsapp_fallback = config.get('engagement_whatsapp_fallback', 10)
+        
+        # Get weights
+        weights = self._get_adaptive_engagement_weights(config)
+        
+        display_text = f"""
+<strong>📊 Engagement Score Calculation Details</strong><br/>
+<em>Analysis period: Last {engagement_period} days</em><br/><br/>
+
+<strong>📧 Email Engagement:</strong><br/>
+• <strong>Data source:</strong> Email messages in last {engagement_period} days<br/>
+• <strong>Formula:</strong> Email messages × {email_multiplier} (max 100)<br/>
+• <strong>Example:</strong> 10 email interactions = {10 * email_multiplier} points<br/><br/>
+
+<strong>🌐 Website Engagement:</strong><br/>
+• <strong>Status:</strong> <span style="color: #d73502;"><strong>Currently Disabled</strong></span><br/>
+• <strong>Reason:</strong> Sale orders ≠ website engagement (customers can buy offline, by phone, in-store, etc.)<br/>
+• <strong>Current score:</strong> Always 0 until real website analytics are implemented<br/>
+• <strong>Future implementation:</strong> Will track actual website visits, page views, session time, and content engagement<br/><br/>
+
+<strong>📱 WhatsApp Engagement:</strong><br/>
+• <strong>Data source:</strong> Won CRM opportunities with "WhatsApp Campaign" source in last {engagement_period} days<br/>
+• <strong>Formula:</strong> Base score ({whatsapp_base_score}) + (Won deals × {whatsapp_deal_multiplier}) + (Revenue × {whatsapp_revenue_bonus}) (max 100)<br/>
+• <strong>Fallback:</strong> If in campaigns but no won deals = {whatsapp_fallback} points<br/>
+• <strong>Example:</strong> 2 won deals worth $1000 = {whatsapp_base_score} + {2 * whatsapp_deal_multiplier} + {1000 * whatsapp_revenue_bonus} = {whatsapp_base_score + 2 * whatsapp_deal_multiplier + 1000 * whatsapp_revenue_bonus} points<br/><br/>
+
+<strong>🎯 Overall Engagement (Weighted Average):</strong><br/>
+"""
+        
+        for metric, weight in weights.items():
+            channel_name = metric.replace('_engagement', '').replace('_', ' ').title()
+            display_text += f"• <strong>{channel_name}:</strong> {weight:.1f}% weight<br/>"
+        
+        display_text += f"""<br/>
+<strong>💡 Understanding Your Scores:</strong><br/>
+• <strong>Website engagement is currently disabled</strong> because sale orders don't represent true website activity<br/>
+• <strong>Email engagement of 0</strong> means no email interactions in last {engagement_period} days<br/>
+• <strong>WhatsApp engagement</strong> now tracks actual business results (won deals) rather than just message activity<br/>
+• <strong>Overall score</strong> = weighted average of enabled channels (currently Email + WhatsApp only)<br/>
+• <strong>When website tracking is implemented</strong>, overall scores will include all three channels<br/><br/>
+
+<em>📈 Scores update automatically based on recent customer activity</em>
+"""
+        return display_text
+
+    engagement_calculation_display = fields.Html(
+        string='Engagement Calculation Details',
+        compute='_compute_engagement_calculation_display',
+        help='Current engagement scoring logic for transparency'
+    )
+
+    @api.depends_context('uid')
+    def _compute_engagement_calculation_display(self):
+        """Compute engagement calculation display"""
+        for partner in self:
+            partner.engagement_calculation_display = self.get_engagement_calculation_display()
+
+    def get_journey_multichannel_calculation_display(self):
+        """Get journey and multichannel calculation details formatted for user display"""
+        config = self.env['res.config.settings'].get_analytics_config()
+        
+        # Get configuration values
+        journey_active_threshold = config.get('journey_active_threshold', 90)
+        journey_loyalty_threshold = config.get('journey_loyalty_threshold', 180)
+        b2b_loyalty_orders = config.get('journey_b2b_loyalty_orders', 5)
+        engagement_period = config.get('engagement_analysis_period', 90)
+        
+        display_text = f"""
+<strong>🗺️ Customer Journey Stage Calculation</strong><br/>
+<em>Determines where customers are in their relationship with your business</em><br/><br/>
+
+<strong>📋 Journey Stage Rules:</strong><br/>
+<strong>For Individual Customers:</strong><br/>
+• <strong>Awareness:</strong> Never made a purchase (customer_rank = 0)<br/>
+• <strong>Consideration:</strong> First-time customer (exactly 1 order)<br/>
+• <strong>Active Customer:</strong> Recent purchase (last purchase ≤ {journey_active_threshold} days ago)<br/>
+• <strong>Loyal Customer:</strong> Moderate recency (last purchase {journey_active_threshold+1}-{journey_loyalty_threshold} days ago)<br/>
+• <strong>Brand Advocate:</strong> RFM segment = Champions or Loyal Customers<br/>
+• <strong>Dormant:</strong> Long time since purchase (last purchase > {journey_loyalty_threshold} days ago)<br/><br/>
+
+<strong>For Business Customers (B2B):</strong><br/>
+• <strong>Awareness:</strong> Never made a purchase<br/>
+• <strong>Loyal Customer:</strong> {b2b_loyalty_orders}+ orders (established relationship)<br/>
+• <strong>Active Customer:</strong> 1-{b2b_loyalty_orders-1} orders (growing relationship)<br/><br/>
+
+<strong>🌐 Multi-Channel Behavior Calculation</strong><br/>
+<em>Analyzes how customers interact across different channels</em><br/><br/>
+
+<strong>📊 Channel Detection:</strong><br/>
+• <strong>Email Channel:</strong> Has email address<br/>
+• <strong>WhatsApp Channel:</strong> Has mobile number<br/>
+• <strong>Phone Channel:</strong> Has phone number<br/>
+• <strong>Website Channel:</strong> <span style="color: #d73502;"><strong>Currently Disabled</strong></span> (sale orders ≠ website usage)<br/><br/>
+
+<strong>🎯 Preferred Channel Logic:</strong><br/>
+• <strong>WhatsApp:</strong> Won CRM opportunities with "WhatsApp Campaign" source + mobile number (business results)<br/>
+• <strong>Email:</strong> Recent email activity in last {engagement_period} days + email address (engagement-based)<br/>
+• <strong>Email (Fallback):</strong> Has email address but no recent activity<br/>
+• <strong>WhatsApp (Fallback):</strong> Has mobile number but no won deals<br/>
+• <strong>Phone (Fallback):</strong> Has phone number only<br/>
+• <strong>Mixed:</strong> No contact methods available<br/><br/>
+
+<strong>📈 Consistency Score Rules:</strong><br/>
+• <strong>85 points:</strong> 3+ channels available (highly connected)<br/>
+• <strong>60 points:</strong> 2 channels available (moderately connected)<br/>
+• <strong>30 points:</strong> 1 channel available (limited connectivity)<br/>
+• <strong>0 points:</strong> No channels available<br/><br/>
+
+<strong>💡 Understanding Your Results:</strong><br/>
+• <strong>Journey stage</strong> shows customer lifecycle position based on purchase behavior<br/>
+• <strong>Channel touchpoints</strong> count available communication methods (email, mobile, phone only - website disabled)<br/>
+• <strong>Preferred channel</strong> indicates best way to reach this customer based on actual engagement and business results<br/>
+• <strong>Consistency score</strong> measures connectivity across available channels (max 3 channels currently)<br/>
+• <strong>WhatsApp preference</strong> now based on won deals rather than message activity for better business alignment<br/><br/>
+
+<em>📈 Metrics update automatically based on contact info and purchase activity</em>
+"""
+        return display_text
+
+    journey_multichannel_calculation_display = fields.Html(
+        string='Journey & Multi-Channel Calculation Details',
+        compute='_compute_journey_multichannel_calculation_display',
+        help='Current journey and multichannel logic for transparency'
+    )
+
+    @api.depends_context('uid')
+    def _compute_journey_multichannel_calculation_display(self):
+        """Compute journey and multichannel calculation display"""
+        for partner in self:
+            partner.journey_multichannel_calculation_display = self.get_journey_multichannel_calculation_display()
+
+    def get_churn_calculation_display(self):
+        """Get churn risk calculation details formatted for user display"""
+        config = self.env['res.config.settings'].get_analytics_config()
+        
+        # Get configuration values
+        churn_long_period = config.get('churn_long_period', 365)
+        churn_medium_period = config.get('churn_medium_period', 180)
+        churn_short_period = config.get('churn_short_period', 90)
+        
+        churn_engagement_very_low = config.get('churn_engagement_very_low_threshold', 20)
+        churn_engagement_low = config.get('churn_engagement_low_threshold', 40)
+        churn_engagement_medium = config.get('churn_engagement_medium_threshold', 60)
+        
+        consistency_very_low = config.get('churn_consistency_very_low_threshold', 20)
+        consistency_low = config.get('churn_consistency_low_threshold', 40)
+        consistency_medium = config.get('churn_consistency_medium_threshold', 60)
+        
+        display_text = f"""
+<strong>🚨 Churn Risk Calculation</strong><br/>
+<em>Predicts the likelihood of customer leaving in the next 90 days</em><br/><br/>
+
+<strong>📊 Risk Factors & Scoring:</strong><br/><br/>
+
+<strong>1️⃣ RFM Segment Analysis (40% weight):</strong><br/>
+• <strong>Lost/Hibernating:</strong> 100 points (critical risk)<br/>
+• <strong>Cannot Lose Them/At Risk:</strong> 75 points (high risk)<br/>
+• <strong>About to Sleep/Need Attention:</strong> 50 points (medium risk)<br/>
+• <strong>Promising/New Customers:</strong> 25 points (low risk)<br/>
+• <strong>Other segments:</strong> 0 points (minimal risk)<br/><br/>
+
+<strong>2️⃣ Purchase Recency (30% weight):</strong><br/>
+• <strong>No purchase > {churn_long_period} days:</strong> 100 points (critical)<br/>
+• <strong>No purchase > {churn_medium_period} days:</strong> 65 points (high)<br/>
+• <strong>No purchase > {churn_short_period} days:</strong> 35 points (medium)<br/>
+• <strong>Recent purchase ≤ {churn_short_period} days:</strong> 0 points (low)<br/><br/>
+
+<strong>3️⃣ Engagement Level (20% weight):</strong><br/>
+• <strong>Overall score < {churn_engagement_very_low}:</strong> 100 points (critical)<br/>
+• <strong>Overall score < {churn_engagement_low}:</strong> 75 points (high)<br/>
+• <strong>Overall score < {churn_engagement_medium}:</strong> 50 points (medium)<br/>
+• <strong>Overall score ≥ {churn_engagement_medium}:</strong> 0 points (low)<br/><br/>
+
+<strong>4️⃣ Journey Stage (5% weight):</strong><br/>
+• <strong>Dormant stage:</strong> 100 points<br/>
+• <strong>Consideration stage:</strong> 50 points<br/>
+• <strong>Other stages:</strong> 0 points<br/><br/>
+
+<strong>5️⃣ Multi-Channel Activity (5% weight):</strong><br/>
+• <strong>Consistency score < {consistency_very_low}:</strong> 100 points<br/>
+• <strong>Consistency score < {consistency_low}:</strong> 65 points<br/>
+• <strong>Consistency score < {consistency_medium}:</strong> 35 points<br/>
+• <strong>Consistency score ≥ {consistency_medium}:</strong> 0 points<br/><br/>
+
+<strong>🎯 Final Score Calculation:</strong><br/>
+• Each factor's points are multiplied by its weight percentage<br/>
+• All weighted scores are summed for final risk score (0-100)<br/>
+• <strong>Note:</strong> Weights automatically adjust if some metrics are disabled<br/><br/>
+
+<strong>⚡ Risk Level Classification:</strong><br/>
+• <strong>Very Low Risk (0-20):</strong> Customer is stable and engaged<br/>
+• <strong>Low Risk (21-40):</strong> Minor attention may be beneficial<br/>
+• <strong>Medium Risk (41-60):</strong> Proactive engagement recommended<br/>
+• <strong>High Risk (61-80):</strong> Immediate action required<br/>
+• <strong>Very High Risk (81-100):</strong> Critical - deploy retention strategies<br/><br/>
+
+<strong>💡 Business Actions by Risk Level:</strong><br/>
+• <strong>Very Low/Low:</strong> Continue normal engagement, reward loyalty<br/>
+• <strong>Medium:</strong> Send personalized offers, increase touchpoints<br/>
+• <strong>High:</strong> Direct outreach, special discounts, win-back campaigns<br/>
+• <strong>Very High:</strong> Executive attention, maximum retention efforts<br/><br/>
+
+<em>📈 Scores update automatically based on customer behavior changes</em>
+"""
+        return display_text
+
+    churn_calculation_display = fields.Html(
+        string='Churn Risk Calculation Details',
+        compute='_compute_churn_calculation_display',
+        help='Current churn risk prediction logic for transparency'
+    )
+
+    @api.depends_context('uid')
+    def _compute_churn_calculation_display(self):
+        """Compute churn calculation display"""
+        for partner in self:
+            partner.churn_calculation_display = self.get_churn_calculation_display()
+
+    def get_values_propensity_calculation_display(self):
+        """Get values-driven propensity calculation details formatted for user display"""
+        config = self.env['res.config.settings'].get_analytics_config()
+        
+        # Get configuration values
+        eco_keywords = config.get('eco_friendly_keywords', 'eco,organic,sustainable,green,bio,natural')
+        social_keywords = config.get('social_responsibility_keywords', 'fair,ethical,charity,community,social')
+        
+        luxury_threshold = config.get('premium_luxury_threshold', 500.0)
+        premium_threshold = config.get('premium_premium_threshold', 200.0)
+        midrange_threshold = config.get('premium_midrange_threshold', 100.0)
+        budget_plus_threshold = config.get('premium_budget_plus_threshold', 50.0)
+        
+        eco_boost = config.get('eco_friendly_loyalty_boost', 1.2)
+        premium_boost = config.get('premium_loyalty_boost', 1.1)
+        social_boost = config.get('social_responsibility_loyalty_boost', 1.2)
+        
+        display_text = f"""
+<strong>🌱 Values & Preferences Calculation</strong><br/>
+<em>Analyzes what this customer cares about when making purchases</em><br/><br/>
+
+<strong>🍃 Sustainability Preference Score:</strong><br/>
+<strong>How it works:</strong><br/>
+• Examines all products purchased by customer<br/>
+• Searches for eco-friendly keywords in product names<br/>
+• <strong>Keywords:</strong> {eco_keywords}<br/>
+• <strong>Formula:</strong> (Eco products ÷ Total products) × 100<br/>
+• <strong>Example:</strong> 3 eco products out of 10 = 30% score<br/><br/>
+
+<strong>💎 Premium Product Propensity:</strong><br/>
+<strong>Price-based classification:</strong><br/>
+• <strong>Luxury (${luxury_threshold}+):</strong> 90 points<br/>
+• <strong>Premium (${premium_threshold}-${luxury_threshold}):</strong> 70 points<br/>
+• <strong>Mid-range (${midrange_threshold}-${premium_threshold}):</strong> 50 points<br/>
+• <strong>Budget Plus (${budget_plus_threshold}-${midrange_threshold}):</strong> 30 points<br/>
+• <strong>Budget (< ${budget_plus_threshold}):</strong> 10 points<br/>
+<strong>Calculation:</strong> Based on average price of all items purchased<br/><br/>
+
+<strong>🤝 Social Responsibility Score:</strong><br/>
+<strong>How it works:</strong><br/>
+• Examines all products purchased by customer<br/>
+• Searches for social impact keywords in product names<br/>
+• <strong>Keywords:</strong> {social_keywords}<br/>
+• <strong>Formula:</strong> (Social products ÷ Total products) × 100<br/>
+• <strong>Example:</strong> 2 fair-trade products out of 8 = 25% score<br/><br/>
+
+<strong>🎯 Loyalty Boost Factor:</strong><br/>
+• Champions & Loyal Customers get score boosts:<br/>
+• <strong>Sustainability:</strong> {(eco_boost - 1) * 100:.0f}% boost (max 100)<br/>
+• <strong>Premium:</strong> {(premium_boost - 1) * 100:.0f}% boost (max 100)<br/>
+• <strong>Social:</strong> {(social_boost - 1) * 100:.0f}% boost (max 100)<br/>
+• <strong>Why?</strong> Loyal customers' preferences are more established<br/><br/>
+
+<strong>💡 Understanding the Scores:</strong><br/>
+• <strong>0-20:</strong> Little to no interest in this value<br/>
+• <strong>21-40:</strong> Some interest, worth testing<br/>
+• <strong>41-60:</strong> Moderate preference, good targeting opportunity<br/>
+• <strong>61-80:</strong> Strong preference, prioritize these products<br/>
+• <strong>81-100:</strong> Core value, central to purchase decisions<br/><br/>
+
+<strong>📊 Data Quality Notes:</strong><br/>
+• Scores based on actual purchase history, not surveys<br/>
+• Keyword matching depends on product naming accuracy<br/>
+• New customers may have low scores due to limited data<br/>
+• Scores improve in accuracy with more purchases<br/><br/>
+
+<em>📈 Scores update automatically as customers make new purchases</em>
+"""
+        return display_text
+
+    values_propensity_calculation_display = fields.Html(
+        string='Values & Preferences Calculation Details',
+        compute='_compute_values_propensity_calculation_display',
+        help='Current values-driven propensity logic for transparency'
+    )
+
+    @api.depends_context('uid')
+    def _compute_values_propensity_calculation_display(self):
+        """Compute values propensity calculation display"""
+        for partner in self:
+            partner.values_propensity_calculation_display = self.get_values_propensity_calculation_display()
+
+    def get_social_commerce_calculation_display(self):
+        """Get social commerce calculation details formatted for user display"""
+        config = self.env['res.config.settings'].get_analytics_config()
+        
+        # Get configuration values
+        fb_kw = config.get('social_facebook_keywords', 'facebook,fb')
+        ig_kw = config.get('social_instagram_keywords', 'instagram,ig')
+        tw_kw = config.get('social_twitter_keywords', 'twitter')
+        li_kw = config.get('social_linkedin_keywords', 'linkedin')
+        tt_kw = config.get('social_tiktok_keywords', 'tiktok')
+        yt_kw = config.get('social_youtube_keywords', 'youtube')
+        ot_kw = config.get('social_other_keywords', 'social,share,referral')
+        
+        display_text = f"""
+<strong>📱 Social Commerce Calculation</strong><br/>
+<em>Tracks how customers discover and buy from you through social media</em><br/><br/>
+
+<strong>🔍 Social Media Source Detection:</strong><br/>
+<strong>How it works:</strong><br/>
+• Examines UTM source data from all confirmed orders<br/>
+• Searches for platform keywords in order source names<br/>
+• Counts most frequent platform as primary source<br/><br/>
+
+<strong>Platform Keywords:</strong><br/>
+• <strong>Facebook:</strong> {fb_kw}<br/>
+• <strong>Instagram:</strong> {ig_kw}<br/>
+• <strong>Twitter:</strong> {tw_kw}<br/>
+• <strong>LinkedIn:</strong> {li_kw}<br/>
+• <strong>TikTok:</strong> {tt_kw}<br/>
+• <strong>YouTube:</strong> {yt_kw}<br/>
+• <strong>Other Social:</strong> {ot_kw}<br/><br/>
+
+<strong>📊 Metric Calculations:</strong><br/><br/>
+
+<strong>1️⃣ Social Media Source:</strong><br/>
+• Platform with most orders wins (majority rule)<br/>
+• If tied, first detected platform is selected<br/>
+• "None" if no social media sources found<br/><br/>
+
+<strong>2️⃣ Social Referral Count:</strong><br/>
+• Total number of orders from any social media source<br/>
+• Includes all platforms, not just primary<br/><br/>
+
+<strong>3️⃣ Social Engagement Score:</strong><br/>
+• <strong>Formula:</strong> (Social orders ÷ Total orders) × 100<br/>
+• <strong>Example:</strong> 3 social orders out of 10 total = 30% score<br/>
+• Shows percentage of business from social media<br/><br/>
+
+<strong>4️⃣ Social Conversion Rate:</strong><br/>
+• Measures effectiveness of social traffic<br/>
+• <strong>Formula:</strong> Social engagement score × conversion factor<br/>
+• Higher scores = better social media ROI<br/><br/>
+
+<strong>💡 Data Requirements:</strong><br/>
+• Orders must have UTM source tracking configured<br/>
+• Source names must contain platform keywords<br/>
+• No source data = "none" classification<br/>
+• Works with any UTM tracking tool<br/><br/>
+
+<strong>📈 Business Insights:</strong><br/>
+• <strong>Primary source</strong> shows where to focus social efforts<br/>
+• <strong>Referral count</strong> shows social media impact on sales<br/>
+• <strong>Engagement score</strong> reveals social dependency level<br/>
+• <strong>Conversion rate</strong> indicates social traffic quality<br/><br/>
+
+<em>📊 Metrics update automatically as new orders are tracked</em>
+"""
+        return display_text
+
+    social_commerce_calculation_display = fields.Html(
+        string='Social Commerce Calculation Details',
+        compute='_compute_social_commerce_calculation_display',
+        help='Current social commerce tracking logic for transparency'
+    )
+
+    @api.depends_context('uid')
+    def _compute_social_commerce_calculation_display(self):
+        """Compute social commerce calculation display"""
+        for partner in self:
+            partner.social_commerce_calculation_display = self.get_social_commerce_calculation_display()
+
+    def get_bnpl_calculation_display(self):
+        """Get BNPL calculation details formatted for user display"""
+        config = self.env['res.config.settings'].get_analytics_config()
+        
+        # Get configuration values
+        bnpl_keywords = config.get('bnpl_keywords', 'installment,split,bnpl,klarna,afterpay,sezzle,affirm')
+        bnpl_rarely_threshold = config.get('bnpl_rarely_threshold', 2)
+        bnpl_sometimes_threshold = config.get('bnpl_sometimes_threshold', 5)
+        bnpl_frequently_threshold = config.get('bnpl_frequently_threshold', 10)
+        
+        display_text = f"""
+<strong>💳 BNPL (Buy Now Pay Later) Calculation</strong><br/>
+<em>Analyzes customer payment preferences for installment and deferred payment options</em><br/><br/>
+
+<strong>🔍 BNPL Detection Method:</strong><br/>
+• Examines payment terms on all confirmed orders<br/>
+• Searches for BNPL keywords in payment term names<br/>
+• <strong>Keywords:</strong> {bnpl_keywords}<br/>
+• Counts orders with matching payment terms<br/><br/>
+
+<strong>📊 Usage Frequency Classification:</strong><br/>
+• <strong>Never:</strong> 0 BNPL orders<br/>
+• <strong>Rarely:</strong> 1-{bnpl_rarely_threshold} BNPL orders<br/>
+• <strong>Sometimes:</strong> {bnpl_rarely_threshold + 1}-{bnpl_sometimes_threshold} BNPL orders<br/>
+• <strong>Frequently:</strong> {bnpl_sometimes_threshold + 1}-{bnpl_frequently_threshold} BNPL orders<br/>
+• <strong>Always:</strong> > {bnpl_frequently_threshold} BNPL orders<br/><br/>
+
+<strong>💯 Preference Score Calculation:</strong><br/>
+• <strong>Formula:</strong> (BNPL orders ÷ Total orders) × 100<br/>
+• <strong>Example:</strong> 3 BNPL orders out of 12 total = 25% preference<br/>
+• Shows percentage of orders using BNPL options<br/>
+• Score range: 0-100%<br/><br/>
+
+<strong>🔧 Common BNPL Payment Terms:</strong><br/>
+• <strong>Klarna:</strong> Split payments, pay in 30 days<br/>
+• <strong>Afterpay:</strong> 4 interest-free installments<br/>
+• <strong>Sezzle:</strong> Split into 4 payments<br/>
+• <strong>Affirm:</strong> Monthly installments<br/>
+• <strong>Generic:</strong> Any "installment" or "split" payment<br/><br/>
+
+<strong>📈 Business Insights:</strong><br/>
+• <strong>High preference (60%+):</strong> Always offer BNPL options<br/>
+• <strong>Medium preference (30-60%):</strong> Highlight BNPL availability<br/>
+• <strong>Low preference (< 30%):</strong> BNPL optional but available<br/>
+• <strong>Zero preference:</strong> Focus on standard payment methods<br/><br/>
+
+<strong>⚠️ Mobile Commerce Note:</strong><br/>
+• Mobile metrics are <strong>currently disabled</strong> due to unreliable data<br/>
+• Cannot accurately determine device type from order data<br/>
+• Will be implemented when real device tracking is available<br/><br/>
+
+<em>💳 Scores update automatically as customers choose different payment methods</em>
+"""
+        return display_text
+
+    bnpl_calculation_display = fields.Html(
+        string='BNPL Calculation Details',
+        compute='_compute_bnpl_calculation_display',
+        help='Current BNPL tracking logic for transparency'
+    )
+
+    @api.depends_context('uid')
+    def _compute_bnpl_calculation_display(self):
+        """Compute BNPL calculation display"""
+        for partner in self:
+            partner.bnpl_calculation_display = self.get_bnpl_calculation_display()
+
     @api.depends('message_ids', 'sale_order_ids', 'opportunity_ids')
     def _compute_engagement_metrics(self):
         """Compute engagement scores across all channels (adaptive based on configuration)"""
@@ -663,31 +1209,52 @@ class ResPartner(models.Model):
             
             # Website engagement (if enabled)
             if config.get('enable_website_engagement', True) and partner.customer_rank > 0:
-                engagement_period = config.get('engagement_analysis_period', 90)
-                recent_orders = partner.sale_order_ids.filtered(
-                    lambda o: o.date_order and 
-                    o.date_order.date() >= date.today() - timedelta(days=engagement_period)
-                )
-                if recent_orders:
-                    website_multiplier = config.get('engagement_website_multiplier', 15)
-                    website_base = config.get('engagement_website_base', 20)
-                    scores['website_engagement'] = min(len(recent_orders) * website_multiplier + website_base, 100)
-                elif partner.sale_order_ids:
-                    scores['website_engagement'] = config.get('engagement_website_historical', 30)  # Has historical orders
-                else:
-                    scores['website_engagement'] = 0.0
+                # TODO: Implement real website engagement tracking
+                # Currently disabled because sale orders ≠ website engagement
+                # Customers can buy offline, by phone, in-store, etc.
+                # Real website engagement should measure:
+                # - Page views, session time, content consumption
+                # - Website visits without purchases
+                # - Click-through rates, form submissions
+                # 
+                # For now, set to 0 until proper website analytics are available
+                scores['website_engagement'] = 0.0
             else:
                 scores['website_engagement'] = 0.0
             
             # WhatsApp engagement (if enabled)
             if config.get('enable_whatsapp_engagement', True) and partner.mobile:
-                whatsapp_campaigns = campaigns.filtered(
-                    lambda c: c.state in ('completed', 'running')
-                )
-                if whatsapp_campaigns:
-                    whatsapp_multiplier = config.get('engagement_whatsapp_multiplier', 10)
-                    whatsapp_base = config.get('engagement_whatsapp_base', 30)
-                    scores['whatsapp_engagement'] = min(len(whatsapp_campaigns) * whatsapp_multiplier + whatsapp_base, 100)
+                # WhatsApp engagement based on won CRM opportunities from WhatsApp campaigns
+                engagement_period = config.get('engagement_analysis_period', 90)
+                engagement_days_ago = date.today() - timedelta(days=engagement_period)
+                
+                # Find won opportunities with WhatsApp Campaign source
+                won_opportunities = self.env['crm.lead'].search([
+                    ('partner_id', '=', partner.id),
+                    ('probability', '=', 100),  # Won deals
+                    ('stage_id.is_won', '=', True),  # Ensure stage is marked as won
+                    ('source_id.name', 'ilike', 'WhatsApp Campaign%'),  # Source starts with "WhatsApp Campaign"
+                    ('create_date', '>=', engagement_days_ago),  # Within engagement period
+                    ('active', '=', True)
+                ])
+                
+                # Calculate engagement score based on won deals
+                if won_opportunities:
+                    # Score based on number of won deals and their value
+                    deal_count = len(won_opportunities)
+                    total_revenue = sum(won_opportunities.mapped('expected_revenue'))
+                    
+                    # Base score calculation
+                    deal_multiplier = config.get('engagement_whatsapp_deal_multiplier', 25)
+                    revenue_bonus = config.get('engagement_whatsapp_revenue_bonus', 0.001)  # Small bonus per currency unit
+                    base_score = config.get('engagement_whatsapp_base_score', 30)
+                    
+                    # Calculate score: base + (deals * multiplier) + (revenue * bonus)
+                    calculated_score = base_score + (deal_count * deal_multiplier) + (total_revenue * revenue_bonus)
+                    scores['whatsapp_engagement'] = min(calculated_score, 100)
+                elif campaigns.filtered(lambda c: c.state in ('completed', 'running')):
+                    # Fallback: if in campaigns but no won deals, give modest score
+                    scores['whatsapp_engagement'] = config.get('engagement_whatsapp_fallback', 10)
                 else:
                     scores['whatsapp_engagement'] = 0.0
             else:
@@ -699,7 +1266,8 @@ class ResPartner(models.Model):
             total_weight = 0.0
             
             for metric, weight in weights.items():
-                if metric in scores and scores[metric] > 0:
+                if metric in scores:
+                    # Include ALL enabled channels in weighted average, even if score is 0
                     total_weighted_score += scores[metric] * (weight / 100)
                     total_weight += weight / 100
             
@@ -767,7 +1335,7 @@ class ResPartner(models.Model):
                 else:
                     partner.customer_journey_stage = 'purchase'
 
-    @api.depends('email', 'mobile', 'phone', 'message_ids', 'sale_order_ids')
+    @api.depends('email', 'mobile', 'phone', 'message_ids', 'opportunity_ids')
     def _compute_multichannel_behavior(self):
         """Compute multi-channel behavior metrics"""
         # Get metrics configuration
@@ -781,7 +1349,7 @@ class ResPartner(models.Model):
                 partner.multichannel_consistency_score = 0.0
                 continue
                 
-            # Count available channels
+            # Count available channels (excluding website since we can't track real website activity)
             channels = []
             if partner.email:
                 channels.append('email')
@@ -789,23 +1357,45 @@ class ResPartner(models.Model):
                 channels.append('whatsapp')
             if partner.phone:
                 channels.append('phone')
-            if partner.sale_order_ids:
-                channels.append('website')
+            # Note: Website channel removed - sale orders don't indicate website usage
+            # Customers can buy offline, by phone, in-store, etc.
             
             # Count touchpoints
             partner.multichannel_touchpoints = len(channels)
             
-            # Determine preferred channel based on activity
-            if partner.sale_order_ids and len(partner.sale_order_ids) >= 3:
-                partner.preferred_channel = 'website'
-            elif partner.mobile and partner.message_ids:
-                partner.preferred_channel = 'whatsapp'
+            # Determine preferred channel based on actual business results and engagement
+            engagement_period = config.get('engagement_analysis_period', 90)
+            engagement_days_ago = date.today() - timedelta(days=engagement_period)
+            
+            # Check for WhatsApp preference based on won CRM opportunities (consistent with engagement logic)
+            won_whatsapp_opportunities = self.env['crm.lead'].search([
+                ('partner_id', '=', partner.id),
+                ('probability', '=', 100),  # Won deals
+                ('stage_id.is_won', '=', True),  # Ensure stage is marked as won
+                ('source_id.name', 'ilike', 'WhatsApp Campaign%'),  # Source starts with "WhatsApp Campaign"
+                ('create_date', '>=', engagement_days_ago),  # Within engagement period
+                ('active', '=', True)
+            ])
+            
+            # Check for email activity (consistent with engagement logic)  
+            recent_email_messages = partner.message_ids.filtered(
+                lambda m: m.date and m.date.date() >= engagement_days_ago and 
+                m.message_type == 'email'
+            )
+            
+            # Determine preference based on actual business activity
+            if won_whatsapp_opportunities and partner.mobile:
+                partner.preferred_channel = 'whatsapp'  # Has won deals from WhatsApp campaigns
+            elif recent_email_messages and partner.email:
+                partner.preferred_channel = 'email'  # Active email engagement
             elif partner.email:
-                partner.preferred_channel = 'email'
+                partner.preferred_channel = 'email'  # Has email (fallback)
+            elif partner.mobile:
+                partner.preferred_channel = 'whatsapp'  # Has mobile (fallback)
             elif partner.phone:
-                partner.preferred_channel = 'phone'
+                partner.preferred_channel = 'phone'  # Has phone (fallback)
             else:
-                partner.preferred_channel = 'mixed'
+                partner.preferred_channel = 'mixed'  # No clear preference
             
             # Consistency score (how active across channels)
             if partner.multichannel_touchpoints >= 3:
@@ -1182,72 +1772,37 @@ class ResPartner(models.Model):
                 else:
                     partner.bnpl_preference_score = 0
                 
-                # Mobile Commerce Analysis (simplified - based on order patterns)
-                # In a real implementation, you would track device type from web analytics
+                # Mobile Commerce Analysis - DISABLED DUE TO FUNDAMENTAL FLAWS
+                # TODO: Implement real mobile analytics when device tracking is available
+                # Current issues (same as website engagement issue):
+                # - Order timing ≠ mobile usage (customers can order offline, by phone, in-store, etc.)
+                # - Order amount ≠ device type (small orders don't necessarily mean mobile)
+                # - Heuristic assumptions are unreliable and create misleading metrics
+                # 
+                # Real mobile commerce tracking should measure:
+                # - Actual device detection from web sessions
+                # - Mobile app usage analytics  
+                # - User agent strings from real web traffic
+                # - Mobile-specific conversion funnels
+                #
+                # For now, set neutral/disabled values until proper mobile analytics are implemented
                 
-                # Simulate mobile behavior based on order characteristics
-                mobile_orders = 0
-                desktop_orders = 0
-                mobile_total = 0
-                desktop_total = 0
-                
-                for order in orders:
-                    # Heuristic: smaller orders and certain times suggest mobile
-                    order_hour = order.date_order.hour if order.date_order else 12
-                    
-                    # Mobile indicators: off-hours, smaller amounts, certain products
-                    mobile_start_hour = config.get('mobile_start_hour', 9)
-                    mobile_end_hour = config.get('mobile_end_hour', 18)
-                    mobile_amount_threshold = config.get('mobile_amount_threshold', 200.0)
-                    
-                    if (order_hour < mobile_start_hour or order_hour > mobile_end_hour) and order.amount_total < mobile_amount_threshold:
-                        mobile_orders += 1
-                        mobile_total += order.amount_total
-                    else:
-                        desktop_orders += 1
-                        desktop_total += order.amount_total
-                
-                # Calculate mobile commerce score
-                total_orders = mobile_orders + desktop_orders
-                if total_orders > 0:
-                    mobile_score = (mobile_orders / total_orders) * 100
-                    partner.mobile_commerce_score = mobile_score
-                else:
-                    partner.mobile_commerce_score = config.get('mobile_commerce_default_score', 50.0)  # Default neutral score
-                
-                # Determine device preference
-                mobile_preference_ratio = config.get('mobile_preference_ratio', 1.5)
-                desktop_preference_ratio = config.get('desktop_preference_ratio', 1.5)
-                
-                if mobile_orders > desktop_orders * mobile_preference_ratio:
-                    partner.mobile_device_preference = 'smartphone'
-                elif desktop_orders > mobile_orders * desktop_preference_ratio:
-                    partner.mobile_device_preference = 'desktop'
-                elif mobile_orders > desktop_orders:
-                    partner.mobile_device_preference = 'tablet'
-                else:
-                    partner.mobile_device_preference = 'mixed'
-                
-                # Calculate average order values
-                partner.average_order_value_mobile = mobile_total / mobile_orders if mobile_orders > 0 else 0
-                partner.average_order_value_desktop = desktop_total / desktop_orders if desktop_orders > 0 else 0
-                
-                # Calculate mobile conversion rate (simplified)
-                if mobile_orders > 0:
-                    # Base on mobile engagement and order frequency
-                    mobile_conversion_multiplier = config.get('mobile_conversion_multiplier', 0.9)
-                    partner.mobile_conversion_rate = min(partner.mobile_commerce_score * mobile_conversion_multiplier, 100)
-                else:
-                    partner.mobile_conversion_rate = 0
+                partner.mobile_commerce_score = 0.0  # Disabled - no reliable way to track mobile vs desktop orders
+                partner.mobile_device_preference = 'mixed'  # Cannot determine without real device tracking
+                partner.average_order_value_mobile = 0.0  # Cannot separate mobile vs desktop order values
+                partner.average_order_value_desktop = 0.0  # Cannot separate mobile vs desktop order values
+                partner.mobile_conversion_rate = 0.0  # Cannot calculate without real mobile analytics
                     
             else:
+                # No orders - set defaults
                 partner.bnpl_usage_frequency = 'never'
                 partner.bnpl_preference_score = 0
-                partner.mobile_commerce_score = config.get('mobile_commerce_default_score', 50.0)
+                # Mobile commerce - disabled (same as above, no orders doesn't change the fundamental issues)
+                partner.mobile_commerce_score = 0.0
                 partner.mobile_device_preference = 'mixed'
-                partner.average_order_value_mobile = 0
-                partner.average_order_value_desktop = 0
-                partner.mobile_conversion_rate = 0
+                partner.average_order_value_mobile = 0.0
+                partner.average_order_value_desktop = 0.0
+                partner.mobile_conversion_rate = 0.0
     
     def _force_analytics_computation(self):
         """Force computation of all analytics fields for existing customers"""

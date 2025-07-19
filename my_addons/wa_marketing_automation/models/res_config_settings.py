@@ -317,26 +317,70 @@ class ResConfigSettings(models.TransientModel):
     # Advanced Analytics Configuration
     # =====================================
     
-    # Keywords Configuration
-    eco_friendly_keywords = fields.Char(
-        string='Eco-Friendly Keywords',
-        help='Comma-separated keywords for eco-friendly product detection',
-        config_parameter='wa_marketing_automation.eco_friendly_keywords',
-        default='eco,organic,sustainable,green,bio,natural',
+    # Eco-Friendly Keywords Configuration
+    eco_keywords = fields.Char(
+        string='Eco Keywords',
+        help='Basic eco-friendly keywords',
+        config_parameter='wa_marketing_automation.eco_keywords',
+        default='eco,green',
     )
     
-    social_responsibility_keywords = fields.Char(
-        string='Social Responsibility Keywords',
-        help='Comma-separated keywords for social responsibility product detection',
-        config_parameter='wa_marketing_automation.social_responsibility_keywords',
-        default='fair,ethical,charity,community,social',
+    organic_keywords = fields.Char(
+        string='Organic Keywords',
+        help='Organic product keywords',
+        config_parameter='wa_marketing_automation.organic_keywords',
+        default='organic,bio',
     )
     
-    bnpl_keywords = fields.Char(
-        string='BNPL Keywords',
-        help='Comma-separated keywords for Buy Now Pay Later detection',
-        config_parameter='wa_marketing_automation.bnpl_keywords',
-        default='installment,split,bnpl,klarna,afterpay,sezzle,affirm',
+    sustainable_keywords = fields.Char(
+        string='Sustainable Keywords',
+        help='Sustainability keywords',
+        config_parameter='wa_marketing_automation.sustainable_keywords',
+        default='sustainable,natural',
+    )
+    
+    # Social Responsibility Keywords Configuration
+    fair_trade_keywords = fields.Char(
+        string='Fair Trade Keywords',
+        help='Fair trade and ethical keywords',
+        config_parameter='wa_marketing_automation.fair_trade_keywords',
+        default='fair,ethical',
+    )
+    
+    charity_keywords = fields.Char(
+        string='Charity Keywords',
+        help='Charity and community keywords',
+        config_parameter='wa_marketing_automation.charity_keywords',
+        default='charity,community',
+    )
+    
+    social_cause_keywords = fields.Char(
+        string='Social Cause Keywords',
+        help='Social cause keywords',
+        config_parameter='wa_marketing_automation.social_cause_keywords',
+        default='social',
+    )
+    
+    # BNPL Keywords Configuration
+    installment_keywords = fields.Char(
+        string='Installment Keywords',
+        help='Installment payment keywords',
+        config_parameter='wa_marketing_automation.installment_keywords',
+        default='installment,split',
+    )
+    
+    bnpl_service_keywords = fields.Char(
+        string='BNPL Service Keywords',
+        help='BNPL service provider keywords',
+        config_parameter='wa_marketing_automation.bnpl_service_keywords',
+        default='bnpl,klarna,afterpay',
+    )
+    
+    payment_plan_keywords = fields.Char(
+        string='Payment Plan Keywords',
+        help='Payment plan keywords',
+        config_parameter='wa_marketing_automation.payment_plan_keywords',
+        default='sezzle,affirm',
     )
     
     # Premium Propensity Thresholds
@@ -725,11 +769,53 @@ class ResConfigSettings(models.TransientModel):
     )
     
     # Social Commerce Platform Keywords
-    social_platform_keywords = fields.Char(
-        string='Social Platform Keywords',
-        help='JSON format platform keywords for social commerce detection',
-        config_parameter='wa_marketing_automation.social_platform_keywords',
-        default='{"facebook": ["facebook", "fb"], "instagram": ["instagram", "ig"], "twitter": ["twitter"], "linkedin": ["linkedin"], "tiktok": ["tiktok"], "youtube": ["youtube"], "other": ["social", "share", "referral"]}',
+    facebook_keywords = fields.Char(
+        string='Facebook Keywords',
+        help='Keywords to identify Facebook traffic (comma-separated)',
+        config_parameter='wa_marketing_automation.facebook_keywords',
+        default='facebook,fb',
+    )
+    
+    instagram_keywords = fields.Char(
+        string='Instagram Keywords',
+        help='Keywords to identify Instagram traffic (comma-separated)',
+        config_parameter='wa_marketing_automation.instagram_keywords',
+        default='instagram,ig',
+    )
+    
+    twitter_keywords = fields.Char(
+        string='Twitter Keywords',
+        help='Keywords to identify Twitter traffic (comma-separated)',
+        config_parameter='wa_marketing_automation.twitter_keywords',
+        default='twitter',
+    )
+    
+    linkedin_keywords = fields.Char(
+        string='LinkedIn Keywords',
+        help='Keywords to identify LinkedIn traffic (comma-separated)',
+        config_parameter='wa_marketing_automation.linkedin_keywords',
+        default='linkedin',
+    )
+    
+    tiktok_keywords = fields.Char(
+        string='TikTok Keywords',
+        help='Keywords to identify TikTok traffic (comma-separated)',
+        config_parameter='wa_marketing_automation.tiktok_keywords',
+        default='tiktok',
+    )
+    
+    youtube_keywords = fields.Char(
+        string='YouTube Keywords',
+        help='Keywords to identify YouTube traffic (comma-separated)',
+        config_parameter='wa_marketing_automation.youtube_keywords',
+        default='youtube',
+    )
+    
+    other_social_keywords = fields.Char(
+        string='Other Social Keywords',
+        help='Keywords to identify other social media traffic (comma-separated)',
+        config_parameter='wa_marketing_automation.other_social_keywords',
+        default='social,share,referral',
     )
     
     # BNPL Usage Frequency Thresholds
@@ -1110,6 +1196,42 @@ class ResConfigSettings(models.TransientModel):
         }
 
     @api.model
+    def _get_combined_keywords(self, keyword_strings):
+        """Combine keywords from multiple field strings into a single list
+        
+        Args:
+            keyword_strings: List of comma-separated keyword strings
+        Returns: List of cleaned keywords
+        """
+        combined = []
+        for keyword_string in keyword_strings:
+            if keyword_string:
+                keywords = [k.strip() for k in keyword_string.split(',') if k.strip()]
+                combined.extend(keywords)
+        return combined
+    
+    @api.model
+    def _get_social_platform_keywords(self):
+        """Get social platform keywords from individual fields
+        
+        Returns: {"platform": ["keyword1", "keyword2"]}
+        """
+        import json
+        params = self.env['ir.config_parameter'].sudo()
+        
+        result = {
+            'facebook': [k.strip() for k in params.get_param('wa_marketing_automation.facebook_keywords', 'facebook,fb').split(',') if k.strip()],
+            'instagram': [k.strip() for k in params.get_param('wa_marketing_automation.instagram_keywords', 'instagram,ig').split(',') if k.strip()],
+            'twitter': [k.strip() for k in params.get_param('wa_marketing_automation.twitter_keywords', 'twitter').split(',') if k.strip()],
+            'linkedin': [k.strip() for k in params.get_param('wa_marketing_automation.linkedin_keywords', 'linkedin').split(',') if k.strip()],
+            'tiktok': [k.strip() for k in params.get_param('wa_marketing_automation.tiktok_keywords', 'tiktok').split(',') if k.strip()],
+            'youtube': [k.strip() for k in params.get_param('wa_marketing_automation.youtube_keywords', 'youtube').split(',') if k.strip()],
+            'other': [k.strip() for k in params.get_param('wa_marketing_automation.other_social_keywords', 'social,share,referral').split(',') if k.strip()],
+        }
+        
+        return json.dumps(result)
+    
+    @api.model
     def get_analytics_config(self):
         """Get analytics configuration values"""
         params = self.env['ir.config_parameter'].sudo()
@@ -1128,10 +1250,22 @@ class ResConfigSettings(models.TransientModel):
             'enable_website_engagement': params.get_param('wa_marketing_automation.enable_website_engagement', 'True') == 'True',
             'enable_whatsapp_engagement': params.get_param('wa_marketing_automation.enable_whatsapp_engagement', 'True') == 'True',
             
-            # Keywords
-            'eco_friendly_keywords': params.get_param('wa_marketing_automation.eco_friendly_keywords', 'eco,organic,sustainable,green,bio,natural').split(','),
-            'social_responsibility_keywords': params.get_param('wa_marketing_automation.social_responsibility_keywords', 'fair,ethical,charity,community,social').split(','),
-            'bnpl_keywords': params.get_param('wa_marketing_automation.bnpl_keywords', 'installment,split,bnpl,klarna,afterpay,sezzle,affirm').split(','),
+            # Keywords (combined from separate fields)
+            'eco_friendly_keywords': self._get_combined_keywords([
+                params.get_param('wa_marketing_automation.eco_keywords', 'eco,green'),
+                params.get_param('wa_marketing_automation.organic_keywords', 'organic,bio'),
+                params.get_param('wa_marketing_automation.sustainable_keywords', 'sustainable,natural'),
+            ]),
+            'social_responsibility_keywords': self._get_combined_keywords([
+                params.get_param('wa_marketing_automation.fair_trade_keywords', 'fair,ethical'),
+                params.get_param('wa_marketing_automation.charity_keywords', 'charity,community'),
+                params.get_param('wa_marketing_automation.social_cause_keywords', 'social'),
+            ]),
+            'bnpl_keywords': self._get_combined_keywords([
+                params.get_param('wa_marketing_automation.installment_keywords', 'installment,split'),
+                params.get_param('wa_marketing_automation.bnpl_service_keywords', 'bnpl,klarna,afterpay'),
+                params.get_param('wa_marketing_automation.payment_plan_keywords', 'sezzle,affirm'),
+            ]),
             
             # Premium thresholds
             'premium_threshold_luxury': float(params.get_param('wa_marketing_automation.premium_threshold_luxury', '500.0')),
@@ -1215,7 +1349,7 @@ class ResConfigSettings(models.TransientModel):
             
             # Social commerce
             'social_conversion_rate_multiplier': float(params.get_param('wa_marketing_automation.social_conversion_rate_multiplier', '0.8')),
-            'social_platform_keywords': params.get_param('wa_marketing_automation.social_platform_keywords', '{"facebook": ["facebook", "fb"], "instagram": ["instagram", "ig"], "twitter": ["twitter"], "linkedin": ["linkedin"], "tiktok": ["tiktok"], "youtube": ["youtube"], "other": ["social", "share", "referral"]}'),
+            'social_platform_keywords': self._get_social_platform_keywords(),
             
             # BNPL thresholds
             'bnpl_rarely_threshold': int(params.get_param('wa_marketing_automation.bnpl_rarely_threshold', '2')),

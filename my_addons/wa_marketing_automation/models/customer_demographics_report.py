@@ -132,77 +132,34 @@ class CustomerDemographicsReport(models.Model):
                         ELSE 0
                     END as average_order_value,
                     
-                    -- Recency Segmentation
+                    -- Recency Segmentation (based on corrected RFM recency_score)
                     CASE 
-                        WHEN sales_data.last_purchase_date IS NULL THEN 'new'
-                        WHEN EXTRACT(DAYS FROM (CURRENT_TIMESTAMP - sales_data.last_purchase_date)) <= 30 THEN 'active'
-                        WHEN EXTRACT(DAYS FROM (CURRENT_TIMESTAMP - sales_data.last_purchase_date)) <= 90 THEN 'recent'
-                        WHEN EXTRACT(DAYS FROM (CURRENT_TIMESTAMP - sales_data.last_purchase_date)) <= 365 THEN 'dormant'
-                        ELSE 'lost'
+                        WHEN rp.customer_rank = 0 THEN 'new'  -- No purchases
+                        WHEN COALESCE(rp.recency_score, 1) >= 4 THEN 'active'    -- Score 4-5
+                        WHEN COALESCE(rp.recency_score, 1) = 3 THEN 'recent'     -- Score 3
+                        WHEN COALESCE(rp.recency_score, 1) = 2 THEN 'dormant'    -- Score 2
+                        ELSE 'lost'  -- Score 1
                     END as recency_segment,
                     
-                    -- Frequency Segmentation
+                    -- Frequency Segmentation (based on corrected RFM frequency_score)
                     CASE 
-                        WHEN COALESCE(sales_data.total_orders, 0) >= 10 THEN 'high'
-                        WHEN COALESCE(sales_data.total_orders, 0) >= 5 THEN 'medium'
-                        WHEN COALESCE(sales_data.total_orders, 0) >= 2 THEN 'low'
-                        WHEN COALESCE(sales_data.total_orders, 0) = 1 THEN 'one_time'
-                        ELSE 'none'
+                        WHEN COALESCE(rp.frequency_score, 0) >= 4 THEN 'high'      -- Score 4-5
+                        WHEN COALESCE(rp.frequency_score, 0) = 3 THEN 'medium'     -- Score 3
+                        WHEN COALESCE(rp.frequency_score, 0) = 2 THEN 'low'        -- Score 2
+                        WHEN COALESCE(rp.frequency_score, 0) = 1 THEN 'one_time'   -- Score 1
+                        ELSE 'none'  -- Score 0
                     END as frequency_segment,
                     
-                    -- Monetary Segmentation (will be computed via percentiles)
+                    -- Monetary Segmentation (based on corrected RFM monetary_score)
                     CASE 
-                        WHEN COALESCE(sales_data.total_spent, 0) = 0 THEN 'no_value'
-                        WHEN COALESCE(sales_data.total_spent, 0) >= (
-                            SELECT PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY total_spent) 
-                            FROM (
-                                SELECT partner_id, SUM(price_subtotal) as total_spent
-                                FROM sale_order_line sol
-                                JOIN sale_order so ON sol.order_id = so.id
-                                WHERE so.state IN ('sale', 'done')
-                                GROUP BY partner_id
-                            ) spent_data
-                        ) THEN 'high_value'
-                        WHEN COALESCE(sales_data.total_spent, 0) >= (
-                            SELECT PERCENTILE_CONT(0.2) WITHIN GROUP (ORDER BY total_spent) 
-                            FROM (
-                                SELECT partner_id, SUM(price_subtotal) as total_spent
-                                FROM sale_order_line sol
-                                JOIN sale_order so ON sol.order_id = so.id
-                                WHERE so.state IN ('sale', 'done')
-                                GROUP BY partner_id
-                            ) spent_data
-                        ) THEN 'medium_value'
-                        ELSE 'low_value'
+                        WHEN COALESCE(rp.monetary_score, 0) >= 4 THEN 'high_value'   -- Score 4-5
+                        WHEN COALESCE(rp.monetary_score, 0) >= 2 THEN 'medium_value' -- Score 2-3
+                        WHEN COALESCE(rp.monetary_score, 0) = 1 THEN 'low_value'     -- Score 1
+                        ELSE 'no_value'  -- Score 0
                     END as monetary_segment,
                     
-                    -- Customer Score (RFM Score calculation)
-                    CASE 
-                        WHEN sales_data.last_purchase_date IS NULL THEN 1
-                        ELSE (
-                            -- Recency Score (1-3)
-                            CASE 
-                                WHEN EXTRACT(DAYS FROM (CURRENT_TIMESTAMP - sales_data.last_purchase_date)) <= 30 THEN 3
-                                WHEN EXTRACT(DAYS FROM (CURRENT_TIMESTAMP - sales_data.last_purchase_date)) <= 90 THEN 2
-                                ELSE 1
-                            END +
-                            -- Frequency Score (1-3)
-                            CASE 
-                                WHEN COALESCE(sales_data.total_orders, 0) >= 10 THEN 3
-                                WHEN COALESCE(sales_data.total_orders, 0) >= 5 THEN 2
-                                WHEN COALESCE(sales_data.total_orders, 0) >= 1 THEN 1
-                                ELSE 0
-                            END +
-                            -- Monetary Score (1-4)
-                            CASE 
-                                WHEN COALESCE(sales_data.total_spent, 0) >= 1000 THEN 4
-                                WHEN COALESCE(sales_data.total_spent, 0) >= 500 THEN 3
-                                WHEN COALESCE(sales_data.total_spent, 0) >= 100 THEN 2
-                                WHEN COALESCE(sales_data.total_spent, 0) > 0 THEN 1
-                                ELSE 0
-                            END
-                        )
-                    END as customer_score,
+                    -- Customer Score (use corrected RFM score directly)
+                    COALESCE(rp.rfm_score, 0) as customer_score,
                     
                     -- Marketing Insights (temporarily set to 0 - will add back later)
                     0 as whatsapp_campaigns_sent,

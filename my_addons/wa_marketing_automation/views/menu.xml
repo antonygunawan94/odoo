@@ -5,29 +5,39 @@
         web_icon="wa_marketing_automation,static/description/icon.png"
     />
 
+    <!-- Campaigns Menu (now a parent menu) -->
     <menuitem id="wa_marketing_automation_menu_campaign"
         name="Campaigns"
         parent="wa_marketing_automation_menu_base"
+        sequence="10"
+    />
+    
+    <menuitem id="wa_marketing_automation_menu_campaign_list"
+        name="Campaign Management"
+        parent="wa_marketing_automation_menu_campaign"
         action="wa_marketing_automation.wa_marketing_automation_campaign_action"
+        sequence="10"
     />
 
     <menuitem id="wa_marketing_automation_menu_customer_segmentation"
         name="Customer Segmentations"
         parent="wa_marketing_automation_menu_base"
         action="wa_marketing_automation.wa_marketing_automation_customer_segmentation_action"
+        sequence="20"
     />
 
     <menuitem id="wa_marketing_automation_menu_whatsapp_api_log"
-        name="Whatsapp API Logs"
-        parent="wa_marketing_automation_menu_base"
+        name="WhatsApp API Logs"
+        parent="wa_marketing_automation_menu_campaign"
         action="wa_marketing_automation.wa_marketing_automation_whatsapp_api_log_action"
+        sequence="20"
     />
 
     <!-- Reports Menu -->
     <menuitem id="wa_marketing_automation_menu_reports"
         name="Reports"
         parent="wa_marketing_automation_menu_base"
-        sequence="50"
+        sequence="40"
     />
 
     <menuitem id="wa_marketing_automation_menu_customer_demographics_report"
@@ -67,9 +77,9 @@
 
     <menuitem id="wa_marketing_automation_menu_scheduled_actions"
         name="Scheduled Actions"
-        parent="wa_marketing_automation_menu_base"
+        parent="wa_marketing_automation_menu_campaign"
         action="wa_marketing_automation.wa_marketing_automation_scheduled_actions_action"
-        sequence="90"
+        sequence="30"
     />
 
     <!-- Configuration Menu - Opens Settings > General Settings > WhatsApp Marketing Automation -->
@@ -84,7 +94,7 @@
         name="Advanced Analytics Filter"
         parent="wa_marketing_automation_menu_base"
         action="wa_marketing_automation.action_advanced_analytics_filter"
-        sequence="25"
+        sequence="30"
     />
 
 </odoo>

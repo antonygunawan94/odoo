@@ -7,19 +7,19 @@
         <field name="model">wa_marketing_automation.cohort_analysis_report</field>
         <field name="arch" type="xml">
             <list string="Cohort Analysis Report" create="false" edit="false" delete="false">
-                <field name="cohort_period_month" />
-                <field name="period_number" />
-                <field name="customers_acquired" />
-                <field name="customers_active" />
-                <field name="retention_rate" decoration-success="retention_rate >= 70"
+                <field name="cohort_period_month" string="Cohort Month" width="120px" />
+                <field name="period_number" string="Period" width="70px" />
+                <field name="customers_acquired" string="Acquired" width="80px" />
+                <field name="customers_active" string="Active" width="70px" />
+                <field name="retention_rate" string="Retention %" width="90px" decoration-success="retention_rate >= 70"
                     decoration-warning="retention_rate >= 40 and retention_rate &lt; 70"
                     decoration-danger="retention_rate &lt; 40" />
-                <field name="total_revenue" />
-                <field name="average_revenue_per_customer" />
-                <field name="cumulative_revenue" />
-                <field name="avg_engagement_score" />
-                <field name="churn_risk_customers" decoration-danger="churn_risk_customers > 0" />
-                <field name="customer_lifetime_value" />
+                <field name="total_revenue" string="Revenue" width="100px" />
+                <field name="average_revenue_per_customer" string="Avg Rev/Cust" width="110px" />
+                <field name="cumulative_revenue" string="Cumulative Rev" width="120px" />
+                <field name="avg_engagement_score" string="Engagement" width="90px" />
+                <field name="churn_risk_customers" string="High Risk" width="80px" decoration-danger="churn_risk_customers > 0" />
+                <field name="customer_lifetime_value" string="CLV" width="90px" />
             </list>
         </field>
     </record>
@@ -75,17 +75,21 @@
                     </group>
 
                     <div class="alert alert-info" role="alert">
-                        <strong>Cohort Analysis Insights:</strong>
-                        <br />
+                        <strong>📊 Cohort Analysis Explained:</strong>
+                        <br /><br />
+                        <strong>What you're seeing:</strong>
                         <ul>
-                            <li><strong>Retention Rate:</strong> Percentage of customers from this
-                                cohort still active in this period</li>
-                            <li><strong>Period Number:</strong> Number of months since customer
-                                acquisition (0 = acquisition month)</li>
-                            <li><strong>Customer Lifetime Value:</strong> Average revenue per
-                                customer over their entire relationship</li>
-                            <li><strong>Churn Risk:</strong> Number of customers at high risk of
-                                churning</li>
+                            <li><strong>Multiple rows per cohort month:</strong> Each row shows how the same group of customers performed in different months</li>
+                            <li><strong>Period Number:</strong> Months since acquisition (0 = acquisition month, 1 = next month, etc.)</li>
+                            <li><strong>Retention Rate:</strong> % of original cohort customers still active in this period</li>
+                            <li><strong>Example:</strong> 2025-05 cohort with Period 0, 1, 2 shows May customers' behavior in May, June, July</li>
+                        </ul>
+                        <br />
+                        <strong>Key Metrics:</strong>
+                        <ul>
+                            <li><strong>CLV:</strong> Customer Lifetime Value - average revenue per customer</li>
+                            <li><strong>High Risk:</strong> Number of customers likely to churn</li>
+                            <li><strong>Cumulative Rev:</strong> Total revenue from cohort up to this period</li>
                         </ul>
                     </div>
                 </sheet>
@@ -168,24 +172,25 @@
         <field name="context">{'search_default_recent_cohorts': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Cohort Analysis Report
+                📊 Cohort Analysis Report
             </p>
-            <p> Track customer behavior over time by analyzing cohorts (groups of customers acquired
-                in the same period). <br />
-                    <strong>Key Insights:</strong>
-                    <ul>
-                    <li><strong>Retention Rates:</strong> How many customers stay active over time</li>
-                    <li><strong>Revenue Patterns:</strong> How revenue evolves for each cohort</li>
-                    <li><strong>Customer Lifetime Value:</strong> Average value of customers by
-                acquisition period</li>
-                    <li><strong>Churn Risk:</strong> Early warning signs of customer attrition</li>
+            <p><strong>What is Cohort Analysis?</strong><br />
+                Track how groups of customers (acquired in the same month) behave over time. Each cohort appears in multiple rows showing their performance in different months.
+            </p>
+            <p><strong>🔍 Understanding the Data:</strong>
+                <ul>
+                    <li><strong>Period 0:</strong> Performance in acquisition month</li>
+                    <li><strong>Period 1:</strong> Performance 1 month after acquisition</li>
+                    <li><strong>Period 2:</strong> Performance 2 months after acquisition</li>
+                    <li><strong>Retention Rate:</strong> % of original customers still active</li>
                 </ul>
             </p>
-            <p> Use this report to: <ul>
-                    <li>Identify the most valuable customer acquisition periods</li>
-                    <li>Understand customer lifecycle patterns</li>
-                    <li>Optimize retention strategies</li>
-                    <li>Predict future revenue from existing cohorts</li>
+            <p><strong>🎯 Use this to:</strong>
+                <ul>
+                    <li>Identify which acquisition months brought the best long-term customers</li>
+                    <li>See how quickly customers drop off after acquisition</li>
+                    <li>Predict future revenue from existing customer groups</li>
+                    <li>Optimize retention strategies based on patterns</li>
                 </ul>
             </p>
         </field>

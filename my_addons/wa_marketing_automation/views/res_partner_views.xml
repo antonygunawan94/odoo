@@ -68,6 +68,11 @@
                                     <strong>Use this to:</strong> Identify your most valuable customers for VIP treatment and find at-risk customers who need special attention
                                 </div>
                             </group>
+                            <group name="rfm_thresholds">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="rfm_thresholds_display" nolabel="1" readonly="1"/>
+                                </div>
+                            </group>
                         </page>
 
                         <!-- Engagement Analytics Sub-tab -->
@@ -112,6 +117,16 @@
                                     <strong>Use this to:</strong> Choose the best communication channel for each customer and identify highly engaged customers for special offers
                                 </div>
                             </group>
+                            <group name="engagement_calculation_details">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="engagement_calculation_display" nolabel="1" readonly="1"/>
+                                </div>
+                            </group>
+                            <group name="journey_multichannel_calculation_details">
+                                <div class="alert alert-info" role="alert">
+                                    <field name="journey_multichannel_calculation_display" nolabel="1" readonly="1"/>
+                                </div>
+                            </group>
                         </page>
 
                         <!-- Churn Prediction Sub-tab -->
@@ -146,6 +161,11 @@
                                     <strong>Use this to:</strong> Identify customers who need immediate attention with special offers, personal outreach, or loyalty programs to prevent them from leaving
                                 </div>
                             </group>
+                            <group name="churn_calculation_details">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="churn_calculation_display" nolabel="1" readonly="1"/>
+                                </div>
+                            </group>
                         </page>
 
                         <!-- Values-Driven Propensity Sub-tab -->
@@ -170,6 +190,11 @@
                                     </ul>
                                     <strong>Data sources:</strong> Analysis of their purchase history looking for eco-friendly, premium, and socially responsible products<br /><br />
                                     <strong>Use this to:</strong> Recommend products that match their values, create targeted marketing campaigns, and personalize product suggestions
+                                </div>
+                            </group>
+                            <group name="values_calculation_details">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="values_propensity_calculation_display" nolabel="1" readonly="1"/>
                                 </div>
                             </group>
                         </page>
@@ -200,6 +225,11 @@
                                     </ul>
                                     <strong>Data sources:</strong> Order source tracking, UTM parameters, referral URLs, and social media campaign data<br /><br />
                                     <strong>Use this to:</strong> Focus your social media marketing on the platforms where this customer is most active and likely to buy
+                                </div>
+                            </group>
+                            <group name="social_calculation_details">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="social_commerce_calculation_display" nolabel="1" readonly="1"/>
                                 </div>
                             </group>
                         </page>
@@ -236,16 +266,22 @@
                             <group name="bnpl_mobile_help">
                                 <div class="alert alert-info" role="alert">
                                     <strong>Payment &amp; Shopping Preferences:</strong><br />
-                                    This shows how this customer prefers to pay and what devices they use for shopping.<br /><br />
+                                    This shows payment preferences and device information for this customer.<br /><br />
                                     <strong>What we analyze:</strong>
                                     <ul>
-                                        <li><strong>BNPL Usage:</strong> How often they use Buy Now Pay Later services like Klarna, Afterpay, or installment plans</li>
-                                        <li><strong>Mobile Device Preference:</strong> Whether they prefer shopping on smartphone, tablet, or desktop computer</li>
-                                        <li><strong>Mobile Commerce Score:</strong> How much they prefer mobile shopping vs desktop (0-100)</li>
-                                        <li><strong>Average Order Values:</strong> How much they typically spend when shopping on different devices</li>
+                                        <li><strong>BNPL Usage:</strong> How often they use Buy Now Pay Later services like Klarna, Afterpay, or installment plans (based on payment terms)</li>
+                                        <li><strong>Mobile Device Preference:</strong> <span style="color: #d73502;"><strong>Currently Disabled</strong></span> - Cannot determine from orders alone</li>
+                                        <li><strong>Mobile Commerce Score:</strong> <span style="color: #d73502;"><strong>Currently Disabled</strong></span> - Sale orders ≠ device usage</li>
+                                        <li><strong>Average Order Values:</strong> <span style="color: #d73502;"><strong>Currently Disabled</strong></span> - Cannot separate by device without real tracking</li>
                                     </ul>
-                                    <strong>Data sources:</strong> Payment method analysis, device detection from orders, shopping session data, and purchase timing patterns<br /><br />
-                                    <strong>Use this to:</strong> Optimize your mobile website, offer the right payment options, and time your marketing for when they're most likely to shop
+                                    <strong>Data sources:</strong> Payment method analysis from order payment terms (BNPL only)<br /><br />
+                                    <strong>Mobile metrics disabled because:</strong> Order timing and amounts don't indicate device type. Customers can order offline, by phone, in-store, etc.<br />
+                                    <strong>Use BNPL data to:</strong> Offer appropriate payment options and understand customer payment preferences
+                                </div>
+                            </group>
+                            <group name="bnpl_calculation_details">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="bnpl_calculation_display" nolabel="1" readonly="1"/>
                                 </div>
                             </group>
                         </page>

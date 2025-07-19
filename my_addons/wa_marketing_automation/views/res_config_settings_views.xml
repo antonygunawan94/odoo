@@ -1,69 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        
+
         <!-- WhatsApp Marketing Automation Settings View -->
         <record id="res_config_settings_view_form" model="ir.ui.view">
             <field name="name">res.config.settings.view.form.inherit.wa_marketing_automation</field>
             <field name="model">res.config.settings</field>
-            <field name="priority" eval="15"/>
-            <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+            <field name="priority" eval="15" />
+            <field name="inherit_id" ref="base.res_config_settings_view_form" />
             <field name="arch" type="xml">
                 <xpath expr="//form" position="inside">
-                    <app data-string="WhatsApp Marketing Automation" 
-                         string="WhatsApp Marketing Automation" 
-                         name="wa_marketing_automation" 
-                         groups="base.group_user">
-                        
+                    <app data-string="WhatsApp Marketing Automation"
+                        string="WhatsApp Marketing Automation"
+                        name="wa_marketing_automation"
+                        groups="base.group_user">
+
                         <!-- WhatsApp API Configuration Block -->
                         <block title="WhatsApp API Configuration">
-                            <setting string="WhatsApp Base API URL" help="Configure your WhatsApp Business API connection settings">
-                                <field name="whatsapp_base_url"/>
+                            <setting string="WhatsApp Base API URL"
+                                help="Configure your WhatsApp Business API connection settings">
+                                <field name="whatsapp_base_url" />
                             </setting>
-                            <setting string="Access Token" help="API access token for WhatsApp service authentication">
-                                <field name="whatsapp_access_token" password="True"/>
+                            <setting string="Access Token"
+                                help="API access token for WhatsApp service authentication">
+                                <field name="whatsapp_access_token" password="True" />
                             </setting>
-                            <setting string="Send Message URL Path" help="API endpoint path for sending messages">
-                                <field name="whatsapp_send_path_url"/>
+                            <setting string="Send Message URL Path"
+                                help="API endpoint path for sending messages">
+                                <field name="whatsapp_send_path_url" />
                             </setting>
-                            <setting string="Health Check URL Path" help="API endpoint path for health checks">
-                                <field name="whatsapp_health_check_path_url"/>
+                            <setting string="Health Check URL Path"
+                                help="API endpoint path for health checks">
+                                <field name="whatsapp_health_check_path_url" />
                             </setting>
-                            <setting string="Test Customer" help="Customer record used for testing message templates">
-                                <field name="whatsapp_test_customer_id" options="{'no_create': True}"/>
+                            <setting string="Test Customer"
+                                help="Customer record used for testing message templates">
+                                <field name="whatsapp_test_customer_id"
+                                    options="{'no_create': True}" />
                             </setting>
-                            <setting string="Connection Test" help="Test your WhatsApp API connection">
-                                <button name="action_test_whatsapp_connection" 
-                                        string="Test Connection" 
-                                        type="object" 
-                                        class="btn-primary"
-                                        icon="fa-plug"/>
+                            <setting string="Connection Test"
+                                help="Test your WhatsApp API connection">
+                                <button name="action_test_whatsapp_connection"
+                                    string="Test Connection"
+                                    type="object"
+                                    class="btn-primary"
+                                    icon="fa-plug" />
                             </setting>
                         </block>
 
                         <!-- Analytics Configuration Block -->
                         <block title="Analytics Package Selection">
-                            <setting string="Core Analytics Package" help="Essential customer metrics including RFM segmentation, engagement tracking, journey mapping, and churn prediction">
-                                <field name="analytics_core_enabled"/>
-                                <div class="content-group mt16" invisible="not analytics_core_enabled">
+                            <setting string="Core Analytics Package"
+                                help="Essential customer metrics including RFM segmentation, engagement tracking, journey mapping, and churn prediction">
+                                <field name="analytics_core_enabled" />
+                                <div class="content-group mt16"
+                                    invisible="not analytics_core_enabled">
                                     <div class="text-muted">
-                                        Includes: RFM Analysis, Engagement Scoring, Customer Journey, Churn Prediction
+                                        Includes: RFM Analysis, Engagement Scoring, Customer
+                                        Journey, Churn Prediction
                                     </div>
                                 </div>
                             </setting>
-                            <setting string="Behavioral Analytics Package" help="Customer preference insights including values-driven analysis, eco-friendly scoring, and premium propensity">
-                                <field name="analytics_behavioral_enabled"/>
-                                <div class="content-group mt16" invisible="not analytics_behavioral_enabled">
+                            <setting string="Behavioral Analytics Package"
+                                help="Customer preference insights including values-driven analysis, eco-friendly scoring, and premium propensity">
+                                <field name="analytics_behavioral_enabled" />
+                                <div class="content-group mt16"
+                                    invisible="not analytics_behavioral_enabled">
                                     <div class="text-muted">
-                                        Includes: Everything in Core + Values-Driven Analytics, Eco-Friendly Score, Premium Propensity
+                                        Includes: Everything in Core + Values-Driven Analytics,
+                                        Eco-Friendly Score, Premium Propensity
                                     </div>
                                 </div>
                             </setting>
-                            <setting string="Digital Marketing Analytics Package" help="Digital marketing insights including social media tracking, campaign attribution, mobile commerce, and payment preferences">
-                                <field name="analytics_commerce_enabled"/>
-                                <div class="content-group mt16" invisible="not analytics_commerce_enabled">
+                            <setting string="Digital Marketing Analytics Package"
+                                help="Digital marketing insights including social media tracking, campaign attribution, mobile commerce, and payment preferences">
+                                <field name="analytics_commerce_enabled" />
+                                <div class="content-group mt16"
+                                    invisible="not analytics_commerce_enabled">
                                     <div class="text-muted">
-                                        Includes: Everything in Behavioral + Social Media Tracking, Campaign Attribution, Mobile Commerce
+                                        Includes: Everything in Behavioral + Social Media Tracking,
+                                        Campaign Attribution, Mobile Commerce
                                     </div>
                                 </div>
                             </setting>
@@ -71,35 +87,36 @@
 
                         <!-- Package Management Block -->
                         <block title="Package Management">
-                            <setting string="Quick Package Setup" help="One-click package configuration">
+                            <setting string="Quick Package Setup"
+                                help="One-click package configuration">
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <button name="action_enable_core_package" 
-                                                string="Enable Core" 
-                                                type="object" 
-                                                class="btn-success w-100"
-                                                icon="fa-check"/>
+                                        <button name="action_enable_core_package"
+                                            string="Enable Core"
+                                            type="object"
+                                            class="btn-success w-100"
+                                            icon="fa-check" />
                                     </div>
                                     <div class="col-md-3">
-                                        <button name="action_enable_behavioral_package" 
-                                                string="Enable Behavioral" 
-                                                type="object" 
-                                                class="btn-warning w-100"
-                                                icon="fa-star"/>
+                                        <button name="action_enable_behavioral_package"
+                                            string="Enable Behavioral"
+                                            type="object"
+                                            class="btn-warning w-100"
+                                            icon="fa-star" />
                                     </div>
                                     <div class="col-md-3">
-                                        <button name="action_enable_commerce_package" 
-                                                string="Enable Digital Marketing" 
-                                                type="object" 
-                                                class="btn-info w-100"
-                                                icon="fa-diamond"/>
+                                        <button name="action_enable_commerce_package"
+                                            string="Enable Digital Marketing"
+                                            type="object"
+                                            class="btn-info w-100"
+                                            icon="fa-diamond" />
                                     </div>
                                     <div class="col-md-3">
-                                        <button name="action_disable_all_optional" 
-                                                string="Disable All Optional" 
-                                                type="object" 
-                                                class="btn-secondary w-100"
-                                                icon="fa-times"/>
+                                        <button name="action_disable_all_optional"
+                                            string="Disable All Optional"
+                                            type="object"
+                                            class="btn-secondary w-100"
+                                            icon="fa-times" />
                                     </div>
                                 </div>
                             </setting>
@@ -107,165 +124,283 @@
 
                         <!-- Core Analytics Settings -->
                         <block title="Core Analytics Settings">
-                            <setting string="RFM Analysis" help="Recency, Frequency, Monetary customer segmentation (Always Enabled)">
-                                <field name="enable_rfm_analysis" readonly="1"/>
+                            <setting string="RFM Analysis"
+                                help="Recency, Frequency, Monetary customer segmentation (Always Enabled)">
+                                <field name="enable_rfm_analysis" readonly="1" />
                             </setting>
-                            <setting string="Engagement Scoring" help="Shows how actively customers interact with your business. Looks at email opens and clicks, website visits and purchases, and WhatsApp message responses over the last 90 days. Customers who engage more across multiple channels get higher scores.">
-                                <field name="enable_engagement_scoring"/>
+                            <setting string="Engagement Scoring"
+                                help="Shows how actively customers interact with your business. Looks at email opens and clicks, website visits and purchases, and WhatsApp message responses over the last 90 days. Customers who engage more across multiple channels get higher scores.">
+                                <field name="enable_engagement_scoring" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_engagement_scoring">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label for="email_engagement_weight"
+                                                class="o_light_label">Email Weight (%)</label>
+                                            <field name="email_engagement_weight" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="website_engagement_weight"
+                                                class="o_light_label">Website Weight (%)</label>
+                                            <field name="website_engagement_weight" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="whatsapp_engagement_weight"
+                                                class="o_light_label">WhatsApp Weight (%)</label>
+                                            <field name="whatsapp_engagement_weight" />
+                                        </div>
+                                    </div>
+                                </div>
                             </setting>
-                            <setting string="Email Engagement" help="Tracks how customers respond to your email campaigns. Counts email opens, clicks, and replies over the last 90 days. More interactions mean higher engagement scores, showing customers who are most interested in your email marketing." invisible="not enable_engagement_scoring">
-                                <field name="enable_email_engagement"/>
+                            <setting string="Email Engagement"
+                                help="Tracks how customers respond to your email campaigns. Counts email opens, clicks, and replies over the last 90 days. More interactions mean higher engagement scores, showing customers who are most interested in your email marketing."
+                                invisible="not enable_engagement_scoring">
+                                <field name="enable_email_engagement" />
                             </setting>
-                            <setting string="WhatsApp Engagement" help="Measures how actively customers participate in your WhatsApp campaigns. Counts participation in completed and ongoing WhatsApp campaigns, plus response rates to messages. Active participants get higher scores." invisible="not enable_engagement_scoring">
-                                <field name="enable_whatsapp_engagement"/>
+                            <setting string="WhatsApp Engagement"
+                                help="Measures how actively customers participate in your WhatsApp campaigns. Counts participation in completed and ongoing WhatsApp campaigns, plus response rates to messages. Active participants get higher scores."
+                                invisible="not enable_engagement_scoring">
+                                <field name="enable_whatsapp_engagement" />
                             </setting>
-                            <setting string="Website Engagement" help="Tracks how often customers visit your website and make purchases. Based on order frequency and recency over the last 90 days. Customers with more recent and frequent orders get higher scores." invisible="not enable_engagement_scoring">
-                                <field name="enable_website_engagement"/>
+                            <setting string="Website Engagement"
+                                help="Tracks how often customers visit your website and make purchases. Based on order frequency and recency over the last 90 days. Customers with more recent and frequent orders get higher scores."
+                                invisible="not enable_engagement_scoring">
+                                <field name="enable_website_engagement" />
                             </setting>
-                            <setting string="Customer Journey Tracking" help="Tracks where customers are in their relationship with your business. Based on purchase history and time since last order: new prospects who haven't bought, first-time buyers, active customers, loyal repeat buyers, and dormant customers who haven't purchased recently.">
-                                <field name="enable_customer_journey"/>
+                            <setting string="Customer Journey Tracking"
+                                help="Tracks where customers are in their relationship with your business. Based on purchase history and time since last order: new prospects who haven't bought, first-time buyers, active customers, loyal repeat buyers, and dormant customers who haven't purchased recently.">
+                                <field name="enable_customer_journey" />
                             </setting>
-                            <setting string="Churn Prediction" help="Identifies customers who might stop buying from you soon. Analyzes how recently they purchased, how often they buy, their engagement with emails and messages, and their overall activity pattern. Customers with declining activity get higher risk scores.">
-                                <field name="enable_churn_prediction"/>
+                            <setting string="Churn Prediction"
+                                help="Identifies customers who might stop buying from you soon. Analyzes how recently they purchased, how often they buy, their engagement with emails and messages, and their overall activity pattern. Customers with declining activity get higher risk scores.">
+                                <field name="enable_churn_prediction" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_churn_prediction">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label for="churn_rfm_weight" class="o_light_label">RFM
+                                                Weight (%)</label>
+                                            <field name="churn_rfm_weight" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="churn_engagement_weight"
+                                                class="o_light_label">Engagement Weight (%)</label>
+                                            <field name="churn_engagement_weight" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="churn_journey_weight" class="o_light_label">Journey
+                                                Weight (%)</label>
+                                            <field name="churn_journey_weight" />
+                                        </div>
+                                    </div>
+                                </div>
                             </setting>
-                            <setting string="Multi-Channel Behavior" help="Tracks how customers prefer to interact with your business. Counts how many channels they use (email, phone, website, WhatsApp) and identifies their most active channel based on purchase behavior and message activity.">
-                                <field name="enable_multichannel_behavior"/>
+                            <setting string="Multi-Channel Behavior"
+                                help="Tracks how customers prefer to interact with your business. Counts how many channels they use (email, phone, website, WhatsApp) and identifies their most active channel based on purchase behavior and message activity.">
+                                <field name="enable_multichannel_behavior" />
                             </setting>
-                            <setting string="Cohort Analysis" help="Groups customers by when they first purchased and tracks how many return over time. Shows which months or periods brought the most loyal customers. Based on order dates and customer retention patterns. Use this to identify the best times to acquire customers and measure long-term customer loyalty.">
-                                <field name="enable_cohort_analysis"/>
+                            <setting string="Cohort Analysis"
+                                help="Groups customers by when they first purchased and tracks how many return over time. Shows which months or periods brought the most loyal customers. Based on order dates and customer retention patterns. Use this to identify the best times to acquire customers and measure long-term customer loyalty.">
+                                <field name="enable_cohort_analysis" />
                             </setting>
                         </block>
 
 
                         <!-- Behavioral Analytics Settings -->
                         <block title="Behavioral Analytics Settings">
-                            <setting string="Values-Driven Analytics" help="Identifies customers who prioritize personal values over price when shopping. Analyzes their purchase history to find preferences for eco-friendly products, premium quality items, and socially responsible brands.">
-                                <field name="enable_values_analytics"/>
+                            <setting string="Values-Driven Analytics"
+                                help="Identifies customers who prioritize personal values over price when shopping. Analyzes their purchase history to find preferences for eco-friendly products, premium quality items, and socially responsible brands.">
+                                <field name="enable_values_analytics" />
                             </setting>
-                            <setting string="Eco-Friendly Score" help="Shows how much customers prefer environmentally-friendly products. Calculates the percentage of their purchases that include eco-friendly, organic, sustainable, green, bio, or natural products. Loyal customers get a bonus score." invisible="not enable_values_analytics">
-                                <field name="enable_eco_friendly_score"/>
+                            <setting string="Eco-Friendly Score"
+                                help="Shows how much customers prefer environmentally-friendly products. Calculates the percentage of their purchases that include eco-friendly, organic, sustainable, green, bio, or natural products. Loyal customers get a bonus score."
+                                invisible="not enable_values_analytics">
+                                <field name="enable_eco_friendly_score" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_eco_friendly_score">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="eco_keywords" class="o_light_label">Eco Keywords</label>
+                                            <field name="eco_keywords" placeholder="eco,green" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="organic_keywords" class="o_light_label">Organic Keywords</label>
+                                            <field name="organic_keywords" placeholder="organic,bio" />
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <div class="col-md-12">
+                                            <label for="sustainable_keywords" class="o_light_label">Sustainable Keywords</label>
+                                            <field name="sustainable_keywords" placeholder="sustainable,natural" />
+                                        </div>
+                                    </div>
+                                </div>
                             </setting>
-                            <setting string="Premium Propensity" help="Identifies customers who are willing to pay more for higher-quality products. Based on their average purchase amount: higher spenders get higher scores. Looks at all their order history to determine their typical spending level." invisible="not enable_values_analytics">
-                                <field name="enable_premium_propensity"/>
+                            <setting string="Premium Propensity"
+                                help="Identifies customers who are willing to pay more for higher-quality products. Based on their average purchase amount: higher spenders get higher scores. Looks at all their order history to determine their typical spending level."
+                                invisible="not enable_values_analytics">
+                                <field name="enable_premium_propensity" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_premium_propensity">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="premium_threshold_luxury"
+                                                class="o_light_label">Luxury Threshold</label>
+                                            <field name="premium_threshold_luxury" widget="monetary" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="premium_threshold_premium"
+                                                class="o_light_label">Premium Threshold</label>
+                                            <field name="premium_threshold_premium" widget="monetary" />
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <div class="col-md-6">
+                                            <label for="premium_threshold_mid" class="o_light_label">Mid-Range
+                                                Threshold</label>
+                                            <field name="premium_threshold_mid" widget="monetary" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="premium_threshold_budget_plus"
+                                                class="o_light_label">Budget-Plus Threshold</label>
+                                            <field name="premium_threshold_budget_plus" widget="monetary" />
+                                        </div>
+                                    </div>
+                                </div>
                             </setting>
-                            <setting string="Social Responsibility" help="Shows customers who prefer socially responsible brands. Calculates the percentage of their purchases that include fair trade, ethical, charity, community, or social cause products. Higher percentages mean stronger preference for responsible brands." invisible="not enable_values_analytics">
-                                <field name="enable_social_responsibility"/>
+                            <setting string="Social Responsibility"
+                                help="Shows customers who prefer socially responsible brands. Calculates the percentage of their purchases that include fair trade, ethical, charity, community, or social cause products. Higher percentages mean stronger preference for responsible brands."
+                                invisible="not enable_values_analytics">
+                                <field name="enable_social_responsibility" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_social_responsibility">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="fair_trade_keywords" class="o_light_label">Fair Trade Keywords</label>
+                                            <field name="fair_trade_keywords" placeholder="fair,ethical" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="charity_keywords" class="o_light_label">Charity Keywords</label>
+                                            <field name="charity_keywords" placeholder="charity,community" />
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <div class="col-md-12">
+                                            <label for="social_cause_keywords" class="o_light_label">Social Cause Keywords</label>
+                                            <field name="social_cause_keywords" placeholder="social" />
+                                        </div>
+                                    </div>
+                                </div>
                             </setting>
                         </block>
 
                         <!-- Digital Marketing Analytics Settings -->
                         <block title="Digital Marketing Analytics Settings">
-                            <setting string="Social Commerce Analytics" help="Tracks which customers come from social media platforms. Analyzes order sources to identify customers from Facebook, Instagram, TikTok, LinkedIn, YouTube, and Twitter. Counts how many orders came from each platform.">
-                                <field name="enable_social_commerce"/>
+                            <setting string="Social Commerce Analytics"
+                                help="Tracks which customers come from social media platforms. Analyzes order sources to identify customers from Facebook, Instagram, TikTok, LinkedIn, YouTube, and Twitter. Counts how many orders came from each platform.">
+                                <field name="enable_social_commerce" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_social_commerce">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="facebook_keywords" class="o_light_label">Facebook Keywords</label>
+                                            <field name="facebook_keywords" placeholder="facebook,fb" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="instagram_keywords" class="o_light_label">Instagram Keywords</label>
+                                            <field name="instagram_keywords" placeholder="instagram,ig" />
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <div class="col-md-6">
+                                            <label for="twitter_keywords" class="o_light_label">Twitter Keywords</label>
+                                            <field name="twitter_keywords" placeholder="twitter" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="linkedin_keywords" class="o_light_label">LinkedIn Keywords</label>
+                                            <field name="linkedin_keywords" placeholder="linkedin" />
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <div class="col-md-6">
+                                            <label for="tiktok_keywords" class="o_light_label">TikTok Keywords</label>
+                                            <field name="tiktok_keywords" placeholder="tiktok" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="youtube_keywords" class="o_light_label">YouTube Keywords</label>
+                                            <field name="youtube_keywords" placeholder="youtube" />
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <div class="col-md-12">
+                                            <label for="other_social_keywords" class="o_light_label">Other Social Keywords</label>
+                                            <field name="other_social_keywords" placeholder="social,share,referral" />
+                                        </div>
+                                    </div>
+                                    <div class="text-muted mt-1">
+                                        <small>Enter comma-separated keywords for each platform (e.g., facebook,fb)</small>
+                                    </div>
+                                </div>
                             </setting>
-                            <setting string="UTM Tracking" help="Tracks which specific marketing campaigns, ads, or links bring customers to your store. Analyzes special tracking codes in URLs to show which Facebook ads, Google ads, or email campaigns work best. Based on order sources and campaign tracking data. Use this to see which marketing efforts actually drive sales and where to spend your advertising budget." invisible="not enable_social_commerce">
-                                <field name="enable_utm_tracking"/>
+                            <setting string="UTM Tracking"
+                                help="Tracks which specific marketing campaigns, ads, or links bring customers to your store. Analyzes special tracking codes in URLs to show which Facebook ads, Google ads, or email campaigns work best. Based on order sources and campaign tracking data. Use this to see which marketing efforts actually drive sales and where to spend your advertising budget."
+                                invisible="not enable_social_commerce">
+                                <field name="enable_utm_tracking" />
                             </setting>
-                            <setting string="Social Engagement" help="Measures how actively customers interact with your social media content and how often they click through to buy. Tracks likes, shares, comments, and purchases from social platforms. Based on social media activity and conversion tracking. Use this to create more engaging social content and identify customers who are most responsive to social media marketing." invisible="not enable_social_commerce">
-                                <field name="enable_social_engagement"/>
+                            <setting string="Social Engagement"
+                                help="Measures how actively customers interact with your social media content and how often they click through to buy. Tracks likes, shares, comments, and purchases from social platforms. Based on social media activity and conversion tracking. Use this to create more engaging social content and identify customers who are most responsive to social media marketing."
+                                invisible="not enable_social_commerce">
+                                <field name="enable_social_engagement" />
                             </setting>
-                            <setting string="BNPL Analytics" help="Identifies customers who prefer Buy Now, Pay Later payment options. Looks at payment terms used in their orders to find installment, split payment, or BNPL service usage (like Klarna, Afterpay, Affirm). Frequent users get higher scores.">
-                                <field name="enable_bnpl_analytics"/>
+                            <setting string="BNPL Analytics"
+                                help="Identifies customers who prefer Buy Now, Pay Later payment options. Looks at payment terms used in their orders to find installment, split payment, or BNPL service usage (like Klarna, Afterpay, Affirm). Frequent users get higher scores.">
+                                <field name="enable_bnpl_analytics" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_bnpl_analytics">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="installment_keywords" class="o_light_label">Installment Keywords</label>
+                                            <field name="installment_keywords" placeholder="installment,split" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="bnpl_service_keywords" class="o_light_label">BNPL Service Keywords</label>
+                                            <field name="bnpl_service_keywords" placeholder="bnpl,klarna,afterpay" />
+                                        </div>
+                                    </div>
+                                    <div class="row mt8">
+                                        <div class="col-md-12">
+                                            <label for="payment_plan_keywords" class="o_light_label">Payment Plan Keywords</label>
+                                            <field name="payment_plan_keywords" placeholder="sezzle,affirm" />
+                                        </div>
+                                    </div>
+                                </div>
                             </setting>
-                            <setting string="Mobile Commerce" help="Shows whether customers prefer to shop on mobile devices or desktop computers. Analyzes order timing and amounts to identify mobile shoppers (typically smaller orders placed outside business hours) versus desktop shoppers.">
-                                <field name="enable_mobile_commerce"/>
+                            <setting string="Mobile Commerce"
+                                help="Shows whether customers prefer to shop on mobile devices or desktop computers. Analyzes order timing and amounts to identify mobile shoppers (typically smaller orders placed outside business hours) versus desktop shoppers.">
+                                <field name="enable_mobile_commerce" />
+                                <div class="content-group mt16"
+                                    invisible="not enable_mobile_commerce">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <label for="mobile_order_threshold"
+                                                class="o_light_label">Mobile Order Threshold</label>
+                                            <field name="mobile_order_threshold" />
+                                        </div>
+                                    </div>
+                                </div>
                             </setting>
-                            <setting string="Device Preference" help="Identify primary device usage and optimize marketing content" invisible="not enable_mobile_commerce">
-                                <field name="enable_device_preference"/>
+                            <setting string="Device Preference"
+                                help="Identify primary device usage and optimize marketing content"
+                                invisible="not enable_mobile_commerce">
+                                <field name="enable_device_preference" />
                             </setting>
                         </block>
 
-                        <!-- Advanced Configuration -->
-                        <block title="Advanced Configuration" groups="base.group_no_one">
-                            <setting string="Keywords Configuration" help="Configure keywords and thresholds for analytics calculations">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <label for="eco_friendly_keywords" class="o_light_label">Eco-Friendly Keywords</label>
-                                        <field name="eco_friendly_keywords" class="o_input_full_width" placeholder="eco,organic,sustainable,green,bio,natural"/>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="social_responsibility_keywords" class="o_light_label">Social Responsibility Keywords</label>
-                                        <field name="social_responsibility_keywords" class="o_input_full_width" placeholder="fair,ethical,charity,community,social"/>
-                                    </div>
-                                </div>
-                                <div class="row mt8">
-                                    <div class="col-md-6">
-                                        <label for="bnpl_keywords" class="o_light_label">BNPL Keywords</label>
-                                        <field name="bnpl_keywords" class="o_input_full_width" placeholder="installment,split,bnpl,klarna,afterpay,sezzle,affirm"/>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="email_engagement_period" class="o_light_label">Email Engagement Period (days)</label>
-                                        <field name="email_engagement_period" class="o_input_full_width"/>
-                                    </div>
-                                </div>
-                            </setting>
-                            <setting string="Premium Propensity Thresholds" help="Configure price thresholds for premium product propensity scoring">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="premium_threshold_luxury" class="o_light_label">Luxury Threshold ($)</label>
-                                        <field name="premium_threshold_luxury" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="premium_threshold_premium" class="o_light_label">Premium Threshold ($)</label>
-                                        <field name="premium_threshold_premium" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="premium_threshold_mid" class="o_light_label">Mid-Range Threshold ($)</label>
-                                        <field name="premium_threshold_mid" class="o_input_full_width"/>
-                                    </div>
-                                </div>
-                                <div class="row mt8">
-                                    <div class="col-md-4">
-                                        <label for="premium_threshold_budget_plus" class="o_light_label">Budget-Plus Threshold ($)</label>
-                                        <field name="premium_threshold_budget_plus" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="premium_score_luxury" class="o_light_label">Luxury Score</label>
-                                        <field name="premium_score_luxury" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="premium_score_premium" class="o_light_label">Premium Score</label>
-                                        <field name="premium_score_premium" class="o_input_full_width"/>
-                                    </div>
-                                </div>
-                            </setting>
-                            <setting string="Engagement Scoring Weights" help="Configure weights for engagement scoring calculation">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="email_engagement_weight" class="o_light_label">Email Weight (%)</label>
-                                        <field name="email_engagement_weight" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="website_engagement_weight" class="o_light_label">Website Weight (%)</label>
-                                        <field name="website_engagement_weight" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="whatsapp_engagement_weight" class="o_light_label">WhatsApp Weight (%)</label>
-                                        <field name="whatsapp_engagement_weight" class="o_input_full_width"/>
-                                    </div>
-                                </div>
-                            </setting>
-                            <setting string="Churn Prediction Weights" help="Configure weights for churn prediction calculation">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="churn_rfm_weight" class="o_light_label">RFM Weight (%)</label>
-                                        <field name="churn_rfm_weight" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="churn_engagement_weight" class="o_light_label">Engagement Weight (%)</label>
-                                        <field name="churn_engagement_weight" class="o_input_full_width"/>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="churn_journey_weight" class="o_light_label">Journey Weight (%)</label>
-                                        <field name="churn_journey_weight" class="o_input_full_width"/>
-                                    </div>
-                                </div>
-                            </setting>
-                        </block>
 
                         <!-- Configuration Guide -->
                         <block title="Configuration Guide">
-                            <setting string="Package Overview" help="Quick reference guide for analytics packages">
+                            <setting string="Package Overview"
+                                help="Quick reference guide for analytics packages">
                                 <div class="alert alert-info" role="alert">
                                     <div class="row">
                                         <div class="col-md-4">
