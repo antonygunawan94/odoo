@@ -131,25 +131,61 @@
                             <setting string="Engagement Scoring"
                                 help="Shows how actively customers interact with your business. Looks at email opens and clicks, website visits and purchases, and WhatsApp message responses over the last 90 days. Customers who engage more across multiple channels get higher scores.">
                                 <field name="enable_engagement_scoring" />
+                                <!-- Basic Configuration -->
                                 <div class="content-group mt16"
                                     invisible="not enable_engagement_scoring">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <label for="email_engagement_weight"
-                                                class="o_light_label">Email Weight (%)</label>
-                                            <field name="email_engagement_weight" />
+                                    <details>
+                                        <summary class="text-primary" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-cogs"/> Basic Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label for="email_engagement_weight"
+                                                        class="o_light_label">Email Weight (%)</label>
+                                                    <field name="email_engagement_weight" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="website_engagement_weight"
+                                                        class="o_light_label">Website Weight (%)</label>
+                                                    <field name="website_engagement_weight" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="whatsapp_engagement_weight"
+                                                        class="o_light_label">WhatsApp Weight (%)</label>
+                                                    <field name="whatsapp_engagement_weight" />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <label for="website_engagement_weight"
-                                                class="o_light_label">Website Weight (%)</label>
-                                            <field name="website_engagement_weight" />
+                                    </details>
+                                </div>
+                                <!-- Advanced Configuration -->
+                                <div class="content-group mt8"
+                                    invisible="not enable_engagement_scoring">
+                                    <details>
+                                        <summary class="text-info" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-wrench"/> Advanced Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label for="email_engagement_period" class="o_light_label">Email Period (Days)</label>
+                                                    <field name="email_engagement_period" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="email_points_per_message" class="o_light_label">Email Points per Message</label>
+                                                    <field name="email_points_per_message" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="website_points_per_order" class="o_light_label">Website Points per Order</label>
+                                                    <field name="website_points_per_order" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Fine-tune engagement calculation parameters. Period: 30-365 days. Points: 1-50 range.</small>
+                                            </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <label for="whatsapp_engagement_weight"
-                                                class="o_light_label">WhatsApp Weight (%)</label>
-                                            <field name="whatsapp_engagement_weight" />
-                                        </div>
-                                    </div>
+                                    </details>
                                 </div>
                             </setting>
                             <setting string="Email Engagement"
@@ -174,34 +210,165 @@
                             <setting string="Churn Prediction"
                                 help="Identifies customers who might stop buying from you soon. Analyzes how recently they purchased, how often they buy, their engagement with emails and messages, and their overall activity pattern. Customers with declining activity get higher risk scores.">
                                 <field name="enable_churn_prediction" />
+                                <!-- Basic Configuration -->
                                 <div class="content-group mt16"
                                     invisible="not enable_churn_prediction">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <label for="churn_rfm_weight" class="o_light_label">RFM
-                                                Weight (%)</label>
-                                            <field name="churn_rfm_weight" />
+                                    <details>
+                                        <summary class="text-primary" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-cogs"/> Basic Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label for="churn_rfm_weight" class="o_light_label">RFM Weight (%)</label>
+                                                    <field name="churn_rfm_weight" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="churn_engagement_weight" class="o_light_label">Engagement Weight (%)</label>
+                                                    <field name="churn_engagement_weight" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="churn_journey_weight" class="o_light_label">Journey Weight (%)</label>
+                                                    <field name="churn_journey_weight" />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <label for="churn_engagement_weight"
-                                                class="o_light_label">Engagement Weight (%)</label>
-                                            <field name="churn_engagement_weight" />
+                                    </details>
+                                </div>
+                                <!-- Advanced Configuration -->
+                                <div class="content-group mt8"
+                                    invisible="not enable_churn_prediction">
+                                    <details>
+                                        <summary class="text-info" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-wrench"/> Advanced Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <label for="churn_risk_very_high_threshold" class="o_light_label">Very High Risk (%)</label>
+                                                    <field name="churn_risk_very_high_threshold" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="churn_risk_high_threshold" class="o_light_label">High Risk (%)</label>
+                                                    <field name="churn_risk_high_threshold" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="churn_risk_medium_threshold" class="o_light_label">Medium Risk (%)</label>
+                                                    <field name="churn_risk_medium_threshold" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label for="churn_risk_low_threshold" class="o_light_label">Low Risk (%)</label>
+                                                    <field name="churn_risk_low_threshold" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Risk thresholds must be in descending order. Values: 0-100%. Used to classify customer churn risk levels.</small>
+                                            </div>
+                                            
+                                            <!-- Win-back Campaign Threshold -->
+                                            <div class="mt-3">
+                                                <h6>Win-back Campaign Configuration</h6>
+                                                <div class="row mt-2">
+                                                    <div class="col-md-6">
+                                                        <label for="churn_risk_min_tier_threshold" class="o_light_label">Minimum Valuable Customer Spending</label>
+                                                        <field name="churn_risk_min_tier_threshold" />
+                                                        <div class="text-muted">
+                                                            <small>Customers in spending tiers below this amount will be excluded from win-back campaigns. This prevents marketing to low-value customers.</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <label for="churn_journey_weight" class="o_light_label">Journey
-                                                Weight (%)</label>
-                                            <field name="churn_journey_weight" />
-                                        </div>
-                                    </div>
+                                    </details>
                                 </div>
                             </setting>
                             <setting string="Multi-Channel Behavior"
                                 help="Tracks how customers prefer to interact with your business. Counts how many channels they use (email, phone, website, WhatsApp) and identifies their most active channel based on purchase behavior and message activity.">
                                 <field name="enable_multichannel_behavior" />
+                                <!-- Advanced Configuration -->
+                                <div class="content-group mt16"
+                                    invisible="not enable_multichannel_behavior">
+                                    <details>
+                                        <summary class="text-info" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-wrench"/> Advanced Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label for="multichannel_3plus_score" class="o_light_label">3+ Touchpoints Score</label>
+                                                    <field name="multichannel_3plus_score" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="multichannel_2_score" class="o_light_label">2 Touchpoints Score</label>
+                                                    <field name="multichannel_2_score" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="multichannel_1_score" class="o_light_label">1 Touchpoint Score</label>
+                                                    <field name="multichannel_1_score" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Consistency scores for multichannel behavior. Higher touchpoints = higher scores. Values: 0-100.</small>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
                             </setting>
                             <setting string="Cohort Analysis"
                                 help="Groups customers by when they first purchased and tracks how many return over time. Shows which months or periods brought the most loyal customers. Based on order dates and customer retention patterns. Use this to identify the best times to acquire customers and measure long-term customer loyalty.">
                                 <field name="enable_cohort_analysis" />
+                            </setting>
+                            <setting string="Demographics Analytics"
+                                help="Analyze customer age groups, spending tiers, and demographic patterns to optimize marketing strategies and customer segmentation. Provides insights into customer distribution across different age and spending categories.">
+                                <field name="enable_demographics_analytics" />
+                                <!-- Basic Configuration -->
+                                <div class="content-group mt16"
+                                    invisible="not enable_demographics_analytics">
+                                    <details>
+                                        <summary class="text-primary" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-cogs"/> Basic Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <label for="age_validation_limit" class="o_light_label">Age Validation Limit (Years)</label>
+                                                    <field name="age_validation_limit" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="new_customer_threshold" class="o_light_label">New Customer Order Threshold</label>
+                                                    <field name="new_customer_threshold" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Age limit: 50-200 years. New customer threshold: minimum 1 order.</small>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </setting>
+                            <setting string="Source Analytics"
+                                help="Track customer acquisition sources and channels to measure marketing ROI and optimize acquisition spend across different touchpoints. Identifies which channels bring the most valuable customers.">
+                                <field name="enable_source_analytics" />
+                                <!-- Basic Configuration -->
+                                <div class="content-group mt16"
+                                    invisible="not enable_source_analytics">
+                                    <details>
+                                        <summary class="text-primary" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-cogs"/> Basic Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <label for="rfm_analysis_period_days" class="o_light_label">RFM Analysis Period (Days)</label>
+                                                    <field name="rfm_analysis_period_days" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Period: 30-1095 days (3 years max). Used for customer lifetime and RFM calculations.</small>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
                             </setting>
                         </block>
 
@@ -211,6 +378,30 @@
                             <setting string="Values-Driven Analytics"
                                 help="Identifies customers who prioritize personal values over price when shopping. Analyzes their purchase history to find preferences for eco-friendly products, premium quality items, and socially responsible brands.">
                                 <field name="enable_values_analytics" />
+                                <!-- Values Preference Configuration -->
+                                <div class="content-group mt16"
+                                    invisible="not enable_values_analytics">
+                                    <details>
+                                        <summary class="text-primary" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-cogs"/> Values Preference Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <label for="values_strong_preference_threshold" class="o_light_label">Strong Preference Threshold (%)</label>
+                                                    <field name="values_strong_preference_threshold" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="values_targeting_threshold" class="o_light_label">Targeting Threshold (%)</label>
+                                                    <field name="values_targeting_threshold" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Strong preference: minimum score for highlighting customer preferences. Targeting: minimum score for primary messaging recommendations.</small>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
                             </setting>
                             <setting string="Eco-Friendly Score"
                                 help="Shows how much customers prefer environmentally-friendly products. Calculates the percentage of their purchases that include eco-friendly, organic, sustainable, green, bio, or natural products. Loyal customers get a bonus score."
@@ -290,6 +481,81 @@
                                             <field name="social_cause_keywords" placeholder="social" />
                                         </div>
                                     </div>
+                                </div>
+                            </setting>
+                            <setting string="Product Category Analytics"
+                                help="Analyze customer purchase patterns across product categories to identify preferences, diversity, and changes in buying behavior over time. Shows which customers have diverse shopping habits versus focused interests.">
+                                <field name="enable_product_category_analytics" />
+                                <!-- Basic Configuration -->
+                                <div class="content-group mt16"
+                                    invisible="not enable_product_category_analytics">
+                                    <details>
+                                        <summary class="text-primary" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-cogs"/> Basic Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <label for="category_analysis_period_days" class="o_light_label">Category Analysis Period (Days)</label>
+                                                    <field name="category_analysis_period_days" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="max_reasonable_categories" class="o_light_label">Maximum Reasonable Categories</label>
+                                                    <field name="max_reasonable_categories" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Analysis period: 30-730 days. Max categories: 5-100.</small>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                                <!-- Advanced Configuration -->
+                                <div class="content-group mt8"
+                                    invisible="not enable_product_category_analytics">
+                                    <details>
+                                        <summary class="text-info" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-wrench"/> Advanced Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <label for="category_spending_weight" class="o_light_label">Category Spending Weight (0.0-1.0)</label>
+                                                    <field name="category_spending_weight" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="category_frequency_weight" class="o_light_label">Category Frequency Weight (0.0-1.0)</label>
+                                                    <field name="category_frequency_weight" />
+                                                </div>
+                                            </div>
+                                            <div class="row mt8">
+                                                <div class="col-md-6">
+                                                    <label for="category_change_positive_threshold" class="o_light_label">Positive Change Threshold (%)</label>
+                                                    <field name="category_change_positive_threshold" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="category_change_negative_threshold" class="o_light_label">Negative Change Threshold (%)</label>
+                                                    <field name="category_change_negative_threshold" />
+                                                </div>
+                                            </div>
+                                            <div class="row mt8">
+                                                <div class="col-md-6">
+                                                    <label for="diversity_score_high_threshold" class="o_light_label">High Diversity Threshold</label>
+                                                    <field name="diversity_score_high_threshold" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="diversity_score_medium_threshold" class="o_light_label">Medium Diversity Threshold</label>
+                                                    <field name="diversity_score_medium_threshold" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>
+                                                    Weights must sum to 1.0. Change thresholds: 5-100%. 
+                                                    High diversity threshold must be greater than medium (0-100).
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </div>
                             </setting>
                         </block>
@@ -378,15 +644,63 @@
                             <setting string="Mobile Commerce"
                                 help="Shows whether customers prefer to shop on mobile devices or desktop computers. Analyzes order timing and amounts to identify mobile shoppers (typically smaller orders placed outside business hours) versus desktop shoppers.">
                                 <field name="enable_mobile_commerce" />
+                                <!-- Basic Configuration -->
                                 <div class="content-group mt16"
                                     invisible="not enable_mobile_commerce">
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <label for="mobile_order_threshold"
-                                                class="o_light_label">Mobile Order Threshold</label>
-                                            <field name="mobile_order_threshold" />
+                                    <details>
+                                        <summary class="text-primary" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-cogs"/> Basic Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <label for="mobile_order_threshold" class="o_light_label">Mobile Order Threshold</label>
+                                                    <field name="mobile_order_threshold" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Orders below this amount are considered mobile commerce indicators.</small>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </details>
+                                </div>
+                                <!-- Advanced Configuration -->
+                                <div class="content-group mt8"
+                                    invisible="not enable_mobile_commerce">
+                                    <details>
+                                        <summary class="text-info" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-wrench"/> Advanced Configuration
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label for="mobile_hour_start" class="o_light_label">Mobile Hours Start (24h)</label>
+                                                    <field name="mobile_hour_start" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="mobile_hour_end" class="o_light_label">Mobile Hours End (24h)</label>
+                                                    <field name="mobile_hour_end" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="mobile_device_preference_threshold" class="o_light_label">Device Preference Threshold</label>
+                                                    <field name="mobile_device_preference_threshold" />
+                                                </div>
+                                            </div>
+                                            <div class="row mt8">
+                                                <div class="col-md-6">
+                                                    <label for="mobile_conversion_rate_multiplier" class="o_light_label">Mobile Conversion Rate Multiplier</label>
+                                                    <field name="mobile_conversion_rate_multiplier" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="mobile_default_score" class="o_light_label">Mobile Default Score</label>
+                                                    <field name="mobile_default_score" />
+                                                </div>
+                                            </div>
+                                            <div class="text-muted mt-1">
+                                                <small>Hours: 0-23. Preference threshold: 1.0-3.0. Conversion multiplier: 0.1-2.0. Default score: 0-100.</small>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </div>
                             </setting>
                             <setting string="Device Preference"

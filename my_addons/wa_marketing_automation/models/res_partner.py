@@ -1,473 +1,601 @@
-from odoo import fields, models, api
 from datetime import date, timedelta
+
 from dateutil.relativedelta import relativedelta
+
+from odoo import api, fields, models
 
 
 class ResPartner(models.Model):
-    _inherit = 'res.partner'
+    _inherit = "res.partner"
 
     date_of_birth = fields.Date(
-        string='Date of Birth',
-        help='Date of birth of the contact',
+        string="Date of Birth",
+        help="Date of birth of the contact",
         tracking=True,
     )
-    
+
     age = fields.Integer(
-        string='Age',
-        compute='_compute_age',
+        string="Age",
+        compute="_compute_age",
         store=True,
-        help='Age in years, computed from date of birth',
+        help="Age in years, computed from date of birth",
     )
-    
+
     age_display = fields.Char(
-        string='Age Display',
-        compute='_compute_age_display',
+        string="Age Display",
+        compute="_compute_age_display",
         store=True,
-        help='Age display in human readable format',
+        help="Age display in human readable format",
     )
 
     # RFM Analysis Fields
     days_since_last_purchase = fields.Integer(
-        string='Days Since Last Purchase',
-        compute='_compute_rfm_data',
+        string="Days Since Last Purchase",
+        compute="_compute_rfm_data",
         store=True,
-        help='Number of days since the last purchase',
+        help="Number of days since the last purchase",
     )
-    
+
     purchase_count = fields.Integer(
-        string='Purchase Count',
-        compute='_compute_rfm_data',
+        string="Purchase Count",
+        compute="_compute_rfm_data",
         store=True,
-        help='Total number of confirmed purchases in the last 12 months',
+        help="Total number of confirmed purchases in the last 12 months",
     )
-    
+
     total_spent = fields.Float(
-        string='Total Spent',
-        compute='_compute_rfm_data',
+        string="Total Spent",
+        compute="_compute_rfm_data",
         store=True,
-        help='Total amount spent in the last 12 months',
+        help="Total amount spent in the last 12 months",
     )
-    
+
     recency_score = fields.Integer(
-        string='Recency Score',
-        compute='_compute_rfm_scores',
+        string="Recency Score",
+        compute="_compute_rfm_scores",
         store=True,
-        help='Recency score (1-5): How recently the customer made a purchase',
+        help="Recency score (1-5): How recently the customer made a purchase",
     )
-    
+
     frequency_score = fields.Integer(
-        string='Frequency Score',
-        compute='_compute_rfm_scores',
+        string="Frequency Score",
+        compute="_compute_rfm_scores",
         store=True,
-        help='Frequency score (1-5): How often the customer makes purchases',
+        help="Frequency score (1-5): How often the customer makes purchases",
     )
-    
+
     monetary_score = fields.Integer(
-        string='Monetary Score',
-        compute='_compute_rfm_scores',
+        string="Monetary Score",
+        compute="_compute_rfm_scores",
         store=True,
-        help='Monetary score (1-5): How much the customer spends',
+        help="Monetary score (1-5): How much the customer spends",
     )
-    
+
     rfm_score = fields.Integer(
-        string='RFM Score',
-        compute='_compute_rfm_scores',
+        string="RFM Score",
+        compute="_compute_rfm_scores",
         store=True,
-        help='Combined RFM score (3-15): Sum of Recency, Frequency, and Monetary scores',
+        help="Combined RFM score (3-15): Sum of Recency, Frequency, and Monetary scores",
     )
-    
-    rfm_segment = fields.Selection([
-        ('champions', 'Champions'),
-        ('loyal_customers', 'Loyal Customers'),
-        ('potential_loyalists', 'Potential Loyalists'),
-        ('new_customers', 'New Customers'),
-        ('promising', 'Promising'),
-        ('need_attention', 'Need Attention'),
-        ('about_to_sleep', 'About to Sleep'),
-        ('at_risk', 'At Risk'),
-        ('cannot_lose_them', 'Cannot Lose Them'),
-        ('hibernating', 'Hibernating'),
-        ('lost', 'Lost'),
-    ], string='RFM Segment', compute='_compute_rfm_scores', store=True,
-        help='Customer segment based on RFM analysis')
+
+    rfm_segment = fields.Selection(
+        [
+            ("champions", "Champions"),
+            ("loyal_customers", "Loyal Customers"),
+            ("potential_loyalists", "Potential Loyalists"),
+            ("new_customers", "New Customers"),
+            ("promising", "Promising"),
+            ("need_attention", "Need Attention"),
+            ("about_to_sleep", "About to Sleep"),
+            ("at_risk", "At Risk"),
+            ("cannot_lose_them", "Cannot Lose Them"),
+            ("hibernating", "Hibernating"),
+            ("lost", "Lost"),
+        ],
+        string="RFM Segment",
+        compute="_compute_rfm_scores",
+        store=True,
+        help="Customer segment based on RFM analysis",
+    )
 
     # Customer Spending Tier (Dynamic Configuration-Based)
     @api.model
     def _get_customer_spending_tier_selection(self):
         """Get dynamic customer spending tier selection from configuration"""
-        spending_tier_config = self.env['wa_marketing_automation.customer_spending_tier_config']
+        spending_tier_config = self.env[
+            "wa_marketing_automation.customer_spending_tier_config"
+        ]
         return spending_tier_config.get_spending_tier_selection_options()
 
     customer_spending_tier = fields.Selection(
-        selection='_get_customer_spending_tier_selection',
-        string='Customer Spending Tier',
-        compute='_compute_customer_spending_tier',
+        selection="_get_customer_spending_tier_selection",
+        string="Customer Spending Tier",
+        compute="_compute_customer_spending_tier",
         store=True,
-        help='Customer tier based on total spending amount using configurable thresholds'
+        help="Customer tier based on total spending amount using configurable thresholds",
     )
 
     customer_spending_tier_display = fields.Char(
-        string='Spending Tier Details',
-        compute='_compute_customer_spending_tier',
+        string="Spending Tier Details",
+        compute="_compute_customer_spending_tier",
         store=True,
-        help='Formatted display of customer spending tier with amount'
+        help="Formatted display of customer spending tier with amount",
     )
 
     # Age Group Fields
     def _get_customer_age_group_selection(self):
         """Get selection options from age group configuration"""
-        age_group_config = self.env['wa_marketing_automation.customer_age_group_config']
+        age_group_config = self.env["wa_marketing_automation.customer_age_group_config"]
         return age_group_config.get_age_group_selection()
 
     customer_age_group = fields.Selection(
-        selection='_get_customer_age_group_selection',
-        string='Customer Age Group',
-        compute='_compute_customer_age_group',
+        selection="_get_customer_age_group_selection",
+        string="Customer Age Group",
+        compute="_compute_customer_age_group",
         store=True,
-        help='Customer age group based on current age using configurable thresholds'
+        help="Customer age group based on current age using configurable thresholds",
     )
-    
+
     customer_age_group_display = fields.Char(
-        string='Age Group Details',
-        compute='_compute_customer_age_group',
+        string="Age Group Details",
+        compute="_compute_customer_age_group",
         store=True,
-        help='Formatted display of customer age group with age range'
+        help="Formatted display of customer age group with age range",
+    )
+
+    # Customer Acquisition Source Fields
+    acquisition_source_id = fields.Many2one(
+        "wa_marketing_automation.customer_acquisition_source_config",
+        string="Acquisition Source",
+        help="How this customer was acquired (e.g., Social Media, Direct, Referral)",
+    )
+
+    acquisition_date = fields.Date(
+        string="Acquisition Date",
+        compute="_compute_acquisition_data",
+        store=True,
+        help="Date when this customer was first acquired",
+    )
+
+    customer_lifetime_days = fields.Integer(
+        string="Customer Lifetime (Days)",
+        compute="_compute_acquisition_data",
+        store=True,
+        help="Number of days since customer acquisition",
+    )
+
+    is_new_customer = fields.Boolean(
+        string="Is New Customer",
+        compute="_compute_acquisition_data",
+        store=True,
+        help="True if customer has made 1 or fewer purchases",
+    )
+
+    # Product Category Analytics Fields
+    favorite_product_categories = fields.Text(
+        string="Favorite Product Categories",
+        compute="_compute_product_category_analytics",
+        store=True,
+        help="Top 3 product categories by purchase frequency and spending",
+    )
+
+    category_spending_breakdown = fields.Text(
+        string="Category Spending Breakdown",
+        compute="_compute_product_category_analytics",
+        store=True,
+        help="JSON breakdown of spending amount per product category",
+    )
+
+    category_purchase_pattern = fields.Text(
+        string="Category Purchase Pattern",
+        compute="_compute_product_category_analytics",
+        store=True,
+        help="Analysis of recent vs historical category preferences",
+    )
+
+    top_category_name = fields.Char(
+        string="Top Product Category",
+        compute="_compute_product_category_analytics",
+        store=True,
+        help="Most purchased product category name for quick reporting",
+    )
+
+    category_diversity_score = fields.Float(
+        string="Category Diversity Score",
+        compute="_compute_product_category_analytics",
+        store=True,
+        help="How many different product categories customer purchases from (0-100)",
     )
 
     # Engagement Score Fields
     email_engagement_score = fields.Float(
-        string='Email Engagement Score',
-        compute='_compute_engagement_metrics',
+        string="Email Engagement Score",
+        compute="_compute_engagement_metrics",
         store=True,
-        help='Score based on email opens, clicks, and responses (0-100)',
+        help="Score based on email opens, clicks, and responses (0-100)",
     )
-    
+
     website_engagement_score = fields.Float(
-        string='Website Engagement Score',
-        compute='_compute_engagement_metrics',
+        string="Website Engagement Score",
+        compute="_compute_engagement_metrics",
         store=True,
-        help='Score based on website visits, session duration, and page views (0-100)',
+        help="Score based on website visits, session duration, and page views (0-100)",
     )
-    
+
     whatsapp_engagement_score = fields.Float(
-        string='WhatsApp Engagement Score',
-        compute='_compute_engagement_metrics',
+        string="WhatsApp Engagement Score",
+        compute="_compute_engagement_metrics",
         store=True,
-        help='Score based on WhatsApp campaign responses and interactions (0-100)',
+        help="Score based on WhatsApp campaign responses and interactions (0-100)",
     )
-    
+
     overall_engagement_score = fields.Float(
-        string='Overall Engagement Score',
-        compute='_compute_engagement_metrics',
+        string="Overall Engagement Score",
+        compute="_compute_engagement_metrics",
         store=True,
-        help='Combined engagement score across all channels (0-100)',
+        help="Combined engagement score across all channels (0-100)",
     )
-    
-    engagement_level = fields.Selection([
-        ('very_low', 'Very Low (0-20)'),
-        ('low', 'Low (21-40)'),
-        ('medium', 'Medium (41-60)'),
-        ('high', 'High (61-80)'),
-        ('very_high', 'Very High (81-100)'),
-        ('unknown', 'Unknown (Disabled)'),
-    ], string='Engagement Level', compute='_compute_engagement_metrics', store=True,
-        help='Overall engagement level classification')
+
+    engagement_level = fields.Selection(
+        [
+            ("very_low", "Very Low (0-20)"),
+            ("low", "Low (21-40)"),
+            ("medium", "Medium (41-60)"),
+            ("high", "High (61-80)"),
+            ("very_high", "Very High (81-100)"),
+            ("unknown", "Unknown (Disabled)"),
+        ],
+        string="Engagement Level",
+        compute="_compute_engagement_metrics",
+        store=True,
+        help="Overall engagement level classification",
+    )
 
     # Customer Journey Stage
-    customer_journey_stage = fields.Selection([
-        ('awareness', 'Awareness'),
-        ('consideration', 'Consideration'),
-        ('purchase', 'Active Customer'),
-        ('loyalty', 'Loyal Customer'),
-        ('advocacy', 'Brand Advocate'),
-        ('dormant', 'Dormant'),
-    ], string='Customer Journey Stage', compute='_compute_journey_stage', store=True,
-        help='Current stage in the customer journey')
+    customer_journey_stage = fields.Selection(
+        [
+            ("awareness", "Awareness"),
+            ("consideration", "Consideration"),
+            ("purchase", "Active Customer"),
+            ("loyalty", "Loyal Customer"),
+            ("advocacy", "Brand Advocate"),
+            ("dormant", "Dormant"),
+        ],
+        string="Customer Journey Stage",
+        compute="_compute_journey_stage",
+        store=True,
+        help="Current stage in the customer journey",
+    )
 
     # Multi-Channel Behavior Score
     multichannel_touchpoints = fields.Integer(
-        string='Multi-Channel Touchpoints',
-        compute='_compute_multichannel_behavior',
+        string="Multi-Channel Touchpoints",
+        compute="_compute_multichannel_behavior",
         store=True,
-        help='Number of different channels customer has interacted with',
+        help="Number of different channels customer has interacted with",
     )
-    
+
     multichannel_consistency_score = fields.Float(
-        string='Multi-Channel Consistency Score',
-        compute='_compute_multichannel_behavior',
+        string="Multi-Channel Consistency Score",
+        compute="_compute_multichannel_behavior",
         store=True,
-        help='Consistency of behavior across channels (0-100)',
+        help="Consistency of behavior across channels (0-100)",
     )
-    
-    preferred_channel = fields.Selection([
-        ('email', 'Email'),
-        ('whatsapp', 'WhatsApp'),
-        ('website', 'Website'),
-        ('phone', 'Phone'),
-        ('social_media', 'Social Media'),
-        ('mixed', 'Mixed/No Clear Preference'),
-    ], string='Preferred Channel', compute='_compute_multichannel_behavior', store=True,
-        help='Customer\'s preferred communication channel')
+
+    preferred_channel = fields.Selection(
+        [
+            ("email", "Email"),
+            ("whatsapp", "WhatsApp"),
+            ("website", "Website"),
+            ("phone", "Phone"),
+            ("social_media", "Social Media"),
+            ("mixed", "Mixed/No Clear Preference"),
+        ],
+        string="Preferred Channel",
+        compute="_compute_multichannel_behavior",
+        store=True,
+        help="Customer's preferred communication channel",
+    )
 
     # Churn Prediction
     churn_risk_score = fields.Float(
-        string='Churn Risk Score',
-        compute='_compute_churn_prediction',
+        string="Churn Risk Score",
+        compute="_compute_churn_prediction",
         store=True,
-        help='Probability of customer churning in next 90 days (0-100)',
+        help="Probability of customer churning in next 90 days (0-100)",
     )
-    
-    churn_risk_level = fields.Selection([
-        ('very_low', 'Very Low Risk (0-20)'),
-        ('low', 'Low Risk (21-40)'),
-        ('medium', 'Medium Risk (41-60)'),
-        ('high', 'High Risk (61-80)'),
-        ('very_high', 'Very High Risk (81-100)'),
-        ('unknown', 'Unknown (Disabled)'),
-    ], string='Churn Risk Level', compute='_compute_churn_prediction', store=True,
-        help='Churn risk classification')
+
+    churn_risk_level = fields.Selection(
+        [
+            ("very_low", "Very Low Risk (0-20)"),
+            ("low", "Low Risk (21-40)"),
+            ("medium", "Medium Risk (41-60)"),
+            ("high", "High Risk (61-80)"),
+            ("very_high", "Very High Risk (81-100)"),
+            ("unknown", "Unknown (Disabled)"),
+        ],
+        string="Churn Risk Level",
+        compute="_compute_churn_prediction",
+        store=True,
+        help="Churn risk classification",
+    )
 
     # Values-Driven Purchase Propensity
     sustainability_preference_score = fields.Float(
-        string='Eco-Friendly Score',
-        compute='_compute_values_driven_propensity',
+        string="Eco-Friendly Score",
+        compute="_compute_values_driven_propensity",
         store=True,
-        help='Likelihood to purchase sustainable/eco-friendly products (0-100)',
+        help="Likelihood to purchase sustainable/eco-friendly products (0-100)",
     )
-    
+
     premium_product_propensity = fields.Float(
-        string='Premium Product Propensity',
-        compute='_compute_values_driven_propensity',
+        string="Premium Product Propensity",
+        compute="_compute_values_driven_propensity",
         store=True,
-        help='Likelihood to purchase premium/luxury products (0-100)',
+        help="Likelihood to purchase premium/luxury products (0-100)",
     )
-    
+
     social_responsibility_score = fields.Float(
-        string='Social Responsibility Score',
-        compute='_compute_values_driven_propensity',
+        string="Social Responsibility Score",
+        compute="_compute_values_driven_propensity",
         store=True,
-        help='Preference for socially responsible brands (0-100)',
+        help="Preference for socially responsible brands (0-100)",
     )
 
     # Social Commerce Integration
-    social_media_source = fields.Selection([
-        ('facebook', 'Facebook'),
-        ('instagram', 'Instagram'),
-        ('twitter', 'Twitter'),
-        ('linkedin', 'LinkedIn'),
-        ('tiktok', 'TikTok'),
-        ('youtube', 'YouTube'),
-        ('other', 'Other'),
-        ('none', 'None'),
-    ], string='Social Media Source', compute='_compute_social_commerce_metrics', store=True,
-        help='Primary social media source for this customer')
+    social_media_source = fields.Selection(
+        [
+            ("facebook", "Facebook"),
+            ("instagram", "Instagram"),
+            ("twitter", "Twitter"),
+            ("linkedin", "LinkedIn"),
+            ("tiktok", "TikTok"),
+            ("youtube", "YouTube"),
+            ("other", "Other"),
+            ("none", "None"),
+        ],
+        string="Social Media Source",
+        compute="_compute_social_commerce_metrics",
+        store=True,
+        help="Primary social media source for this customer",
+    )
 
     social_referral_count = fields.Integer(
-        string='Social Referral Count',
-        compute='_compute_social_commerce_metrics',
+        string="Social Referral Count",
+        compute="_compute_social_commerce_metrics",
         store=True,
-        help='Number of referrals from social media',
+        help="Number of referrals from social media",
     )
-    
+
     social_engagement_score = fields.Float(
-        string='Social Engagement Score',
-        compute='_compute_social_commerce_metrics',
+        string="Social Engagement Score",
+        compute="_compute_social_commerce_metrics",
         store=True,
-        help='Engagement score based on social media interactions (0-100)',
+        help="Engagement score based on social media interactions (0-100)",
     )
-    
+
     social_conversion_rate = fields.Float(
-        string='Social Conversion Rate',
-        compute='_compute_social_commerce_metrics',
+        string="Social Conversion Rate",
+        compute="_compute_social_commerce_metrics",
         store=True,
-        help='Conversion rate from social media traffic (0-100)',
+        help="Conversion rate from social media traffic (0-100)",
     )
 
     # BNPL and Mobile Commerce Behavior
-    bnpl_usage_frequency = fields.Selection([
-        ('never', 'Never Used'),
-        ('rarely', 'Rarely (1-2 times)'),
-        ('sometimes', 'Sometimes (3-5 times)'),
-        ('frequently', 'Frequently (6-10 times)'),
-        ('always', 'Always (10+ times)'),
-    ], string='BNPL Usage Frequency', compute='_compute_bnpl_mobile_behavior', store=True,
-        help='How often customer uses Buy Now Pay Later options')
+    bnpl_usage_frequency = fields.Selection(
+        [
+            ("never", "Never Used"),
+            ("rarely", "Rarely (1-2 times)"),
+            ("sometimes", "Sometimes (3-5 times)"),
+            ("frequently", "Frequently (6-10 times)"),
+            ("always", "Always (10+ times)"),
+        ],
+        string="BNPL Usage Frequency",
+        compute="_compute_bnpl_mobile_behavior",
+        store=True,
+        help="How often customer uses Buy Now Pay Later options",
+    )
 
     bnpl_preference_score = fields.Float(
-        string='BNPL Preference Score',
-        compute='_compute_bnpl_mobile_behavior',
+        string="BNPL Preference Score",
+        compute="_compute_bnpl_mobile_behavior",
         store=True,
-        help='Preference for BNPL payment options (0-100)',
+        help="Preference for BNPL payment options (0-100)",
     )
-    
+
     mobile_commerce_score = fields.Float(
-        string='Mobile Commerce Score',
-        compute='_compute_bnpl_mobile_behavior',
+        string="Mobile Commerce Score",
+        compute="_compute_bnpl_mobile_behavior",
         store=True,
-        help='Mobile vs desktop commerce behavior score (0-100)',
+        help="Mobile vs desktop commerce behavior score (0-100)",
     )
-    
-    mobile_device_preference = fields.Selection([
-        ('smartphone', 'Smartphone'),
-        ('tablet', 'Tablet'),
-        ('desktop', 'Desktop'),
-        ('mixed', 'Mixed/No Clear Preference'),
-    ], string='Mobile Device Preference', compute='_compute_bnpl_mobile_behavior', store=True,
-        help='Preferred device for shopping')
+
+    mobile_device_preference = fields.Selection(
+        [
+            ("smartphone", "Smartphone"),
+            ("tablet", "Tablet"),
+            ("desktop", "Desktop"),
+            ("mixed", "Mixed/No Clear Preference"),
+        ],
+        string="Mobile Device Preference",
+        compute="_compute_bnpl_mobile_behavior",
+        store=True,
+        help="Preferred device for shopping",
+    )
 
     average_order_value_mobile = fields.Float(
-        string='Avg Order Value (Mobile)',
-        compute='_compute_bnpl_mobile_behavior',
+        string="Avg Order Value (Mobile)",
+        compute="_compute_bnpl_mobile_behavior",
         store=True,
-        help='Average order value on mobile devices',
+        help="Average order value on mobile devices",
     )
-    
+
     average_order_value_desktop = fields.Float(
-        string='Avg Order Value (Desktop)',
-        compute='_compute_bnpl_mobile_behavior',
+        string="Avg Order Value (Desktop)",
+        compute="_compute_bnpl_mobile_behavior",
         store=True,
-        help='Average order value on desktop devices',
+        help="Average order value on desktop devices",
     )
-    
+
     mobile_conversion_rate = fields.Float(
-        string='Mobile Conversion Rate',
-        compute='_compute_bnpl_mobile_behavior',
+        string="Mobile Conversion Rate",
+        compute="_compute_bnpl_mobile_behavior",
         store=True,
-        help='Conversion rate on mobile devices (0-100)',
+        help="Conversion rate on mobile devices (0-100)",
     )
 
     # Configuration Visibility Fields
     metrics_engagement_enabled = fields.Boolean(
-        string='Engagement Metrics Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether engagement scoring is enabled in configuration',
+        string="Engagement Metrics Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether engagement scoring is enabled in configuration",
     )
-    
+
     metrics_churn_enabled = fields.Boolean(
-        string='Churn Prediction Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether churn prediction is enabled in configuration',
+        string="Churn Prediction Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether churn prediction is enabled in configuration",
     )
-    
+
     metrics_journey_enabled = fields.Boolean(
-        string='Customer Journey Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether customer journey tracking is enabled in configuration',
+        string="Customer Journey Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether customer journey tracking is enabled in configuration",
     )
-    
+
     metrics_values_enabled = fields.Boolean(
-        string='Values Analytics Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether values-driven analytics is enabled in configuration',
+        string="Values Analytics Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether values-driven analytics is enabled in configuration",
     )
-    
+
     metrics_social_enabled = fields.Boolean(
-        string='Social Commerce Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether social commerce analytics is enabled in configuration',
+        string="Social Commerce Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether social commerce analytics is enabled in configuration",
     )
-    
+
     metrics_bnpl_enabled = fields.Boolean(
-        string='BNPL Analytics Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether BNPL analytics is enabled in configuration',
+        string="BNPL Analytics Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether BNPL analytics is enabled in configuration",
     )
-    
+
     metrics_mobile_enabled = fields.Boolean(
-        string='Mobile Commerce Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether mobile commerce analytics is enabled in configuration',
+        string="Mobile Commerce Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether mobile commerce analytics is enabled in configuration",
     )
-    
+
     metrics_multichannel_enabled = fields.Boolean(
-        string='Multi-Channel Enabled',
-        compute='_compute_metrics_configuration',
-        help='Whether multi-channel behavior analytics is enabled in configuration',
+        string="Multi-Channel Enabled",
+        compute="_compute_metrics_configuration",
+        help="Whether multi-channel behavior analytics is enabled in configuration",
     )
 
     def _compute_metrics_configuration(self):
         """Compute metrics configuration visibility flags"""
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
-            partner.metrics_engagement_enabled = config.get('enable_engagement_scoring', True)
-            partner.metrics_churn_enabled = config.get('enable_churn_prediction', True)
-            partner.metrics_journey_enabled = config.get('enable_customer_journey', True)
-            partner.metrics_values_enabled = config.get('enable_values_analytics', False)
-            partner.metrics_social_enabled = config.get('enable_social_commerce', False)
-            partner.metrics_bnpl_enabled = config.get('enable_bnpl_analytics', False)
-            partner.metrics_mobile_enabled = config.get('enable_mobile_commerce', False)
-            partner.metrics_multichannel_enabled = config.get('enable_multichannel_behavior', True)
+            partner.metrics_engagement_enabled = config.get(
+                "enable_engagement_scoring", True
+            )
+            partner.metrics_churn_enabled = config.get("enable_churn_prediction", True)
+            partner.metrics_journey_enabled = config.get(
+                "enable_customer_journey", True
+            )
+            partner.metrics_values_enabled = config.get(
+                "enable_values_analytics", False
+            )
+            partner.metrics_social_enabled = config.get("enable_social_commerce", False)
+            partner.metrics_bnpl_enabled = config.get("enable_bnpl_analytics", False)
+            partner.metrics_mobile_enabled = config.get("enable_mobile_commerce", False)
+            partner.metrics_multichannel_enabled = config.get(
+                "enable_multichannel_behavior", True
+            )
 
     def _get_adaptive_churn_weights(self, config):
         """Get adaptive churn prediction weights based on enabled features"""
         base_factors = {
-            'rfm_analysis': config.get('churn_rfm_weight', 40),
-            'engagement_scoring': config.get('churn_engagement_weight', 30),
-            'customer_journey': config.get('churn_journey_weight', 20),
-            'multichannel_behavior': config.get('churn_multichannel_weight', 10)
+            "rfm_analysis": config.get("churn_rfm_weight", 40),
+            "engagement_scoring": config.get("churn_engagement_weight", 30),
+            "customer_journey": config.get("churn_journey_weight", 20),
+            "multichannel_behavior": config.get("churn_multichannel_weight", 10),
         }
-        
+
         enabled_factors = {}
         disabled_weight = 0
-        
+
         # Check which factors are enabled
         for factor, weight in base_factors.items():
-            if factor == 'rfm_analysis':
+            if factor == "rfm_analysis":
                 enabled_factors[factor] = weight  # Always enabled
-            elif factor == 'engagement_scoring' and config.get('enable_engagement_scoring', True):
+            elif factor == "engagement_scoring" and config.get(
+                "enable_engagement_scoring", True
+            ):
                 enabled_factors[factor] = weight
-            elif factor == 'customer_journey' and config.get('enable_customer_journey', True):
+            elif factor == "customer_journey" and config.get(
+                "enable_customer_journey", True
+            ):
                 enabled_factors[factor] = weight
-            elif factor == 'multichannel_behavior' and config.get('enable_multichannel_behavior', True):
+            elif factor == "multichannel_behavior" and config.get(
+                "enable_multichannel_behavior", True
+            ):
                 enabled_factors[factor] = weight
             else:
                 disabled_weight += weight
-        
+
         # Redistribute disabled weight proportionally to enabled factors
         if enabled_factors and disabled_weight > 0:
             total_enabled_weight = sum(enabled_factors.values())
             for factor in enabled_factors:
                 proportion = enabled_factors[factor] / total_enabled_weight
                 enabled_factors[factor] += disabled_weight * proportion
-        
+
         return enabled_factors
 
     def _get_adaptive_engagement_weights(self, config):
         """Get adaptive engagement weights based on enabled features"""
         base_factors = {
-            'email_engagement': config.get('engagement_email_weight', 40),
-            'website_engagement': config.get('engagement_website_weight', 35),
-            'whatsapp_engagement': config.get('engagement_whatsapp_weight', 25)
+            "email_engagement": config.get("engagement_email_weight", 40),
+            "website_engagement": config.get("engagement_website_weight", 35),
+            "whatsapp_engagement": config.get("engagement_whatsapp_weight", 25),
         }
-        
+
         enabled_factors = {}
         disabled_weight = 0
-        
+
         # Check which factors are enabled
         for factor, weight in base_factors.items():
-            if factor == 'email_engagement' and config.get('enable_email_engagement', True):
+            if factor == "email_engagement" and config.get(
+                "enable_email_engagement", True
+            ):
                 enabled_factors[factor] = weight
-            elif factor == 'website_engagement' and config.get('enable_website_engagement', True):
+            elif factor == "website_engagement" and config.get(
+                "enable_website_engagement", True
+            ):
                 enabled_factors[factor] = weight
-            elif factor == 'whatsapp_engagement' and config.get('enable_whatsapp_engagement', True):
+            elif factor == "whatsapp_engagement" and config.get(
+                "enable_whatsapp_engagement", True
+            ):
                 enabled_factors[factor] = weight
             else:
                 disabled_weight += weight
-        
+
         # Ensure at least one factor is enabled
         if not enabled_factors:
-            enabled_factors['email_engagement'] = 100  # Fallback
+            enabled_factors["email_engagement"] = 100  # Fallback
         elif disabled_weight > 0:
             # Redistribute disabled weight proportionally to enabled factors
             total_enabled_weight = sum(enabled_factors.values())
             for factor in enabled_factors:
                 proportion = enabled_factors[factor] / total_enabled_weight
                 enabled_factors[factor] += disabled_weight * proportion
-        
+
         return enabled_factors
 
-    @api.depends('date_of_birth')
+    @api.depends("date_of_birth")
     def _compute_age(self):
         """Compute age from date of birth"""
         today = date.today()
@@ -483,7 +611,7 @@ class ResPartner(models.Model):
             else:
                 partner.age = 0
 
-    @api.depends('age')
+    @api.depends("age")
     def _compute_age_display(self):
         """Compute age display string"""
         for partner in self:
@@ -492,73 +620,322 @@ class ResPartner(models.Model):
             else:
                 partner.age_display = ""
 
-    @api.constrains('date_of_birth')
+    @api.constrains("date_of_birth")
     def _check_date_of_birth(self):
         """Validate date of birth"""
+        config = self.env["res.config.settings"].get_analytics_config()
+        age_limit = config.get("age_validation_limit", 150)
+
         for partner in self:
             if partner.date_of_birth:
                 if partner.date_of_birth > date.today():
                     raise models.ValidationError(
                         "Date of birth cannot be in the future."
                     )
-                # Check for reasonable age limit (e.g., 150 years)
-                if partner.date_of_birth < date.today() - relativedelta(years=150):
+                # Check for reasonable age limit (configurable)
+                if partner.date_of_birth < date.today() - relativedelta(
+                    years=age_limit
+                ):
                     raise models.ValidationError(
-                        "Date of birth cannot be more than 150 years ago."
+                        f"Date of birth cannot be more than {age_limit} years ago."
                     )
 
-    @api.depends('sale_order_ids.date_order', 'sale_order_ids.state', 'sale_order_ids.amount_total')
+    @api.depends(
+        "sale_order_ids.date_order", "sale_order_ids.state", "sale_order_count"
+    )
+    def _compute_acquisition_data(self):
+        """Compute customer acquisition date and lifetime metrics"""
+        config = self.env["res.config.settings"].get_analytics_config()
+        new_customer_threshold = config.get("new_customer_threshold", 1)
+        today = date.today()
+
+        for partner in self:
+            # Skip if not a customer
+            if partner.customer_rank <= 0 or partner.is_company:
+                partner.acquisition_date = False
+                partner.customer_lifetime_days = 0
+                partner.is_new_customer = False
+                continue
+
+            # Check if sale_order_ids field exists (sale module might not be installed)
+            if not hasattr(partner, "sale_order_ids"):
+                partner.acquisition_date = False
+                partner.customer_lifetime_days = 0
+                partner.is_new_customer = False
+                continue
+
+            # Find first confirmed sale order (acquisition date)
+            first_order = partner.sale_order_ids.filtered(
+                lambda o: o.state in ("sale", "done")
+            ).sorted("date_order")[:1]
+
+            if first_order:
+                partner.acquisition_date = first_order.date_order.date()
+                partner.customer_lifetime_days = (today - partner.acquisition_date).days
+            else:
+                partner.acquisition_date = False
+                partner.customer_lifetime_days = 0
+
+            # Determine if new customer (configurable threshold or fewer purchases)
+            partner.is_new_customer = partner.sale_order_count <= new_customer_threshold
+
+    @api.depends(
+        "sale_order_ids.order_line.product_id.categ_id",
+        "sale_order_ids.state",
+        "sale_order_ids.amount_total",
+    )
+    def _compute_product_category_analytics(self):
+        """Compute product category analytics for customer behavior insights"""
+        import json
+        from collections import Counter, defaultdict
+
+        config = self.env["res.config.settings"].get_analytics_config()
+        category_analysis_period = config.get("category_analysis_period_days", 180)
+
+        today = date.today()
+        analysis_period_start = today - timedelta(days=category_analysis_period)
+
+        for partner in self:
+            # Initialize default values
+            partner.favorite_product_categories = ""
+            partner.category_spending_breakdown = ""
+            partner.category_purchase_pattern = ""
+            partner.top_category_name = ""
+            partner.category_diversity_score = 0.0
+
+            # Skip if not a customer or no sales module
+            if (
+                partner.customer_rank <= 0
+                or partner.is_company
+                or not hasattr(partner, "sale_order_ids")
+            ):
+                continue
+
+            # Get confirmed sale orders with product lines
+            confirmed_orders = partner.sale_order_ids.filtered(
+                lambda o: o.state in ("sale", "done") and o.order_line
+            )
+
+            if not confirmed_orders:
+                continue
+
+            # Collect category data from order lines
+            category_spending = defaultdict(float)
+            category_frequency = defaultdict(int)
+            category_orders = defaultdict(list)
+            recent_categories = defaultdict(float)
+            historical_categories = defaultdict(float)
+
+            for order in confirmed_orders:
+                order_date = order.date_order.date() if order.date_order else today
+                is_recent = order_date >= analysis_period_start
+
+                for line in order.order_line:
+                    if line.product_id and line.product_id.categ_id:
+                        category = line.product_id.categ_id
+                        category_name = category.complete_name
+                        line_total = line.price_subtotal
+
+                        # Track spending and frequency
+                        category_spending[category_name] += line_total
+                        category_frequency[category_name] += 1
+                        category_orders[category_name].append(
+                            {
+                                "date": order_date,
+                                "amount": line_total,
+                                "order_id": order.id,
+                            }
+                        )
+
+                        # Track recent vs historical patterns
+                        if is_recent:
+                            recent_categories[category_name] += line_total
+                        else:
+                            historical_categories[category_name] += line_total
+
+            if not category_spending:
+                continue
+
+            # Calculate top category
+            top_category = max(category_spending.items(), key=lambda x: x[1])
+            partner.top_category_name = top_category[0]
+
+            # Calculate diversity score (0-100 based on number of categories vs max reasonable categories)
+            unique_categories = len(category_spending)
+            max_reasonable_categories = config.get(
+                "max_reasonable_categories", 20
+            )  # Configurable maximum for scoring
+            partner.category_diversity_score = min(
+                100.0, (unique_categories / max_reasonable_categories) * 100
+            )
+
+            # Generate favorite categories (top 3 by combined spending and frequency)
+            category_scores = {}
+            for cat_name in category_spending:
+                # Combine spending (70%) and frequency (30%) for ranking
+                spending_score = category_spending[cat_name]
+                frequency_score = category_frequency[cat_name] * (
+                    spending_score / category_frequency[cat_name]
+                )  # avg order value
+                spending_weight = config.get("category_spending_weight", 0.7)
+                frequency_weight = config.get("category_frequency_weight", 0.3)
+                combined_score = (spending_score * spending_weight) + (
+                    frequency_score * frequency_weight
+                )
+                category_scores[cat_name] = combined_score
+
+            top_3_categories = sorted(
+                category_scores.items(), key=lambda x: x[1], reverse=True
+            )[:3]
+
+            favorite_list = []
+            for i, (cat_name, score) in enumerate(top_3_categories, 1):
+                spending = category_spending[cat_name]
+                frequency = category_frequency[cat_name]
+                favorite_list.append(
+                    f"{i}. {cat_name} (${spending:,.0f}, {frequency} orders)"
+                )
+
+            partner.favorite_product_categories = "\n".join(favorite_list)
+
+            # Generate spending breakdown (JSON)
+            spending_breakdown = {
+                "categories": dict(category_spending),
+                "total_categories": unique_categories,
+                "total_spending": sum(category_spending.values()),
+                "top_category": {
+                    "name": partner.top_category_name,
+                    "amount": top_category[1],
+                    "percentage": (top_category[1] / sum(category_spending.values()))
+                    * 100,
+                },
+            }
+            partner.category_spending_breakdown = json.dumps(
+                spending_breakdown, default=str
+            )
+
+            # Generate purchase pattern analysis
+            pattern_analysis = []
+
+            # Compare recent vs historical preferences
+            if recent_categories and historical_categories:
+                pattern_analysis.append("📊 Recent vs Historical Preferences:")
+
+                # Find categories that increased in recent purchases
+                for cat_name in recent_categories:
+                    recent_amount = recent_categories[cat_name]
+                    historical_amount = historical_categories.get(cat_name, 0)
+
+                    if historical_amount > 0:
+                        change_pct = (
+                            (recent_amount - historical_amount) / historical_amount
+                        ) * 100
+                        positive_threshold = config.get(
+                            "category_change_positive_threshold", 20.0
+                        )
+                        negative_threshold = config.get(
+                            "category_change_negative_threshold", 20.0
+                        )
+                        if change_pct > positive_threshold:
+                            pattern_analysis.append(
+                                f"  ↗️ {cat_name}: +{change_pct:.0f}% increase"
+                            )
+                        elif change_pct < -negative_threshold:
+                            pattern_analysis.append(
+                                f"  ↘️ {cat_name}: {change_pct:.0f}% decrease"
+                            )
+                    else:
+                        pattern_analysis.append(
+                            f"  🆕 {cat_name}: New category preference"
+                        )
+
+            # Add trend information
+            if len(confirmed_orders) >= 3:
+                recent_orders = confirmed_orders.sorted("date_order", reverse=True)[:3]
+                recent_order_categories = set()
+                for order in recent_orders:
+                    for line in order.order_line:
+                        if line.product_id and line.product_id.categ_id:
+                            recent_order_categories.add(
+                                line.product_id.categ_id.complete_name
+                            )
+
+                if len(recent_order_categories) == 1:
+                    pattern_analysis.append(
+                        f"🎯 Recent Focus: Concentrating on {list(recent_order_categories)[0]}"
+                    )
+                elif len(recent_order_categories) >= 4:
+                    pattern_analysis.append(
+                        f"🌈 Recent Diversity: Exploring {len(recent_order_categories)} different categories"
+                    )
+
+            partner.category_purchase_pattern = (
+                "\n".join(pattern_analysis)
+                if pattern_analysis
+                else "Insufficient data for pattern analysis"
+            )
+
+    @api.depends(
+        "sale_order_ids.date_order",
+        "sale_order_ids.state",
+        "sale_order_ids.amount_total",
+    )
     def _compute_rfm_data(self):
         """Compute raw RFM data: days since last purchase, purchase count, total spent"""
+        config = self.env["res.config.settings"].get_analytics_config()
+        rfm_analysis_period = config.get("rfm_analysis_period_days", 365)
+
         today = date.today()
-        twelve_months_ago = today - timedelta(days=365)
-        
+        rfm_period_start = today - timedelta(days=rfm_analysis_period)
+
         for partner in self:
             # Check if sale_order_ids field exists (sale module might not be installed)
-            if not hasattr(partner, 'sale_order_ids'):
+            if not hasattr(partner, "sale_order_ids"):
                 partner.days_since_last_purchase = 9999
                 partner.purchase_count = 0
                 partner.total_spent = 0
                 continue
-                
+
             # Get confirmed sale orders in the last 12 months
             confirmed_orders = partner.sale_order_ids.filtered(
-                lambda order: order.state in ('sale', 'done') and 
-                order.date_order and 
-                order.date_order.date() >= twelve_months_ago
+                lambda order: order.state in ("sale", "done")
+                and order.date_order
+                and order.date_order.date() >= rfm_period_start
             )
-            
+
             # Calculate days since last purchase
             if confirmed_orders:
-                last_order_date = max(confirmed_orders.mapped('date_order')).date()
+                last_order_date = max(confirmed_orders.mapped("date_order")).date()
                 partner.days_since_last_purchase = (today - last_order_date).days
             else:
                 # Check if there are any historical orders
                 all_orders = partner.sale_order_ids.filtered(
-                    lambda order: order.state in ('sale', 'done') and order.date_order
+                    lambda order: order.state in ("sale", "done") and order.date_order
                 )
                 if all_orders:
-                    last_order_date = max(all_orders.mapped('date_order')).date()
+                    last_order_date = max(all_orders.mapped("date_order")).date()
                     partner.days_since_last_purchase = (today - last_order_date).days
                 else:
                     partner.days_since_last_purchase = 9999  # No purchases ever
-            
+
             # Calculate purchase count (last 12 months)
             partner.purchase_count = len(confirmed_orders)
-            
-            # Calculate total spent (last 12 months)
-            partner.total_spent = sum(confirmed_orders.mapped('amount_total'))
 
-    @api.depends('days_since_last_purchase', 'purchase_count', 'total_spent')
+            # Calculate total spent (last 12 months)
+            partner.total_spent = sum(confirmed_orders.mapped("amount_total"))
+
+    @api.depends("days_since_last_purchase", "purchase_count", "total_spent")
     def _compute_rfm_scores(self):
         """Compute RFM scores and segment classification"""
         # Get all active customers for percentile calculation
-        all_customers = self.env['res.partner'].search([
-            ('is_company', '=', False),
-            ('customer_rank', '>', 0),
-            ('active', '=', True)
-        ])
-        
+        all_customers = self.env["res.partner"].search(
+            [
+                ("is_company", "=", False),
+                ("customer_rank", ">", 0),
+                ("active", "=", True),
+            ]
+        )
+
         if not all_customers:
             # No customers to compare against
             for partner in self:
@@ -566,48 +943,69 @@ class ResPartner(models.Model):
                 partner.frequency_score = 0
                 partner.monetary_score = 0
                 partner.rfm_score = 0
-                partner.rfm_segment = 'lost'
+                partner.rfm_segment = "lost"
             return
-        
+
         # Calculate percentiles for scoring
-        recency_values = [p.days_since_last_purchase for p in all_customers if p.days_since_last_purchase < 9999]
-        frequency_values = [p.purchase_count for p in all_customers if p.purchase_count > 0]
+        recency_values = [
+            p.days_since_last_purchase
+            for p in all_customers
+            if p.days_since_last_purchase < 9999
+        ]
+        frequency_values = [
+            p.purchase_count for p in all_customers if p.purchase_count > 0
+        ]
         monetary_values = [p.total_spent for p in all_customers if p.total_spent > 0]
-        
+
         # Calculate quintile thresholds
-        recency_thresholds = self._calculate_quintiles(recency_values, reverse=True)  # Lower days = higher score
+        recency_thresholds = self._calculate_quintiles(
+            recency_values, reverse=True
+        )  # Lower days = higher score
         frequency_thresholds = self._calculate_quintiles(frequency_values)
         monetary_thresholds = self._calculate_quintiles(monetary_values)
-        
+
         for partner in self:
             # Calculate individual scores
-            partner.recency_score = self._get_score(partner.days_since_last_purchase, recency_thresholds, reverse=True)
-            partner.frequency_score = self._get_score(partner.purchase_count, frequency_thresholds)
-            partner.monetary_score = self._get_score(partner.total_spent, monetary_thresholds)
-            
+            partner.recency_score = self._get_score(
+                partner.days_since_last_purchase, recency_thresholds, reverse=True
+            )
+            partner.frequency_score = self._get_score(
+                partner.purchase_count, frequency_thresholds
+            )
+            partner.monetary_score = self._get_score(
+                partner.total_spent, monetary_thresholds
+            )
+
             # Calculate combined score
-            partner.rfm_score = partner.recency_score + partner.frequency_score + partner.monetary_score
-            
+            partner.rfm_score = (
+                partner.recency_score + partner.frequency_score + partner.monetary_score
+            )
+
             # Determine segment
             partner.rfm_segment = self._get_rfm_segment(
-                partner.recency_score, 
-                partner.frequency_score, 
-                partner.monetary_score
+                partner.recency_score, partner.frequency_score, partner.monetary_score
             )
 
     def _calculate_quintiles(self, values, reverse=False):
         """Calculate quintile thresholds for scoring"""
         if not values:
             return [0, 0, 0, 0, 0]
-        
+
         sorted_values = sorted(values, reverse=reverse)
         n = len(sorted_values)
-        
+
+        # Get quintile configuration values
+        config = self.env["res.config.settings"].get_analytics_config()
+        q1 = config.get("rfm_quintile_1", 0.2)
+        q2 = config.get("rfm_quintile_2", 0.4)
+        q3 = config.get("rfm_quintile_3", 0.6)
+        q4 = config.get("rfm_quintile_4", 0.8)
+
         return [
-            sorted_values[int(n * 0.2)] if n > 0 else 0,
-            sorted_values[int(n * 0.4)] if n > 0 else 0,
-            sorted_values[int(n * 0.6)] if n > 0 else 0,
-            sorted_values[int(n * 0.8)] if n > 0 else 0,
+            sorted_values[int(n * q1)] if n > 0 else 0,
+            sorted_values[int(n * q2)] if n > 0 else 0,
+            sorted_values[int(n * q3)] if n > 0 else 0,
+            sorted_values[int(n * q4)] if n > 0 else 0,
             sorted_values[-1] if n > 0 else 0,
         ]
 
@@ -615,7 +1013,7 @@ class ResPartner(models.Model):
         """Get RFM score (1-5) based on value and thresholds"""
         if value == 0 or (reverse and value >= 9999):
             return 1
-        
+
         if reverse:
             # For recency: lower values (fewer days) get higher scores
             # thresholds are in descending order from _calculate_quintiles
@@ -634,86 +1032,101 @@ class ResPartner(models.Model):
         """Determine RFM segment based on individual scores"""
         # Champions: High RFM scores
         if r >= 4 and f >= 4 and m >= 4:
-            return 'champions'
-        
+            return "champions"
+
         # Loyal Customers: High R&F, moderate M
         if r >= 3 and f >= 4 and m >= 3:
-            return 'loyal_customers'
-        
+            return "loyal_customers"
+
         # Potential Loyalists: Recent customers with good frequency
         if r >= 4 and f >= 2 and m >= 2:
-            return 'potential_loyalists'
-        
+            return "potential_loyalists"
+
         # New Customers: Very recent, low frequency
         if r >= 4 and f <= 2 and m <= 2:
-            return 'new_customers'
-        
+            return "new_customers"
+
         # Promising: Recent customers with potential
         if r >= 3 and f <= 2 and m >= 2:
-            return 'promising'
-        
+            return "promising"
+
         # Need Attention: Moderate across all dimensions
         if r >= 2 and f >= 2 and m >= 2:
-            return 'need_attention'
-        
+            return "need_attention"
+
         # About to Sleep: Declining recency but good history
         if r >= 2 and f >= 3 and m >= 3:
-            return 'about_to_sleep'
-        
+            return "about_to_sleep"
+
         # At Risk: Good monetary value but declining
         if r <= 2 and f >= 2 and m >= 3:
-            return 'at_risk'
-        
+            return "at_risk"
+
         # Cannot Lose Them: High value but very low recency
         if r <= 2 and f >= 4 and m >= 4:
-            return 'cannot_lose_them'
-        
+            return "cannot_lose_them"
+
         # Hibernating: Low recency and frequency but some value
         if r <= 2 and f <= 2 and m >= 2:
-            return 'hibernating'
-        
-        # Lost: Low across all dimensions
-        return 'lost'
+            return "hibernating"
 
-    @api.depends('total_spent')
+        # Lost: Low across all dimensions
+        return "lost"
+
+    @api.depends("total_spent")
     def _compute_customer_spending_tier(self):
         """Compute customer spending tier using dynamic spending-based configuration"""
-        spending_tier_config = self.env['wa_marketing_automation.customer_spending_tier_config']
-        
+        spending_tier_config = self.env[
+            "wa_marketing_automation.customer_spending_tier_config"
+        ]
+
         for partner in self:
             if not partner.is_company and partner.customer_rank > 0:
                 # Get spending tier dynamically from configuration
-                tier_code = spending_tier_config.get_spending_tier_for_amount(partner.total_spent)
+                tier_code = spending_tier_config.get_spending_tier_for_amount(
+                    partner.total_spent
+                )
                 partner.customer_spending_tier = tier_code
-                
+
                 # Get tier details for display
-                tier = spending_tier_config.search([('tier_code', '=', tier_code)], limit=1)
+                tier = spending_tier_config.search(
+                    [("tier_code", "=", tier_code)], limit=1
+                )
                 if tier:
                     # Format spending amount with Indonesian Rupiah formatting
                     from ..utils import format_price_with_currency
-                    formatted_amount = format_price_with_currency(partner.total_spent, 'IDR')
+
+                    formatted_amount = format_price_with_currency(
+                        partner.total_spent, "IDR"
+                    )
                     # Use display name only for business-friendly presentation
-                    partner.customer_spending_tier_display = f"{tier.display_name} ({formatted_amount})"
+                    partner.customer_spending_tier_display = (
+                        f"{tier.display_name} ({formatted_amount})"
+                    )
                 else:
-                    partner.customer_spending_tier_display = f"Unclassified (Rp {partner.total_spent:,.0f})"
+                    partner.customer_spending_tier_display = (
+                        f"Unclassified (Rp {partner.total_spent:,.0f})"
+                    )
             else:
                 # Non-customers or companies
-                partner.customer_spending_tier = 'UNCLASSIFIED'
-                partner.customer_spending_tier_display = 'Not Classified'
+                partner.customer_spending_tier = "UNCLASSIFIED"
+                partner.customer_spending_tier_display = "Not Classified"
 
-    @api.depends('age')
+    @api.depends("age")
     def _compute_customer_age_group(self):
         """Compute customer age group using dynamic age-based configuration"""
-        age_group_config = self.env['wa_marketing_automation.customer_age_group_config']
-        
+        age_group_config = self.env["wa_marketing_automation.customer_age_group_config"]
+
         for partner in self:
             if not partner.is_company and partner.customer_rank > 0 and partner.age > 0:
                 # Get age group dynamically from configuration
                 group_code = age_group_config.get_age_group_for_age(partner.age)
                 partner.customer_age_group = group_code
-                
+
                 # Get group details for display
-                group = age_group_config.search([('group_code', '=', group_code)], limit=1)
+                group = age_group_config.search(
+                    [("group_code", "=", group_code)], limit=1
+                )
                 if group:
                     # Use display name only for business-friendly presentation
                     partner.customer_age_group_display = group.display_name
@@ -721,34 +1134,42 @@ class ResPartner(models.Model):
                     partner.customer_age_group_display = "Unclassified"
             else:
                 # Non-customers, companies, or no age data
-                partner.customer_age_group = 'UNCLASSIFIED'
-                partner.customer_age_group_display = 'Unclassified'
+                partner.customer_age_group = "UNCLASSIFIED"
+                partner.customer_age_group_display = "Unclassified"
 
     def get_rfm_thresholds_display(self):
         """Get current RFM thresholds formatted for user display"""
         # Get all active customers for threshold calculation
-        all_customers = self.env['res.partner'].search([
-            ('is_company', '=', False),
-            ('customer_rank', '>', 0),
-            ('active', '=', True)
-        ])
-        
+        all_customers = self.env["res.partner"].search(
+            [
+                ("is_company", "=", False),
+                ("customer_rank", ">", 0),
+                ("active", "=", True),
+            ]
+        )
+
         if not all_customers:
             return "No customer data available for threshold calculation"
-        
+
         # Calculate the same thresholds used in scoring
-        recency_values = [p.days_since_last_purchase for p in all_customers if p.days_since_last_purchase < 9999]
-        frequency_values = [p.purchase_count for p in all_customers if p.purchase_count > 0]
+        recency_values = [
+            p.days_since_last_purchase
+            for p in all_customers
+            if p.days_since_last_purchase < 9999
+        ]
+        frequency_values = [
+            p.purchase_count for p in all_customers if p.purchase_count > 0
+        ]
         monetary_values = [p.total_spent for p in all_customers if p.total_spent > 0]
-        
+
         recency_thresholds = self._calculate_quintiles(recency_values, reverse=True)
         frequency_thresholds = self._calculate_quintiles(frequency_values)
         monetary_thresholds = self._calculate_quintiles(monetary_values)
-        
+
         # Format thresholds for display
         def format_currency(amount):
             return f"${amount:,.0f}" if amount > 0 else "$0"
-        
+
         def format_days(days):
             if days == 0:
                 return "0 days"
@@ -758,7 +1179,7 @@ class ResPartner(models.Model):
                 return f"{days} days ({days//30}+ months)"
             else:
                 return f"{days} days ({days//365}+ years)"
-        
+
         display_text = f"""
 <strong>📊 Current RFM Scoring Thresholds</strong><br/>
 <em>Based on {len(all_customers)} active customers</em><br/><br/>
@@ -789,12 +1210,12 @@ class ResPartner(models.Model):
         return display_text
 
     rfm_thresholds_display = fields.Html(
-        string='RFM Thresholds',
-        compute='_compute_rfm_thresholds_display',
-        help='Current RFM scoring thresholds for transparency'
+        string="RFM Thresholds",
+        compute="_compute_rfm_thresholds_display",
+        help="Current RFM scoring thresholds for transparency",
     )
 
-    @api.depends_context('uid')
+    @api.depends_context("uid")
     def _compute_rfm_thresholds_display(self):
         """Compute RFM thresholds display for the current customer base"""
         for partner in self:
@@ -802,22 +1223,22 @@ class ResPartner(models.Model):
 
     def get_engagement_calculation_display(self):
         """Get engagement calculation details formatted for user display"""
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         # Get configuration values
-        engagement_period = config.get('engagement_analysis_period', 90)
-        email_multiplier = config.get('engagement_email_multiplier', 5)
-        website_multiplier = config.get('engagement_website_multiplier', 15)
-        website_base = config.get('engagement_website_base', 20)
-        website_historical = config.get('engagement_website_historical', 30)
-        whatsapp_deal_multiplier = config.get('engagement_whatsapp_deal_multiplier', 25)
-        whatsapp_revenue_bonus = config.get('engagement_whatsapp_revenue_bonus', 0.001)
-        whatsapp_base_score = config.get('engagement_whatsapp_base_score', 30)
-        whatsapp_fallback = config.get('engagement_whatsapp_fallback', 10)
-        
+        engagement_period = config.get("engagement_analysis_period", 90)
+        email_multiplier = config.get("engagement_email_multiplier", 5)
+        website_multiplier = config.get("engagement_website_multiplier", 15)
+        website_base = config.get("engagement_website_base", 20)
+        website_historical = config.get("engagement_website_historical", 30)
+        whatsapp_deal_multiplier = config.get("engagement_whatsapp_deal_multiplier", 25)
+        whatsapp_revenue_bonus = config.get("engagement_whatsapp_revenue_bonus", 0.001)
+        whatsapp_base_score = config.get("engagement_whatsapp_base_score", 30)
+        whatsapp_fallback = config.get("engagement_whatsapp_fallback", 10)
+
         # Get weights
         weights = self._get_adaptive_engagement_weights(config)
-        
+
         display_text = f"""
 <strong>📊 Engagement Score Calculation Details</strong><br/>
 <em>Analysis period: Last {engagement_period} days</em><br/><br/>
@@ -841,11 +1262,13 @@ class ResPartner(models.Model):
 
 <strong>🎯 Overall Engagement (Weighted Average):</strong><br/>
 """
-        
+
         for metric, weight in weights.items():
-            channel_name = metric.replace('_engagement', '').replace('_', ' ').title()
-            display_text += f"• <strong>{channel_name}:</strong> {weight:.1f}% weight<br/>"
-        
+            channel_name = metric.replace("_engagement", "").replace("_", " ").title()
+            display_text += (
+                f"• <strong>{channel_name}:</strong> {weight:.1f}% weight<br/>"
+            )
+
         display_text += f"""<br/>
 <strong>💡 Understanding Your Scores:</strong><br/>
 • <strong>Website engagement is currently disabled</strong> because sale orders don't represent true website activity<br/>
@@ -859,27 +1282,29 @@ class ResPartner(models.Model):
         return display_text
 
     engagement_calculation_display = fields.Html(
-        string='Engagement Calculation Details',
-        compute='_compute_engagement_calculation_display',
-        help='Current engagement scoring logic for transparency'
+        string="Engagement Calculation Details",
+        compute="_compute_engagement_calculation_display",
+        help="Current engagement scoring logic for transparency",
     )
 
-    @api.depends_context('uid')
+    @api.depends_context("uid")
     def _compute_engagement_calculation_display(self):
         """Compute engagement calculation display"""
         for partner in self:
-            partner.engagement_calculation_display = self.get_engagement_calculation_display()
+            partner.engagement_calculation_display = (
+                self.get_engagement_calculation_display()
+            )
 
     def get_journey_multichannel_calculation_display(self):
         """Get journey and multichannel calculation details formatted for user display"""
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         # Get configuration values
-        journey_active_threshold = config.get('journey_active_threshold', 90)
-        journey_loyalty_threshold = config.get('journey_loyalty_threshold', 180)
-        b2b_loyalty_orders = config.get('journey_b2b_loyalty_orders', 5)
-        engagement_period = config.get('engagement_analysis_period', 90)
-        
+        journey_active_threshold = config.get("journey_active_threshold", 90)
+        journey_loyalty_threshold = config.get("journey_loyalty_threshold", 180)
+        b2b_loyalty_orders = config.get("journey_b2b_loyalty_orders", 5)
+        engagement_period = config.get("engagement_analysis_period", 90)
+
         display_text = f"""
 <strong>🗺️ Customer Journey Stage Calculation</strong><br/>
 <em>Determines where customers are in their relationship with your business</em><br/><br/>
@@ -933,34 +1358,38 @@ class ResPartner(models.Model):
         return display_text
 
     journey_multichannel_calculation_display = fields.Html(
-        string='Journey & Multi-Channel Calculation Details',
-        compute='_compute_journey_multichannel_calculation_display',
-        help='Current journey and multichannel logic for transparency'
+        string="Journey & Multi-Channel Calculation Details",
+        compute="_compute_journey_multichannel_calculation_display",
+        help="Current journey and multichannel logic for transparency",
     )
 
-    @api.depends_context('uid')
+    @api.depends_context("uid")
     def _compute_journey_multichannel_calculation_display(self):
         """Compute journey and multichannel calculation display"""
         for partner in self:
-            partner.journey_multichannel_calculation_display = self.get_journey_multichannel_calculation_display()
+            partner.journey_multichannel_calculation_display = (
+                self.get_journey_multichannel_calculation_display()
+            )
 
     def get_churn_calculation_display(self):
         """Get churn risk calculation details formatted for user display"""
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         # Get configuration values
-        churn_long_period = config.get('churn_long_period', 365)
-        churn_medium_period = config.get('churn_medium_period', 180)
-        churn_short_period = config.get('churn_short_period', 90)
-        
-        churn_engagement_very_low = config.get('churn_engagement_very_low_threshold', 20)
-        churn_engagement_low = config.get('churn_engagement_low_threshold', 40)
-        churn_engagement_medium = config.get('churn_engagement_medium_threshold', 60)
-        
-        consistency_very_low = config.get('churn_consistency_very_low_threshold', 20)
-        consistency_low = config.get('churn_consistency_low_threshold', 40)
-        consistency_medium = config.get('churn_consistency_medium_threshold', 60)
-        
+        churn_long_period = config.get("churn_long_period", 365)
+        churn_medium_period = config.get("churn_medium_period", 180)
+        churn_short_period = config.get("churn_short_period", 90)
+
+        churn_engagement_very_low = config.get(
+            "churn_engagement_very_low_threshold", 20
+        )
+        churn_engagement_low = config.get("churn_engagement_low_threshold", 40)
+        churn_engagement_medium = config.get("churn_engagement_medium_threshold", 60)
+
+        consistency_very_low = config.get("churn_consistency_very_low_threshold", 20)
+        consistency_low = config.get("churn_consistency_low_threshold", 40)
+        consistency_medium = config.get("churn_consistency_medium_threshold", 60)
+
         display_text = f"""
 <strong>🚨 Churn Risk Calculation</strong><br/>
 <em>Predicts the likelihood of customer leaving in the next 90 days</em><br/><br/>
@@ -1020,12 +1449,12 @@ class ResPartner(models.Model):
         return display_text
 
     churn_calculation_display = fields.Html(
-        string='Churn Risk Calculation Details',
-        compute='_compute_churn_calculation_display',
-        help='Current churn risk prediction logic for transparency'
+        string="Churn Risk Calculation Details",
+        compute="_compute_churn_calculation_display",
+        help="Current churn risk prediction logic for transparency",
     )
 
-    @api.depends_context('uid')
+    @api.depends_context("uid")
     def _compute_churn_calculation_display(self):
         """Compute churn calculation display"""
         for partner in self:
@@ -1033,21 +1462,25 @@ class ResPartner(models.Model):
 
     def get_values_propensity_calculation_display(self):
         """Get values-driven propensity calculation details formatted for user display"""
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         # Get configuration values
-        eco_keywords = config.get('eco_friendly_keywords', 'eco,organic,sustainable,green,bio,natural')
-        social_keywords = config.get('social_responsibility_keywords', 'fair,ethical,charity,community,social')
-        
-        luxury_threshold = config.get('premium_luxury_threshold', 500.0)
-        premium_threshold = config.get('premium_premium_threshold', 200.0)
-        midrange_threshold = config.get('premium_midrange_threshold', 100.0)
-        budget_plus_threshold = config.get('premium_budget_plus_threshold', 50.0)
-        
-        eco_boost = config.get('eco_friendly_loyalty_boost', 1.2)
-        premium_boost = config.get('premium_loyalty_boost', 1.1)
-        social_boost = config.get('social_responsibility_loyalty_boost', 1.2)
-        
+        eco_keywords = config.get(
+            "eco_friendly_keywords", "eco,organic,sustainable,green,bio,natural"
+        )
+        social_keywords = config.get(
+            "social_responsibility_keywords", "fair,ethical,charity,community,social"
+        )
+
+        luxury_threshold = config.get("premium_luxury_threshold", 500.0)
+        premium_threshold = config.get("premium_premium_threshold", 200.0)
+        midrange_threshold = config.get("premium_midrange_threshold", 100.0)
+        budget_plus_threshold = config.get("premium_budget_plus_threshold", 50.0)
+
+        eco_boost = config.get("eco_friendly_loyalty_boost", 1.2)
+        premium_boost = config.get("premium_loyalty_boost", 1.1)
+        social_boost = config.get("social_responsibility_loyalty_boost", 1.2)
+
         display_text = f"""
 <strong>🌱 Values & Preferences Calculation</strong><br/>
 <em>Analyzes what this customer cares about when making purchases</em><br/><br/>
@@ -1102,30 +1535,32 @@ class ResPartner(models.Model):
         return display_text
 
     values_propensity_calculation_display = fields.Html(
-        string='Values & Preferences Calculation Details',
-        compute='_compute_values_propensity_calculation_display',
-        help='Current values-driven propensity logic for transparency'
+        string="Values & Preferences Calculation Details",
+        compute="_compute_values_propensity_calculation_display",
+        help="Current values-driven propensity logic for transparency",
     )
 
-    @api.depends_context('uid')
+    @api.depends_context("uid")
     def _compute_values_propensity_calculation_display(self):
         """Compute values propensity calculation display"""
         for partner in self:
-            partner.values_propensity_calculation_display = self.get_values_propensity_calculation_display()
+            partner.values_propensity_calculation_display = (
+                self.get_values_propensity_calculation_display()
+            )
 
     def get_social_commerce_calculation_display(self):
         """Get social commerce calculation details formatted for user display"""
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         # Get configuration values
-        fb_kw = config.get('social_facebook_keywords', 'facebook,fb')
-        ig_kw = config.get('social_instagram_keywords', 'instagram,ig')
-        tw_kw = config.get('social_twitter_keywords', 'twitter')
-        li_kw = config.get('social_linkedin_keywords', 'linkedin')
-        tt_kw = config.get('social_tiktok_keywords', 'tiktok')
-        yt_kw = config.get('social_youtube_keywords', 'youtube')
-        ot_kw = config.get('social_other_keywords', 'social,share,referral')
-        
+        fb_kw = config.get("social_facebook_keywords", "facebook,fb")
+        ig_kw = config.get("social_instagram_keywords", "instagram,ig")
+        tw_kw = config.get("social_twitter_keywords", "twitter")
+        li_kw = config.get("social_linkedin_keywords", "linkedin")
+        tt_kw = config.get("social_tiktok_keywords", "tiktok")
+        yt_kw = config.get("social_youtube_keywords", "youtube")
+        ot_kw = config.get("social_other_keywords", "social,share,referral")
+
         display_text = f"""
 <strong>📱 Social Commerce Calculation</strong><br/>
 <em>Tracks how customers discover and buy from you through social media</em><br/><br/>
@@ -1183,27 +1618,31 @@ class ResPartner(models.Model):
         return display_text
 
     social_commerce_calculation_display = fields.Html(
-        string='Social Commerce Calculation Details',
-        compute='_compute_social_commerce_calculation_display',
-        help='Current social commerce tracking logic for transparency'
+        string="Social Commerce Calculation Details",
+        compute="_compute_social_commerce_calculation_display",
+        help="Current social commerce tracking logic for transparency",
     )
 
-    @api.depends_context('uid')
+    @api.depends_context("uid")
     def _compute_social_commerce_calculation_display(self):
         """Compute social commerce calculation display"""
         for partner in self:
-            partner.social_commerce_calculation_display = self.get_social_commerce_calculation_display()
+            partner.social_commerce_calculation_display = (
+                self.get_social_commerce_calculation_display()
+            )
 
     def get_bnpl_calculation_display(self):
         """Get BNPL calculation details formatted for user display"""
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         # Get configuration values
-        bnpl_keywords = config.get('bnpl_keywords', 'installment,split,bnpl,klarna,afterpay,sezzle,affirm')
-        bnpl_rarely_threshold = config.get('bnpl_rarely_threshold', 2)
-        bnpl_sometimes_threshold = config.get('bnpl_sometimes_threshold', 5)
-        bnpl_frequently_threshold = config.get('bnpl_frequently_threshold', 10)
-        
+        bnpl_keywords = config.get(
+            "bnpl_keywords", "installment,split,bnpl,klarna,afterpay,sezzle,affirm"
+        )
+        bnpl_rarely_threshold = config.get("bnpl_rarely_threshold", 2)
+        bnpl_sometimes_threshold = config.get("bnpl_sometimes_threshold", 5)
+        bnpl_frequently_threshold = config.get("bnpl_frequently_threshold", 10)
+
         display_text = f"""
 <strong>💳 BNPL (Buy Now Pay Later) Calculation</strong><br/>
 <em>Analyzes customer payment preferences for installment and deferred payment options</em><br/><br/>
@@ -1250,242 +1689,629 @@ class ResPartner(models.Model):
         return display_text
 
     bnpl_calculation_display = fields.Html(
-        string='BNPL Calculation Details',
-        compute='_compute_bnpl_calculation_display',
-        help='Current BNPL tracking logic for transparency'
+        string="BNPL Calculation Details",
+        compute="_compute_bnpl_calculation_display",
+        help="Current BNPL tracking logic for transparency",
     )
 
-    @api.depends_context('uid')
+    @api.depends_context("uid")
     def _compute_bnpl_calculation_display(self):
         """Compute BNPL calculation display"""
         for partner in self:
             partner.bnpl_calculation_display = self.get_bnpl_calculation_display()
 
-    @api.depends('message_ids', 'sale_order_ids', 'opportunity_ids')
+    def get_demographics_calculation_display(self):
+        """Generate demographics calculation transparency display"""
+        return """
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <h4 style='margin: 0 0 12px 0; color: #1f2937; font-size: 16px;'>
+                🎯 Demographics Calculation Transparency
+            </h4>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Age Group Classification:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Data Source:</strong> Customer's date of birth field</li>
+                    <li><strong>Calculation:</strong> Current date minus birth date, converted to years</li>
+                    <li><strong>Classification:</strong> Age matched against configured age group ranges</li>
+                    <li><strong>Configuration:</strong> Fully customizable age ranges in Configuration → Customer Age Groups</li>
+                </ul>
+            </div>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Spending Tier Classification:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Data Source:</strong> All confirmed customer sales orders in the last 12 months</li>
+                    <li><strong>Calculation:</strong> Sum of all order amounts (untaxed total)</li>
+                    <li><strong>Classification:</strong> Total spending matched against configured spending tier ranges</li>
+                    <li><strong>Configuration:</strong> Fully customizable spending ranges in Configuration → Customer Spending Tiers</li>
+                    <li><strong>Currency:</strong> Uses company's base currency for calculations</li>
+                </ul>
+            </div>
+            
+            <div style='background: #fef3c7; border: 1px solid #fbbf24; border-radius: 6px; padding: 12px; margin-top: 16px;'>
+                <p style='margin: 0; color: #92400e; font-size: 13px;'>
+                    <strong>📋 Business Note:</strong> Both age groups and spending tiers are fully configurable. 
+                    Businesses can adjust ranges, names, and thresholds to match their specific customer segmentation needs.
+                </p>
+            </div>
+        </div>
+        """
+
+    demographics_calculation_display = fields.Html(
+        string="Demographics Calculation Details",
+        compute="_compute_demographics_calculation_display",
+        store=False,
+        help="Shows how age group and spending tier classifications are calculated",
+    )
+
+    @api.depends_context("uid")
+    def _compute_demographics_calculation_display(self):
+        """Compute demographics calculation display"""
+        for partner in self:
+            partner.demographics_calculation_display = (
+                self.get_demographics_calculation_display()
+            )
+
+    def get_acquisition_calculation_display(self):
+        """Generate acquisition source calculation transparency display"""
+        return """
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <h4 style='margin: 0 0 12px 0; color: #1f2937; font-size: 16px;'>
+                📊 Acquisition Analytics Calculation Transparency
+            </h4>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Acquisition Source Tracking:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Data Source:</strong> Manually assigned acquisition source on customer record</li>
+                    <li><strong>Tracking:</strong> Staff manually select how customer was acquired (Instagram, TikTok, Walk-in, Referral, etc.)</li>
+                    <li><strong>Sources Available:</strong> Configured in Configuration → Customer Acquisition Sources</li>
+                    <li><strong>Digital vs Physical:</strong> Sources marked as digital/social for channel analysis</li>
+                </ul>
+            </div>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Customer Lifecycle Metrics:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Acquisition Date:</strong> Date of customer's first confirmed sales order</li>
+                    <li><strong>Customer Lifetime:</strong> Days between first order and today</li>
+                    <li><strong>New vs Existing:</strong> Customers with ≤1 confirmed orders are considered "new"</li>
+                    <li><strong>Data Source:</strong> Sales order history and order confirmation dates</li>
+                </ul>
+            </div>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Performance Analytics:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Source Performance:</strong> Revenue, customer count, and conversion rates by acquisition source</li>
+                    <li><strong>New vs Existing Performance:</strong> Spending patterns, frequency, and behavior comparison</li>
+                    <li><strong>Retention Analysis:</strong> Customer lifetime value and retention rates by acquisition channel</li>
+                </ul>
+            </div>
+            
+            <div style='background: #e0f2fe; border: 1px solid #0288d1; border-radius: 6px; padding: 12px; margin-top: 16px;'>
+                <p style='margin: 0; color: #01579b; font-size: 13px;'>
+                    <strong>💡 Business Insight:</strong> Acquisition source tracking helps identify which marketing channels 
+                    bring the most valuable customers, enabling better marketing budget allocation and strategy optimization.
+                </p>
+            </div>
+        </div>
+        """
+
+    acquisition_calculation_display = fields.Html(
+        string="Acquisition Analytics Calculation Details",
+        compute="_compute_acquisition_calculation_display",
+        store=False,
+        help="Shows how customer acquisition analytics are calculated and tracked",
+    )
+
+    @api.depends_context("uid")
+    def _compute_acquisition_calculation_display(self):
+        """Compute acquisition calculation display"""
+        for partner in self:
+            partner.acquisition_calculation_display = (
+                self.get_acquisition_calculation_display()
+            )
+
+    def get_category_analytics_calculation_display(self):
+        """Generate product category analytics calculation transparency display"""
+        return """
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <h4 style='margin: 0 0 12px 0; color: #1f2937; font-size: 16px;'>
+                🛍️ Product Category Analytics Calculation Transparency
+            </h4>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Data Collection Process:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Data Source:</strong> All confirmed sales orders and their product line items</li>
+                    <li><strong>Category Mapping:</strong> Product → Product Template → Product Category (hierarchical)</li>
+                    <li><strong>Time Analysis:</strong> Recent (last 6 months) vs Historical (older than 6 months)</li>
+                    <li><strong>Calculation Basis:</strong> Line-item level analysis with category aggregation</li>
+                </ul>
+            </div>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Metric Calculations:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Favorite Categories:</strong> Top 3 categories by combined spending (70%) + frequency (30%)</li>
+                    <li><strong>Top Category:</strong> Single category with highest total spending amount</li>
+                    <li><strong>Diversity Score:</strong> (Unique categories ÷ 20) × 100 (capped at 100%)</li>
+                    <li><strong>Spending Breakdown:</strong> JSON summary with totals, percentages, and category details</li>
+                    <li><strong>Purchase Patterns:</strong> Recent vs historical trend analysis (20%+ change threshold)</li>
+                </ul>
+            </div>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Pattern Analysis Logic:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Trend Detection:</strong> Compares recent 6-month spending vs historical patterns</li>
+                    <li><strong>Focus Analysis:</strong> Identifies customers concentrating on single categories</li>
+                    <li><strong>Diversity Analysis:</strong> Highlights customers exploring multiple categories</li>
+                    <li><strong>Change Threshold:</strong> ±20% spending change to identify significant shifts</li>
+                </ul>
+            </div>
+            
+            <div style='margin-bottom: 16px;'>
+                <h5 style='margin: 0 0 8px 0; color: #374151; font-size: 14px; font-weight: 600;'>
+                    Category Structure:
+                </h5>
+                <ul style='margin: 0; padding-left: 20px; color: #4b5563;'>
+                    <li><strong>Hierarchy Support:</strong> Uses complete category path (e.g., "Electronics / Smartphones / Android")</li>
+                    <li><strong>Category Source:</strong> Odoo's built-in product.category model with parent/child relationships</li>
+                    <li><strong>Configuration:</strong> Categories managed in Inventory → Configuration → Product Categories</li>
+                    <li><strong>Flexibility:</strong> Works with any category structure - fully adaptable to business needs</li>
+                </ul>
+            </div>
+            
+            <div style='background: #f0fdf4; border: 1px solid #16a34a; border-radius: 6px; padding: 12px; margin-top: 16px;'>
+                <p style='margin: 0; color: #15803d; font-size: 13px;'>
+                    <strong>🎯 Business Value:</strong> This analysis helps identify customer preferences, cross-sell opportunities, 
+                    and product category trends. Use it to personalize recommendations, optimize inventory, and create targeted marketing campaigns.
+                </p>
+            </div>
+            
+            <div style='background: #eff6ff; border: 1px solid #3b82f6; border-radius: 6px; padding: 12px; margin-top: 12px;'>
+                <p style='margin: 0; color: #1d4ed8; font-size: 13px;'>
+                    <strong>📊 Performance Note:</strong> Analysis period (6 months) and thresholds (20% change, diversity cap) 
+                    are optimized for business relevance but can be configured per business requirements.
+                </p>
+            </div>
+        </div>
+        """
+
+    category_analytics_calculation_display = fields.Html(
+        string="Category Analytics Calculation Details",
+        compute="_compute_category_analytics_calculation_display",
+        store=False,
+        help="Shows how product category analytics and patterns are calculated",
+    )
+
+    # ===== BUSINESS NOTES FIELDS =====
+    # Contextual business notes for each analytics section
+
+    # RFM Analysis Business Notes (Business Value + Business Insight)
+    rfm_business_notes = fields.Html(
+        string="RFM Business Notes",
+        compute="_compute_rfm_business_notes",
+        store=False,
+        help="Shows contextual business value and insights for RFM analysis",
+    )
+
+    # Engagement Analytics Business Notes (Business Value + Performance Note)
+    engagement_business_notes = fields.Html(
+        string="Engagement Business Notes",
+        compute="_compute_engagement_business_notes",
+        store=False,
+        help="Shows contextual business value and performance notes for engagement analysis",
+    )
+
+    # Churn Risk Business Notes (Urgency Alert + Business Value)
+    churn_business_notes = fields.Html(
+        string="Churn Business Notes",
+        compute="_compute_churn_business_notes",
+        store=False,
+        help="Shows contextual urgency alerts and business value for churn prediction",
+    )
+
+    # Values & Preferences Business Notes (Business Insight)
+    values_business_notes = fields.Html(
+        string="Values Business Notes",
+        compute="_compute_values_business_notes",
+        store=False,
+        help="Shows contextual business insights for values-driven propensity",
+    )
+
+    # Social Commerce Business Notes (Business Value + Performance Note)
+    social_business_notes = fields.Html(
+        string="Social Business Notes",
+        compute="_compute_social_business_notes",
+        store=False,
+        help="Shows contextual business value and performance notes for social commerce",
+    )
+
+    # BNPL & Mobile Business Notes (Business Insight)
+    bnpl_business_notes = fields.Html(
+        string="BNPL Business Notes",
+        compute="_compute_bnpl_business_notes",
+        store=False,
+        help="Shows contextual business insights for BNPL and mobile behavior",
+    )
+
+    # Demographics & Source Business Notes (Business Value + Business Note)
+    demographics_business_notes = fields.Html(
+        string="Demographics Business Notes",
+        compute="_compute_demographics_business_notes",
+        store=False,
+        help="Shows contextual business value and configuration notes for demographics",
+    )
+
+    # Product Categories Business Notes (Business Value + Performance Note)
+    category_business_notes = fields.Html(
+        string="Category Business Notes",
+        compute="_compute_category_business_notes",
+        store=False,
+        help="Shows contextual business value and performance notes for category analytics",
+    )
+
+    @api.depends_context("uid")
+    def _compute_category_analytics_calculation_display(self):
+        """Compute category analytics calculation display"""
+        for partner in self:
+            partner.category_analytics_calculation_display = (
+                self.get_category_analytics_calculation_display()
+            )
+
+    # ===== BUSINESS NOTES COMPUTE METHODS =====
+
+    @api.depends(
+        "rfm_segment", "rfm_score", "recency_score", "frequency_score", "monetary_score"
+    )
+    def _compute_rfm_business_notes(self):
+        """Compute RFM business notes"""
+        for partner in self:
+            partner.rfm_business_notes = self._get_rfm_business_notes()
+
+    @api.depends("engagement_level", "overall_engagement_score", "preferred_channel")
+    def _compute_engagement_business_notes(self):
+        """Compute engagement business notes"""
+        for partner in self:
+            partner.engagement_business_notes = self._get_engagement_business_notes()
+
+    @api.depends("churn_risk_level", "churn_risk_score", "days_since_last_purchase")
+    def _compute_churn_business_notes(self):
+        """Compute churn business notes"""
+        for partner in self:
+            partner.churn_business_notes = self._get_churn_business_notes()
+
+    @api.depends(
+        "sustainability_preference_score",
+        "premium_product_propensity",
+        "social_responsibility_score",
+    )
+    def _compute_values_business_notes(self):
+        """Compute values business notes"""
+        for partner in self:
+            partner.values_business_notes = self._get_values_business_notes()
+
+    @api.depends(
+        "social_media_source", "social_conversion_rate", "social_referral_count"
+    )
+    def _compute_social_business_notes(self):
+        """Compute social business notes"""
+        for partner in self:
+            partner.social_business_notes = self._get_social_business_notes()
+
+    @api.depends("bnpl_usage_frequency", "bnpl_preference_score")
+    def _compute_bnpl_business_notes(self):
+        """Compute BNPL business notes"""
+        for partner in self:
+            partner.bnpl_business_notes = self._get_bnpl_business_notes()
+
+    @api.depends(
+        "customer_age_group",
+        "customer_spending_tier",
+        "acquisition_source_id",
+        "customer_lifetime_days",
+    )
+    def _compute_demographics_business_notes(self):
+        """Compute demographics business notes"""
+        for partner in self:
+            partner.demographics_business_notes = (
+                self._get_demographics_business_notes()
+            )
+
+    @api.depends("top_category_name", "category_diversity_score")
+    def _compute_category_business_notes(self):
+        """Compute category business notes"""
+        for partner in self:
+            partner.category_business_notes = self._get_category_business_notes()
+
+    @api.depends("message_ids", "sale_order_ids", "opportunity_ids")
     def _compute_engagement_metrics(self):
         """Compute engagement scores across all channels (adaptive based on configuration)"""
         # Get metrics configuration
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
             # Skip if engagement scoring is disabled
-            if not config.get('enable_engagement_scoring', True):
+            if not config.get("enable_engagement_scoring", True):
                 partner.email_engagement_score = 0.0
                 partner.website_engagement_score = 0.0
                 partner.whatsapp_engagement_score = 0.0
                 partner.overall_engagement_score = 0.0
-                partner.engagement_level = 'unknown'
+                partner.engagement_level = "unknown"
                 continue
-            
+
             # Get data for scoring
             messages = partner.message_ids
-            campaigns = self.env['wa_marketing_automation.campaign'].search([
-                ('customer_segmentation_id.selected_customers', 'in', partner.ids)
-            ])
-            
+            campaigns = self.env["wa_marketing_automation.campaign"].search(
+                [("customer_segmentation_id.selected_customers", "in", partner.ids)]
+            )
+
             # Calculate individual channel scores
             scores = {}
-            
+
             # Email engagement (if enabled)
-            if config.get('enable_email_engagement', True) and partner.email:
-                engagement_period = config.get('engagement_analysis_period', 90)
+            if config.get("enable_email_engagement", True) and partner.email:
+                engagement_period = config.get("engagement_analysis_period", 90)
                 engagement_days_ago = date.today() - timedelta(days=engagement_period)
                 email_messages = messages.filtered(
-                    lambda m: m.date and m.date.date() >= engagement_days_ago and 
-                    m.message_type == 'email'
+                    lambda m: m.date
+                    and m.date.date() >= engagement_days_ago
+                    and m.message_type == "email"
                 )
-                email_multiplier = config.get('engagement_email_multiplier', 5)
-                scores['email_engagement'] = min(len(email_messages) * email_multiplier, 100)
+                email_multiplier = config.get("engagement_email_multiplier", 5)
+                scores["email_engagement"] = min(
+                    len(email_messages) * email_multiplier, 100
+                )
             else:
-                scores['email_engagement'] = 0.0
-            
+                scores["email_engagement"] = 0.0
+
             # Website engagement (if enabled)
-            if config.get('enable_website_engagement', True) and partner.customer_rank > 0:
+            if (
+                config.get("enable_website_engagement", True)
+                and partner.customer_rank > 0
+            ):
                 # LIMITATION: Website engagement tracking requires direct website analytics data
                 # Cannot reliably infer website engagement from sales orders because:
                 # - Customers can purchase offline, by phone, or in-store
                 # - Order timing and amounts don't correlate with website activity
                 # - Real engagement requires: page views, session time, click-through rates
                 # Set to 0 until proper website analytics integration is available
-                scores['website_engagement'] = 0.0
+                scores["website_engagement"] = 0.0
             else:
-                scores['website_engagement'] = 0.0
-            
+                scores["website_engagement"] = 0.0
+
             # WhatsApp engagement (if enabled)
-            if config.get('enable_whatsapp_engagement', True) and partner.mobile:
+            if config.get("enable_whatsapp_engagement", True) and partner.mobile:
                 # WhatsApp engagement based on won CRM opportunities from WhatsApp campaigns
-                engagement_period = config.get('engagement_analysis_period', 90)
+                engagement_period = config.get("engagement_analysis_period", 90)
                 engagement_days_ago = date.today() - timedelta(days=engagement_period)
-                
+
                 # Find won opportunities with WhatsApp Campaign source
-                won_opportunities = self.env['crm.lead'].search([
-                    ('partner_id', '=', partner.id),
-                    ('probability', '=', 100),  # Won deals
-                    ('stage_id.is_won', '=', True),  # Ensure stage is marked as won
-                    ('source_id.name', 'ilike', 'WhatsApp Campaign%'),  # Source starts with "WhatsApp Campaign"
-                    ('create_date', '>=', engagement_days_ago),  # Within engagement period
-                    ('active', '=', True)
-                ])
-                
+                won_opportunities = self.env["crm.lead"].search(
+                    [
+                        ("partner_id", "=", partner.id),
+                        ("probability", "=", 100),  # Won deals
+                        ("stage_id.is_won", "=", True),  # Ensure stage is marked as won
+                        (
+                            "source_id.name",
+                            "ilike",
+                            "WhatsApp Campaign%",
+                        ),  # Source starts with "WhatsApp Campaign"
+                        (
+                            "create_date",
+                            ">=",
+                            engagement_days_ago,
+                        ),  # Within engagement period
+                        ("active", "=", True),
+                    ]
+                )
+
                 # Calculate engagement score based on won deals
                 if won_opportunities:
                     # Score based on number of won deals and their value
                     deal_count = len(won_opportunities)
-                    total_revenue = sum(won_opportunities.mapped('expected_revenue'))
-                    
+                    total_revenue = sum(won_opportunities.mapped("expected_revenue"))
+
                     # Base score calculation
-                    deal_multiplier = config.get('engagement_whatsapp_deal_multiplier', 25)
-                    revenue_bonus = config.get('engagement_whatsapp_revenue_bonus', 0.001)  # Small bonus per currency unit
-                    base_score = config.get('engagement_whatsapp_base_score', 30)
-                    
+                    deal_multiplier = config.get(
+                        "engagement_whatsapp_deal_multiplier", 25
+                    )
+                    revenue_bonus = config.get(
+                        "engagement_whatsapp_revenue_bonus", 0.001
+                    )  # Small bonus per currency unit
+                    base_score = config.get("engagement_whatsapp_base_score", 30)
+
                     # Calculate score: base + (deals * multiplier) + (revenue * bonus)
-                    calculated_score = base_score + (deal_count * deal_multiplier) + (total_revenue * revenue_bonus)
-                    scores['whatsapp_engagement'] = min(calculated_score, 100)
-                elif campaigns.filtered(lambda c: c.state in ('completed', 'running')):
+                    calculated_score = (
+                        base_score
+                        + (deal_count * deal_multiplier)
+                        + (total_revenue * revenue_bonus)
+                    )
+                    scores["whatsapp_engagement"] = min(calculated_score, 100)
+                elif campaigns.filtered(lambda c: c.state in ("completed", "running")):
                     # Fallback: if in campaigns but no won deals, give modest score
-                    scores['whatsapp_engagement'] = config.get('engagement_whatsapp_fallback', 10)
+                    scores["whatsapp_engagement"] = config.get(
+                        "engagement_whatsapp_fallback", 10
+                    )
                 else:
-                    scores['whatsapp_engagement'] = 0.0
+                    scores["whatsapp_engagement"] = 0.0
             else:
-                scores['whatsapp_engagement'] = 0.0
-            
+                scores["whatsapp_engagement"] = 0.0
+
             # Calculate adaptive weighted overall score
             weights = self._get_adaptive_engagement_weights(config)
             total_weighted_score = 0.0
             total_weight = 0.0
-            
+
             for metric, weight in weights.items():
                 if metric in scores:
                     # Include ALL enabled channels in weighted average, even if score is 0
                     total_weighted_score += scores[metric] * (weight / 100)
                     total_weight += weight / 100
-            
-            overall_score = total_weighted_score / total_weight if total_weight > 0 else 0.0
-            
+
+            overall_score = (
+                total_weighted_score / total_weight if total_weight > 0 else 0.0
+            )
+
             # Set individual scores
-            partner.email_engagement_score = scores['email_engagement']
-            partner.website_engagement_score = scores['website_engagement']
-            partner.whatsapp_engagement_score = scores['whatsapp_engagement']
+            partner.email_engagement_score = scores["email_engagement"]
+            partner.website_engagement_score = scores["website_engagement"]
+            partner.whatsapp_engagement_score = scores["whatsapp_engagement"]
             partner.overall_engagement_score = overall_score
-            
+
             # Determine engagement level
             if overall_score >= 81:
-                partner.engagement_level = 'very_high'
+                partner.engagement_level = "very_high"
             elif overall_score >= 61:
-                partner.engagement_level = 'high'
+                partner.engagement_level = "high"
             elif overall_score >= 41:
-                partner.engagement_level = 'medium'
+                partner.engagement_level = "medium"
             elif overall_score >= 21:
-                partner.engagement_level = 'low'
+                partner.engagement_level = "low"
             else:
-                partner.engagement_level = 'very_low'
+                partner.engagement_level = "very_low"
 
-    @api.depends('rfm_segment', 'days_since_last_purchase', 'customer_rank', 'sale_order_count')
+    @api.depends(
+        "rfm_segment", "days_since_last_purchase", "customer_rank", "sale_order_count"
+    )
     def _compute_journey_stage(self):
         """Compute customer journey stage based on purchase behavior"""
         # Get metrics configuration
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
             # Check if sale module is available
-            if not hasattr(partner, 'sale_order_count'):
-                partner.customer_journey_stage = 'awareness'
+            if not hasattr(partner, "sale_order_count"):
+                partner.customer_journey_stage = "awareness"
                 continue
-                
-            journey_active_threshold = config.get('journey_active_threshold', 90)
-            journey_loyalty_threshold = config.get('journey_loyalty_threshold', 180)
-            b2b_loyalty_orders = config.get('journey_b2b_loyalty_orders', 5)
-            
+
+            journey_active_threshold = config.get("journey_active_threshold", 90)
+            journey_loyalty_threshold = config.get("journey_loyalty_threshold", 180)
+            b2b_loyalty_orders = config.get("journey_b2b_loyalty_orders", 5)
+
             if not partner.is_company:
                 if partner.customer_rank == 0:
                     # Never purchased
-                    partner.customer_journey_stage = 'awareness'
+                    partner.customer_journey_stage = "awareness"
                 elif partner.sale_order_count == 1:
                     # First-time customer
-                    partner.customer_journey_stage = 'consideration'
-                elif partner.rfm_segment in ('champions', 'loyal_customers'):
+                    partner.customer_journey_stage = "consideration"
+                elif partner.rfm_segment in ("champions", "loyal_customers"):
                     # High-value loyal customers
-                    partner.customer_journey_stage = 'advocacy'
+                    partner.customer_journey_stage = "advocacy"
                 elif partner.days_since_last_purchase <= journey_active_threshold:
                     # Active customers
-                    partner.customer_journey_stage = 'purchase'
+                    partner.customer_journey_stage = "purchase"
                 elif partner.days_since_last_purchase <= journey_loyalty_threshold:
                     # Recent customers building loyalty
-                    partner.customer_journey_stage = 'loyalty'
+                    partner.customer_journey_stage = "loyalty"
                 else:
                     # Dormant customers
-                    partner.customer_journey_stage = 'dormant'
+                    partner.customer_journey_stage = "dormant"
             else:
                 # Company logic (B2B)
                 if partner.customer_rank == 0:
-                    partner.customer_journey_stage = 'awareness'
+                    partner.customer_journey_stage = "awareness"
                 elif partner.sale_order_count >= b2b_loyalty_orders:
-                    partner.customer_journey_stage = 'loyalty'
+                    partner.customer_journey_stage = "loyalty"
                 else:
-                    partner.customer_journey_stage = 'purchase'
+                    partner.customer_journey_stage = "purchase"
 
-    @api.depends('email', 'mobile', 'phone', 'message_ids', 'opportunity_ids')
+    @api.depends("email", "mobile", "phone", "message_ids", "opportunity_ids")
     def _compute_multichannel_behavior(self):
         """Compute multi-channel behavior metrics"""
         # Get metrics configuration
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
             # Check if sale module is available
-            if not hasattr(partner, 'sale_order_ids'):
+            if not hasattr(partner, "sale_order_ids"):
                 partner.multichannel_touchpoints = 0
-                partner.preferred_channel = 'email' if partner.email else 'phone'
+                partner.preferred_channel = "email" if partner.email else "phone"
                 partner.multichannel_consistency_score = 0.0
                 continue
-                
+
             # Count available channels (excluding website since we can't track real website activity)
             channels = []
             if partner.email:
-                channels.append('email')
+                channels.append("email")
             if partner.mobile:
-                channels.append('whatsapp')
+                channels.append("whatsapp")
             if partner.phone:
-                channels.append('phone')
+                channels.append("phone")
             # Note: Website channel removed - sale orders don't indicate website usage
             # Customers can buy offline, by phone, in-store, etc.
-            
+
             # Count touchpoints
             partner.multichannel_touchpoints = len(channels)
-            
+
             # Determine preferred channel based on actual business results and engagement
-            engagement_period = config.get('engagement_analysis_period', 90)
+            engagement_period = config.get("engagement_analysis_period", 90)
             engagement_days_ago = date.today() - timedelta(days=engagement_period)
-            
+
             # Check for WhatsApp preference based on won CRM opportunities (consistent with engagement logic)
-            won_whatsapp_opportunities = self.env['crm.lead'].search([
-                ('partner_id', '=', partner.id),
-                ('probability', '=', 100),  # Won deals
-                ('stage_id.is_won', '=', True),  # Ensure stage is marked as won
-                ('source_id.name', 'ilike', 'WhatsApp Campaign%'),  # Source starts with "WhatsApp Campaign"
-                ('create_date', '>=', engagement_days_ago),  # Within engagement period
-                ('active', '=', True)
-            ])
-            
-            # Check for email activity (consistent with engagement logic)  
-            recent_email_messages = partner.message_ids.filtered(
-                lambda m: m.date and m.date.date() >= engagement_days_ago and 
-                m.message_type == 'email'
+            won_whatsapp_opportunities = self.env["crm.lead"].search(
+                [
+                    ("partner_id", "=", partner.id),
+                    ("probability", "=", 100),  # Won deals
+                    ("stage_id.is_won", "=", True),  # Ensure stage is marked as won
+                    (
+                        "source_id.name",
+                        "ilike",
+                        "WhatsApp Campaign%",
+                    ),  # Source starts with "WhatsApp Campaign"
+                    (
+                        "create_date",
+                        ">=",
+                        engagement_days_ago,
+                    ),  # Within engagement period
+                    ("active", "=", True),
+                ]
             )
-            
+
+            # Check for email activity (consistent with engagement logic)
+            recent_email_messages = partner.message_ids.filtered(
+                lambda m: m.date
+                and m.date.date() >= engagement_days_ago
+                and m.message_type == "email"
+            )
+
             # Determine preference based on actual business activity
             if won_whatsapp_opportunities and partner.mobile:
-                partner.preferred_channel = 'whatsapp'  # Has won deals from WhatsApp campaigns
+                partner.preferred_channel = (
+                    "whatsapp"  # Has won deals from WhatsApp campaigns
+                )
             elif recent_email_messages and partner.email:
-                partner.preferred_channel = 'email'  # Active email engagement
+                partner.preferred_channel = "email"  # Active email engagement
             elif partner.email:
-                partner.preferred_channel = 'email'  # Has email (fallback)
+                partner.preferred_channel = "email"  # Has email (fallback)
             elif partner.mobile:
-                partner.preferred_channel = 'whatsapp'  # Has mobile (fallback)
+                partner.preferred_channel = "whatsapp"  # Has mobile (fallback)
             elif partner.phone:
-                partner.preferred_channel = 'phone'  # Has phone (fallback)
+                partner.preferred_channel = "phone"  # Has phone (fallback)
             else:
-                partner.preferred_channel = 'mixed'  # No clear preference
-            
+                partner.preferred_channel = "mixed"  # No clear preference
+
             # Consistency score (how active across channels)
             if partner.multichannel_touchpoints >= 3:
                 partner.multichannel_consistency_score = 85.0
@@ -1496,420 +2322,973 @@ class ResPartner(models.Model):
             else:
                 partner.multichannel_consistency_score = 0.0
 
-    @api.depends('rfm_segment', 'days_since_last_purchase', 'overall_engagement_score', 'customer_journey_stage')
+    @api.depends(
+        "rfm_segment",
+        "days_since_last_purchase",
+        "overall_engagement_score",
+        "customer_journey_stage",
+    )
     def _compute_churn_prediction(self):
         """Compute churn risk score using multiple factors (adaptive based on configuration)"""
         # Get metrics configuration
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
             # Skip if churn prediction is disabled
-            if not config.get('enable_churn_prediction', True):
+            if not config.get("enable_churn_prediction", True):
                 partner.churn_risk_score = 0.0
-                partner.churn_risk_level = 'unknown'
+                partner.churn_risk_level = "unknown"
                 continue
-                
+
             if not partner.is_company and partner.customer_rank > 0:
                 # Get adaptive weights for churn factors
                 weights = self._get_adaptive_churn_weights(config)
                 churn_score = 0.0
-                
+
                 # RFM-based risk (always available)
                 rfm_factor = 0.0
-                if partner.rfm_segment in ('lost', 'hibernating'):
-                    rfm_factor = config.get('churn_rfm_critical_risk', 100.0)
-                elif partner.rfm_segment in ('cannot_lose_them', 'at_risk'):
-                    rfm_factor = config.get('churn_rfm_high_risk', 75.0)
-                elif partner.rfm_segment in ('about_to_sleep', 'need_attention'):
-                    rfm_factor = config.get('churn_rfm_medium_risk', 50.0)
-                elif partner.rfm_segment in ('promising', 'new_customers'):
-                    rfm_factor = config.get('churn_rfm_low_risk', 25.0)
-                
-                if 'rfm_analysis' in weights:
-                    churn_score += rfm_factor * (weights['rfm_analysis'] / 100)
-                
+                if partner.rfm_segment in ("lost", "hibernating"):
+                    rfm_factor = config.get("churn_rfm_critical_risk", 100.0)
+                elif partner.rfm_segment in ("cannot_lose_them", "at_risk"):
+                    rfm_factor = config.get("churn_rfm_high_risk", 75.0)
+                elif partner.rfm_segment in ("about_to_sleep", "need_attention"):
+                    rfm_factor = config.get("churn_rfm_medium_risk", 50.0)
+                elif partner.rfm_segment in ("promising", "new_customers"):
+                    rfm_factor = config.get("churn_rfm_low_risk", 25.0)
+
+                if "rfm_analysis" in weights:
+                    churn_score += rfm_factor * (weights["rfm_analysis"] / 100)
+
                 # Recency factor (always available)
                 recency_factor = 0.0
-                churn_long_period = config.get('churn_long_period', 365)
-                churn_medium_period = config.get('churn_medium_period', 180)
-                churn_short_period = config.get('churn_short_period', 90)
+                churn_long_period = config.get("churn_long_period", 365)
+                churn_medium_period = config.get("churn_medium_period", 180)
+                churn_short_period = config.get("churn_short_period", 90)
                 if partner.days_since_last_purchase > churn_long_period:
-                    recency_factor = config.get('churn_recency_high_risk', 100.0)
+                    recency_factor = config.get("churn_recency_high_risk", 100.0)
                 elif partner.days_since_last_purchase > churn_medium_period:
-                    recency_factor = config.get('churn_recency_medium_risk', 65.0)
+                    recency_factor = config.get("churn_recency_medium_risk", 65.0)
                 elif partner.days_since_last_purchase > churn_short_period:
-                    recency_factor = config.get('churn_recency_low_risk', 35.0)
-                
+                    recency_factor = config.get("churn_recency_low_risk", 35.0)
+
                 # Use a separate recency weight if engagement is disabled
-                if 'engagement_scoring' not in weights:
+                if "engagement_scoring" not in weights:
                     # Boost recency weight when engagement is not available
                     enhanced_weights = dict(weights)
-                    if 'rfm_analysis' in enhanced_weights:
+                    if "rfm_analysis" in enhanced_weights:
                         recency_weight = 60  # Higher weight for recency
-                        enhanced_weights['rfm_analysis'] = 40
+                        enhanced_weights["rfm_analysis"] = 40
                     else:
                         recency_weight = 100
                     churn_score += recency_factor * (recency_weight / 100)
                 else:
-                    churn_score += recency_factor * (weights.get('engagement_scoring', 0) / 100 * 0.5)  # Split engagement weight
-                
+                    churn_score += recency_factor * (
+                        weights.get("engagement_scoring", 0) / 100 * 0.5
+                    )  # Split engagement weight
+
                 # Engagement factor (if enabled)
-                if 'engagement_scoring' in weights and config.get('enable_engagement_scoring', True):
+                if "engagement_scoring" in weights and config.get(
+                    "enable_engagement_scoring", True
+                ):
                     engagement_factor = 0.0
-                    churn_engagement_very_low = config.get('churn_engagement_very_low_threshold', 20)
-                    churn_engagement_low = config.get('churn_engagement_low_threshold', 40)
-                    churn_engagement_medium = config.get('churn_engagement_medium_threshold', 60)
+                    churn_engagement_very_low = config.get(
+                        "churn_engagement_very_low_threshold", 20
+                    )
+                    churn_engagement_low = config.get(
+                        "churn_engagement_low_threshold", 40
+                    )
+                    churn_engagement_medium = config.get(
+                        "churn_engagement_medium_threshold", 60
+                    )
                     if partner.overall_engagement_score < churn_engagement_very_low:
-                        engagement_factor = config.get('churn_engagement_critical_risk', 100.0)
+                        engagement_factor = config.get(
+                            "churn_engagement_critical_risk", 100.0
+                        )
                     elif partner.overall_engagement_score < churn_engagement_low:
-                        engagement_factor = config.get('churn_engagement_high_risk', 75.0)
+                        engagement_factor = config.get(
+                            "churn_engagement_high_risk", 75.0
+                        )
                     elif partner.overall_engagement_score < churn_engagement_medium:
-                        engagement_factor = config.get('churn_engagement_medium_risk', 50.0)
-                    
-                    churn_score += engagement_factor * (weights['engagement_scoring'] / 100 * 0.5)  # Split with recency
-                
+                        engagement_factor = config.get(
+                            "churn_engagement_medium_risk", 50.0
+                        )
+
+                    churn_score += engagement_factor * (
+                        weights["engagement_scoring"] / 100 * 0.5
+                    )  # Split with recency
+
                 # Journey stage factor (if enabled)
-                if 'customer_journey' in weights and config.get('enable_customer_journey', True):
+                if "customer_journey" in weights and config.get(
+                    "enable_customer_journey", True
+                ):
                     journey_factor = 0.0
-                    if partner.customer_journey_stage == 'dormant':
+                    if partner.customer_journey_stage == "dormant":
                         journey_factor = 100.0
-                    elif partner.customer_journey_stage == 'consideration':
+                    elif partner.customer_journey_stage == "consideration":
                         journey_factor = 50.0
-                    
-                    churn_score += journey_factor * (weights['customer_journey'] / 100)
-                
+
+                    churn_score += journey_factor * (weights["customer_journey"] / 100)
+
                 # Multi-channel factor (if enabled)
-                if 'multichannel_behavior' in weights and config.get('enable_multichannel_behavior', True):
+                if "multichannel_behavior" in weights and config.get(
+                    "enable_multichannel_behavior", True
+                ):
                     multichannel_factor = 0.0
-                    min_touchpoints = config.get('churn_multichannel_min_touchpoints', 1)
-                    consistency_low = config.get('churn_multichannel_consistency_low', 30)
-                    consistency_medium = config.get('churn_multichannel_consistency_medium', 60)
+                    min_touchpoints = config.get(
+                        "churn_multichannel_min_touchpoints", 1
+                    )
+                    consistency_low = config.get(
+                        "churn_multichannel_consistency_low", 30
+                    )
+                    consistency_medium = config.get(
+                        "churn_multichannel_consistency_medium", 60
+                    )
                     if partner.multichannel_touchpoints <= min_touchpoints:
-                        multichannel_factor = config.get('churn_multichannel_high_risk', 80.0)
+                        multichannel_factor = config.get(
+                            "churn_multichannel_high_risk", 80.0
+                        )
                     elif partner.multichannel_consistency_score < consistency_low:
-                        multichannel_factor = config.get('churn_multichannel_medium_risk', 60.0)
+                        multichannel_factor = config.get(
+                            "churn_multichannel_medium_risk", 60.0
+                        )
                     elif partner.multichannel_consistency_score < consistency_medium:
-                        multichannel_factor = config.get('churn_multichannel_low_risk', 30.0)
-                    
-                    churn_score += multichannel_factor * (weights['multichannel_behavior'] / 100)
-                
+                        multichannel_factor = config.get(
+                            "churn_multichannel_low_risk", 30.0
+                        )
+
+                    churn_score += multichannel_factor * (
+                        weights["multichannel_behavior"] / 100
+                    )
+
                 partner.churn_risk_score = min(churn_score, 100.0)
-                
+
                 # Determine risk level
                 if partner.churn_risk_score >= 81:
-                    partner.churn_risk_level = 'very_high'
+                    partner.churn_risk_level = "very_high"
                 elif partner.churn_risk_score >= 61:
-                    partner.churn_risk_level = 'high'
+                    partner.churn_risk_level = "high"
                 elif partner.churn_risk_score >= 41:
-                    partner.churn_risk_level = 'medium'
+                    partner.churn_risk_level = "medium"
                 elif partner.churn_risk_score >= 21:
-                    partner.churn_risk_level = 'low'
+                    partner.churn_risk_level = "low"
                 else:
-                    partner.churn_risk_level = 'very_low'
+                    partner.churn_risk_level = "very_low"
             else:
                 partner.churn_risk_score = 0.0
-                partner.churn_risk_level = 'very_low'
+                partner.churn_risk_level = "very_low"
 
-    @api.depends('sale_order_ids.order_line.product_id', 'sale_order_ids.amount_total')
+    @api.depends("sale_order_ids.order_line.product_id", "sale_order_ids.amount_total")
     def _compute_values_driven_propensity(self):
         """Compute values-driven purchase propensity based on product preferences (adaptive)"""
         # Get metrics configuration
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
             # Skip if values analytics is disabled
-            if not config.get('enable_values_analytics', False):
+            if not config.get("enable_values_analytics", False):
                 partner.sustainability_preference_score = 0.0
                 partner.premium_product_propensity = 0.0
                 partner.social_responsibility_score = 0.0
                 continue
             # Check if sale_order_ids field exists (sale module might not be installed)
-            if not hasattr(partner, 'sale_order_ids'):
+            if not hasattr(partner, "sale_order_ids"):
                 partner.sustainability_preference_score = 25.0
                 partner.premium_product_propensity = 25.0
                 partner.social_responsibility_score = 25.0
                 continue
-                
+
             if partner.sale_order_ids:
                 # Analyze product purchases for patterns
-                order_lines = partner.sale_order_ids.mapped('order_line')
-                products = order_lines.mapped('product_id')
-                
+                order_lines = partner.sale_order_ids.mapped("order_line")
+                products = order_lines.mapped("product_id")
+
                 # Sustainability score (based on product categories and names)
                 sustainability_score = 0.0
-                eco_keywords = config.get('eco_friendly_keywords', 'eco,organic,sustainable,green,bio,natural')
-                sustainability_keywords = eco_keywords.split(',') if isinstance(eco_keywords, str) else eco_keywords
+                eco_keywords = config.get(
+                    "eco_friendly_keywords", "eco,organic,sustainable,green,bio,natural"
+                )
+                sustainability_keywords = (
+                    eco_keywords.split(",")
+                    if isinstance(eco_keywords, str)
+                    else eco_keywords
+                )
                 sustainable_products = products.filtered(
-                    lambda p: any(keyword.strip() in p.name.lower() for keyword in sustainability_keywords) if p.name else False
+                    lambda p: (
+                        any(
+                            keyword.strip() in p.name.lower()
+                            for keyword in sustainability_keywords
+                        )
+                        if p.name
+                        else False
+                    )
                 )
                 if products:
-                    sustainability_score = (len(sustainable_products) / len(products)) * 100
-                
+                    sustainability_score = (
+                        len(sustainable_products) / len(products)
+                    ) * 100
+
                 # Premium product propensity (based on price points)
                 premium_score = 0.0
                 if order_lines:
-                    avg_price = sum(order_lines.mapped('price_unit')) / len(order_lines)
+                    avg_price = sum(order_lines.mapped("price_unit")) / len(order_lines)
                     # Score based on average price point (configurable thresholds)
-                    luxury_threshold = config.get('premium_luxury_threshold', 500.0)
-                    premium_threshold = config.get('premium_premium_threshold', 200.0)
-                    midrange_threshold = config.get('premium_midrange_threshold', 100.0)
-                    budget_plus_threshold = config.get('premium_budget_plus_threshold', 50.0)
-                    
+                    luxury_threshold = config.get("premium_luxury_threshold", 500.0)
+                    premium_threshold = config.get("premium_premium_threshold", 200.0)
+                    midrange_threshold = config.get("premium_midrange_threshold", 100.0)
+                    budget_plus_threshold = config.get(
+                        "premium_budget_plus_threshold", 50.0
+                    )
+
                     if avg_price > luxury_threshold:
-                        premium_score = config.get('premium_luxury_score', 90.0)
+                        premium_score = config.get("premium_luxury_score", 90.0)
                     elif avg_price > premium_threshold:
-                        premium_score = config.get('premium_premium_score', 70.0)
+                        premium_score = config.get("premium_premium_score", 70.0)
                     elif avg_price > midrange_threshold:
-                        premium_score = config.get('premium_midrange_score', 50.0)
+                        premium_score = config.get("premium_midrange_score", 50.0)
                     elif avg_price > budget_plus_threshold:
-                        premium_score = config.get('premium_budget_plus_score', 30.0)
+                        premium_score = config.get("premium_budget_plus_score", 30.0)
                     else:
-                        premium_score = config.get('premium_budget_score', 10.0)
-                
+                        premium_score = config.get("premium_budget_score", 10.0)
+
                 # Social responsibility score (based on brand preferences)
                 social_score = 0.0
-                social_resp_keywords = config.get('social_responsibility_keywords', 'fair,ethical,charity,community,social')
-                social_keywords = social_resp_keywords.split(',') if isinstance(social_resp_keywords, str) else social_resp_keywords
+                social_resp_keywords = config.get(
+                    "social_responsibility_keywords",
+                    "fair,ethical,charity,community,social",
+                )
+                social_keywords = (
+                    social_resp_keywords.split(",")
+                    if isinstance(social_resp_keywords, str)
+                    else social_resp_keywords
+                )
                 social_products = products.filtered(
-                    lambda p: any(keyword.strip() in p.name.lower() for keyword in social_keywords) if p.name else False
+                    lambda p: (
+                        any(
+                            keyword.strip() in p.name.lower()
+                            for keyword in social_keywords
+                        )
+                        if p.name
+                        else False
+                    )
                 )
                 if products:
                     social_score = (len(social_products) / len(products)) * 100
-                
+
                 # Boost scores for loyal customers
-                if partner.rfm_segment in ('champions', 'loyal_customers'):
-                    eco_boost = config.get('eco_friendly_loyalty_boost', 1.2)
-                    premium_boost = config.get('premium_loyalty_boost', 1.1)
-                    social_boost = config.get('social_responsibility_loyalty_boost', 1.2)
+                if partner.rfm_segment in ("champions", "loyal_customers"):
+                    eco_boost = config.get("eco_friendly_loyalty_boost", 1.2)
+                    premium_boost = config.get("premium_loyalty_boost", 1.1)
+                    social_boost = config.get(
+                        "social_responsibility_loyalty_boost", 1.2
+                    )
                     sustainability_score = min(sustainability_score * eco_boost, 100)
                     premium_score = min(premium_score * premium_boost, 100)
                     social_score = min(social_score * social_boost, 100)
-                
+
                 partner.sustainability_preference_score = sustainability_score
                 partner.premium_product_propensity = premium_score
                 partner.social_responsibility_score = social_score
             else:
                 # Default scores for customers without purchase history
-                partner.sustainability_preference_score = config.get('eco_friendly_default_score', 25.0)
-                partner.premium_product_propensity = config.get('premium_default_score', 25.0)
-                partner.social_responsibility_score = config.get('social_responsibility_default_score', 25.0)
+                partner.sustainability_preference_score = config.get(
+                    "eco_friendly_default_score", 25.0
+                )
+                partner.premium_product_propensity = config.get(
+                    "premium_default_score", 25.0
+                )
+                partner.social_responsibility_score = config.get(
+                    "social_responsibility_default_score", 25.0
+                )
 
-    @api.depends('sale_order_ids.source_id', 'sale_order_ids.campaign_id', 'sale_order_ids.medium_id')
+    @api.depends(
+        "sale_order_ids.source_id",
+        "sale_order_ids.campaign_id",
+        "sale_order_ids.medium_id",
+    )
     def _compute_social_commerce_metrics(self):
         """Compute social commerce integration metrics based on UTM sources (adaptive)"""
         # Get metrics configuration
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
             # Skip if social commerce analytics is disabled
-            if not config.get('enable_social_commerce', False):
-                partner.social_media_source = 'none'
+            if not config.get("enable_social_commerce", False):
+                partner.social_media_source = "none"
                 partner.social_referral_count = 0
                 partner.social_engagement_score = 0.0
                 partner.social_conversion_rate = 0.0
                 continue
             # Check if sale module is available
-            if not hasattr(partner, 'sale_order_ids'):
-                partner.social_media_source = 'none'
+            if not hasattr(partner, "sale_order_ids"):
+                partner.social_media_source = "none"
                 partner.social_referral_count = 0
                 partner.social_engagement_score = 0.0
                 partner.social_conversion_rate = 0.0
                 continue
-                
+
             if partner.sale_order_ids:
                 # Analyze UTM sources from sales orders
-                orders = partner.sale_order_ids.filtered(lambda o: o.state in ('sale', 'done'))
-                
+                orders = partner.sale_order_ids.filtered(
+                    lambda o: o.state in ("sale", "done")
+                )
+
                 social_sources = []
                 social_order_count = 0
-                
+
                 # Check for social media sources in UTM data
-                fb_kw = config.get('social_facebook_keywords', 'facebook,fb')
-                facebook_keywords = fb_kw.split(',') if isinstance(fb_kw, str) else fb_kw
-                ig_kw = config.get('social_instagram_keywords', 'instagram,ig')
-                instagram_keywords = ig_kw.split(',') if isinstance(ig_kw, str) else ig_kw
-                tw_kw = config.get('social_twitter_keywords', 'twitter')
-                twitter_keywords = tw_kw.split(',') if isinstance(tw_kw, str) else tw_kw
-                li_kw = config.get('social_linkedin_keywords', 'linkedin')
-                linkedin_keywords = li_kw.split(',') if isinstance(li_kw, str) else li_kw
-                tt_kw = config.get('social_tiktok_keywords', 'tiktok')
-                tiktok_keywords = tt_kw.split(',') if isinstance(tt_kw, str) else tt_kw
-                yt_kw = config.get('social_youtube_keywords', 'youtube')
-                youtube_keywords = yt_kw.split(',') if isinstance(yt_kw, str) else yt_kw
-                ot_kw = config.get('social_other_keywords', 'social,share,referral')
-                other_keywords = ot_kw.split(',') if isinstance(ot_kw, str) else ot_kw
-                
+                fb_kw = config.get("social_facebook_keywords", "facebook,fb")
+                facebook_keywords = (
+                    fb_kw.split(",") if isinstance(fb_kw, str) else fb_kw
+                )
+                ig_kw = config.get("social_instagram_keywords", "instagram,ig")
+                instagram_keywords = (
+                    ig_kw.split(",") if isinstance(ig_kw, str) else ig_kw
+                )
+                tw_kw = config.get("social_twitter_keywords", "twitter")
+                twitter_keywords = tw_kw.split(",") if isinstance(tw_kw, str) else tw_kw
+                li_kw = config.get("social_linkedin_keywords", "linkedin")
+                linkedin_keywords = (
+                    li_kw.split(",") if isinstance(li_kw, str) else li_kw
+                )
+                tt_kw = config.get("social_tiktok_keywords", "tiktok")
+                tiktok_keywords = tt_kw.split(",") if isinstance(tt_kw, str) else tt_kw
+                yt_kw = config.get("social_youtube_keywords", "youtube")
+                youtube_keywords = yt_kw.split(",") if isinstance(yt_kw, str) else yt_kw
+                ot_kw = config.get("social_other_keywords", "social,share,referral")
+                other_keywords = ot_kw.split(",") if isinstance(ot_kw, str) else ot_kw
+
                 for order in orders:
                     if order.source_id:
                         source_name = order.source_id.name.lower()
-                        if any(keyword.strip() in source_name for keyword in facebook_keywords):
-                            social_sources.append('facebook')
+                        if any(
+                            keyword.strip() in source_name
+                            for keyword in facebook_keywords
+                        ):
+                            social_sources.append("facebook")
                             social_order_count += 1
-                        elif any(keyword.strip() in source_name for keyword in instagram_keywords):
-                            social_sources.append('instagram')
+                        elif any(
+                            keyword.strip() in source_name
+                            for keyword in instagram_keywords
+                        ):
+                            social_sources.append("instagram")
                             social_order_count += 1
-                        elif any(keyword.strip() in source_name for keyword in twitter_keywords):
-                            social_sources.append('twitter')
+                        elif any(
+                            keyword.strip() in source_name
+                            for keyword in twitter_keywords
+                        ):
+                            social_sources.append("twitter")
                             social_order_count += 1
-                        elif any(keyword.strip() in source_name for keyword in linkedin_keywords):
-                            social_sources.append('linkedin')
+                        elif any(
+                            keyword.strip() in source_name
+                            for keyword in linkedin_keywords
+                        ):
+                            social_sources.append("linkedin")
                             social_order_count += 1
-                        elif any(keyword.strip() in source_name for keyword in tiktok_keywords):
-                            social_sources.append('tiktok')
+                        elif any(
+                            keyword.strip() in source_name
+                            for keyword in tiktok_keywords
+                        ):
+                            social_sources.append("tiktok")
                             social_order_count += 1
-                        elif any(keyword.strip() in source_name for keyword in youtube_keywords):
-                            social_sources.append('youtube')
+                        elif any(
+                            keyword.strip() in source_name
+                            for keyword in youtube_keywords
+                        ):
+                            social_sources.append("youtube")
                             social_order_count += 1
-                        elif any(keyword.strip() in source_name for keyword in other_keywords):
-                            social_sources.append('other')
+                        elif any(
+                            keyword.strip() in source_name for keyword in other_keywords
+                        ):
+                            social_sources.append("other")
                             social_order_count += 1
-                
+
                 # Determine primary social media source
                 if social_sources:
                     from collections import Counter
+
                     most_common = Counter(social_sources).most_common(1)
                     partner.social_media_source = most_common[0][0]
                 else:
-                    partner.social_media_source = 'none'
-                
+                    partner.social_media_source = "none"
+
                 # Calculate social referral count
                 partner.social_referral_count = social_order_count
-                
+
                 # Calculate social engagement score
                 if len(orders) > 0:
                     social_engagement = (social_order_count / len(orders)) * 100
                     partner.social_engagement_score = min(social_engagement, 100)
                 else:
                     partner.social_engagement_score = 0
-                
+
                 # Calculate social conversion rate (simplified)
                 if social_order_count > 0:
                     # Base conversion rate on social engagement
-                    social_conversion_multiplier = config.get('social_conversion_multiplier', 0.8)
-                    partner.social_conversion_rate = min(social_engagement * social_conversion_multiplier, 100)
+                    social_conversion_multiplier = config.get(
+                        "social_conversion_multiplier", 0.8
+                    )
+                    partner.social_conversion_rate = min(
+                        social_engagement * social_conversion_multiplier, 100
+                    )
                 else:
                     partner.social_conversion_rate = 0
-                    
+
             else:
-                partner.social_media_source = 'none'
+                partner.social_media_source = "none"
                 partner.social_referral_count = 0
                 partner.social_engagement_score = 0
                 partner.social_conversion_rate = 0
 
-    @api.depends('sale_order_ids.payment_term_id', 'sale_order_ids.amount_total')
+    @api.depends("sale_order_ids.payment_term_id", "sale_order_ids.amount_total")
     def _compute_bnpl_mobile_behavior(self):
         """Compute BNPL and mobile commerce behavior metrics (adaptive)"""
         # Get metrics configuration
-        config = self.env['res.config.settings'].get_analytics_config()
-        
+        config = self.env["res.config.settings"].get_analytics_config()
+
         for partner in self:
             # Skip if both BNPL and mobile analytics are disabled
-            if not config.get('enable_bnpl_analytics', False) and not config.get('enable_mobile_commerce', False):
-                partner.bnpl_usage_frequency = 'never'
+            if not config.get("enable_bnpl_analytics", False) and not config.get(
+                "enable_mobile_commerce", False
+            ):
+                partner.bnpl_usage_frequency = "never"
                 partner.bnpl_preference_score = 0.0
-                partner.mobile_device_preference = 'mixed'
+                partner.mobile_device_preference = "mixed"
                 partner.mobile_commerce_score = 0.0
                 partner.average_order_value_mobile = 0.0
                 partner.average_order_value_desktop = 0.0
                 partner.mobile_conversion_rate = 0.0
                 continue
             # Check if sale module is available
-            if not hasattr(partner, 'sale_order_ids'):
-                partner.bnpl_usage_frequency = 'never'
+            if not hasattr(partner, "sale_order_ids"):
+                partner.bnpl_usage_frequency = "never"
                 partner.bnpl_preference_score = 0.0
-                partner.mobile_device_preference = 'mixed'
+                partner.mobile_device_preference = "mixed"
                 partner.mobile_commerce_score = 0.0
                 partner.average_order_value_mobile = 0.0
                 partner.average_order_value_desktop = 0.0
                 partner.mobile_conversion_rate = 0.0
                 continue
-                
+
             if partner.sale_order_ids:
-                orders = partner.sale_order_ids.filtered(lambda o: o.state in ('sale', 'done'))
-                
+                orders = partner.sale_order_ids.filtered(
+                    lambda o: o.state in ("sale", "done")
+                )
+
                 # BNPL Analysis (based on payment terms)
                 bnpl_orders = 0
-                bnpl_kw = config.get('bnpl_keywords', 'installment,split,bnpl,klarna,afterpay,sezzle,affirm')
-                bnpl_keywords = bnpl_kw.split(',') if isinstance(bnpl_kw, str) else bnpl_kw
-                
+                bnpl_kw = config.get(
+                    "bnpl_keywords",
+                    "installment,split,bnpl,klarna,afterpay,sezzle,affirm",
+                )
+                bnpl_keywords = (
+                    bnpl_kw.split(",") if isinstance(bnpl_kw, str) else bnpl_kw
+                )
+
                 for order in orders:
                     if order.payment_term_id:
                         payment_term_name = order.payment_term_id.name.lower()
-                        if any(keyword.strip() in payment_term_name for keyword in bnpl_keywords):
+                        if any(
+                            keyword.strip() in payment_term_name
+                            for keyword in bnpl_keywords
+                        ):
                             bnpl_orders += 1
-                
+
                 # Determine BNPL usage frequency
-                bnpl_rarely_threshold = config.get('bnpl_rarely_threshold', 2)
-                bnpl_sometimes_threshold = config.get('bnpl_sometimes_threshold', 5)
-                bnpl_frequently_threshold = config.get('bnpl_frequently_threshold', 10)
-                
+                bnpl_rarely_threshold = config.get("bnpl_rarely_threshold", 2)
+                bnpl_sometimes_threshold = config.get("bnpl_sometimes_threshold", 5)
+                bnpl_frequently_threshold = config.get("bnpl_frequently_threshold", 10)
+
                 if bnpl_orders == 0:
-                    partner.bnpl_usage_frequency = 'never'
+                    partner.bnpl_usage_frequency = "never"
                 elif bnpl_orders <= bnpl_rarely_threshold:
-                    partner.bnpl_usage_frequency = 'rarely'
+                    partner.bnpl_usage_frequency = "rarely"
                 elif bnpl_orders <= bnpl_sometimes_threshold:
-                    partner.bnpl_usage_frequency = 'sometimes'
+                    partner.bnpl_usage_frequency = "sometimes"
                 elif bnpl_orders <= bnpl_frequently_threshold:
-                    partner.bnpl_usage_frequency = 'frequently'
+                    partner.bnpl_usage_frequency = "frequently"
                 else:
-                    partner.bnpl_usage_frequency = 'always'
-                
+                    partner.bnpl_usage_frequency = "always"
+
                 # Calculate BNPL preference score
                 if len(orders) > 0:
                     bnpl_preference = (bnpl_orders / len(orders)) * 100
                     partner.bnpl_preference_score = min(bnpl_preference, 100)
                 else:
                     partner.bnpl_preference_score = 0
-                
+
                 # LIMITATION: Mobile commerce analysis requires actual device detection
                 # Cannot reliably infer mobile usage from order patterns because:
                 # - Order timing ≠ mobile usage (customers order via multiple channels)
                 # - Order amount ≠ device type (small orders don't mean mobile usage)
                 # - Heuristic assumptions create misleading business metrics
                 # Real mobile tracking requires: device detection from web sessions
-                # - Mobile app usage analytics  
+                # - Mobile app usage analytics
                 # - User agent strings from real web traffic
                 # - Mobile-specific conversion funnels
                 #
                 # For now, set neutral/disabled values until proper mobile analytics are implemented
-                
-                partner.mobile_commerce_score = 0.0  # Disabled - no reliable way to track mobile vs desktop orders
-                partner.mobile_device_preference = 'mixed'  # Cannot determine without real device tracking
-                partner.average_order_value_mobile = 0.0  # Cannot separate mobile vs desktop order values
-                partner.average_order_value_desktop = 0.0  # Cannot separate mobile vs desktop order values
-                partner.mobile_conversion_rate = 0.0  # Cannot calculate without real mobile analytics
-                    
+
+                partner.mobile_commerce_score = (
+                    0.0  # Disabled - no reliable way to track mobile vs desktop orders
+                )
+                partner.mobile_device_preference = (
+                    "mixed"  # Cannot determine without real device tracking
+                )
+                partner.average_order_value_mobile = (
+                    0.0  # Cannot separate mobile vs desktop order values
+                )
+                partner.average_order_value_desktop = (
+                    0.0  # Cannot separate mobile vs desktop order values
+                )
+                partner.mobile_conversion_rate = (
+                    0.0  # Cannot calculate without real mobile analytics
+                )
+
             else:
                 # No orders - set defaults
-                partner.bnpl_usage_frequency = 'never'
+                partner.bnpl_usage_frequency = "never"
                 partner.bnpl_preference_score = 0
                 # Mobile commerce - disabled (same as above, no orders doesn't change the fundamental issues)
                 partner.mobile_commerce_score = 0.0
-                partner.mobile_device_preference = 'mixed'
+                partner.mobile_device_preference = "mixed"
                 partner.average_order_value_mobile = 0.0
                 partner.average_order_value_desktop = 0.0
                 partner.mobile_conversion_rate = 0.0
-    
+
+    # ===== BUSINESS NOTES HELPER METHODS =====
+
+    def _get_rfm_business_notes(self):
+        """Generate contextual RFM business value and insights"""
+        segment = self.rfm_segment or "new_customers"
+        recency_score = self.recency_score or 1
+        frequency_score = self.frequency_score or 1
+        monetary_score = self.monetary_score or 1
+
+        # Dynamic business value based on segment
+        segment_strategies = {
+            "champions": "VIP treatment, exclusive offers, and referral programs to maximize lifetime value",
+            "loyal_customers": "Maintain loyalty with personalized service and early access to new products",
+            "potential_loyalists": "Nurture with loyalty programs and targeted upselling to reach champion status",
+            "promising": "Engage with special offers and personalized communication to increase frequency",
+            "need_attention": "Re-engagement campaigns and special incentives to prevent churn",
+            "at_risk": "URGENT: Immediate retention campaigns and personal outreach required",
+            "cannot_lose_them": "CRITICAL: High-value customer at risk - priority intervention needed",
+            "hibernating": "Win-back campaigns with compelling offers to reactivate",
+            "lost": "Aggressive re-acquisition campaigns or move to inactive list",
+            "new_customers": "Welcome campaigns and onboarding to build initial relationship",
+        }
+
+        strategy = segment_strategies.get(segment, "Standard engagement approach")
+
+        # Risk factor insights
+        risk_factors = []
+        if recency_score <= 2:
+            risk_factors.append("Low recent activity")
+        if frequency_score <= 2:
+            risk_factors.append("Infrequent purchases")
+        if monetary_score <= 2:
+            risk_factors.append("Low spending")
+
+        risk_text = (
+            " | Risk factors: " + ", ".join(risk_factors) if risk_factors else ""
+        )
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #f0fdf4; border: 1px solid #16a34a; border-radius: 6px; padding: 12px; margin-bottom: 12px;'>
+                <p style='margin: 0; color: #15803d; font-size: 13px;'>
+                    <strong>🎯 Business Value:</strong> Customer is '{segment}' segment. Strategy: {strategy}.
+                    Use this to prioritize sales efforts and allocate marketing resources effectively.{risk_text}
+                </p>
+            </div>
+            <div style='background: #e0f2fe; border: 1px solid #0288d1; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #01579b; font-size: 13px;'>
+                    <strong>💡 Business Insight:</strong> RFM analysis reveals customer lifecycle position and guides retention strategies. 
+                    Focus on high-value segments while implementing targeted interventions for at-risk customers.
+                </p>
+            </div>
+        </div>
+        """
+
+    def _get_engagement_business_notes(self):
+        """Generate contextual engagement business value and performance notes"""
+        engagement_level = self.engagement_level or "low"
+        overall_score = self.overall_engagement_score or 0
+        preferred_channel = self.preferred_channel or "unknown"
+
+        # Dynamic strategy based on engagement level
+        engagement_strategies = {
+            "very_high": "Leverage high engagement for premium offers, product launches, and referral programs",
+            "high": "Maintain engagement with exclusive content and explore upselling opportunities",
+            "medium": "Optimize communication frequency and test new engagement channels",
+            "low": "Re-engagement campaigns with compelling content and channel optimization",
+            "very_low": "URGENT: Aggressive re-engagement or consider moving to inactive list",
+        }
+
+        strategy = engagement_strategies.get(
+            engagement_level, "Standard engagement approach"
+        )
+
+        # Channel-specific recommendations
+        channel_strategies = {
+            "email": "Optimize email campaigns with personalized content and timing",
+            "whatsapp": "Use WhatsApp for direct, personal, and immediate communication",
+            "phone": "Leverage phone for high-value interactions and relationship building",
+            "unknown": "Test multiple channels to identify optimal communication method",
+        }
+
+        channel_strategy = channel_strategies.get(
+            preferred_channel, "Multi-channel approach"
+        )
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #f0fdf4; border: 1px solid #16a34a; border-radius: 6px; padding: 12px; margin-bottom: 12px;'>
+                <p style='margin: 0; color: #15803d; font-size: 13px;'>
+                    <strong>🎯 Business Value:</strong> Engagement is '{engagement_level}' ({overall_score:.1f}/100). {strategy}
+                    Channel strategy: {channel_strategy}
+                </p>
+            </div>
+            <div style='background: #eff6ff; border: 1px solid #3b82f6; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #1d4ed8; font-size: 13px;'>
+                    <strong>📊 Performance Note:</strong> Engagement scoring uses weighted channels (email: 40%, website: 35%, WhatsApp: 25%) 
+                    over 90-day periods. Weights and analysis periods are configurable in system settings.
+                </p>
+            </div>
+        </div>
+        """
+
+    def _get_churn_business_notes(self):
+        """Generate contextual churn urgency alerts and business value"""
+        churn_risk = self.churn_risk_level or "medium"
+        churn_score = self.churn_risk_score or 50
+        days_since = self.days_since_last_purchase or 0
+        total_spent = self.total_spent or 0
+
+        # Urgency level based on risk and customer value
+        if churn_risk in ["high", "very_high"]:
+            if total_spent > 1000:  # High-value customer
+                urgency = "🚨 CRITICAL PRIORITY"
+                urgency_color = "#dc2626"  # Red
+                action = "IMMEDIATE personal intervention required - high-value customer at risk"
+            else:
+                urgency = "⚠️ HIGH PRIORITY"
+                urgency_color = "#ea580c"  # Orange
+                action = "Urgent retention campaign needed within 48 hours"
+        elif churn_risk == "medium":
+            urgency = "⚡ MEDIUM PRIORITY"
+            urgency_color = "#ca8a04"  # Yellow
+            action = "Monitor closely and prepare targeted retention offers"
+        else:
+            urgency = "✅ LOW PRIORITY"
+            urgency_color = "#16a34a"  # Green
+            action = "Maintain current engagement and monitor for early warning signs"
+
+        # Specific recommendations
+        if days_since > 180:
+            specific_action = f"Customer hasn't purchased in {days_since} days - immediate win-back campaign needed"
+        elif days_since > 90:
+            specific_action = f"Purchase gap of {days_since} days is concerning - reach out proactively"
+        else:
+            specific_action = "Recent purchase activity is normal - continue monitoring"
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #fef2f2; border: 1px solid {urgency_color}; border-radius: 6px; padding: 12px; margin-bottom: 12px;'>
+                <p style='margin: 0; color: {urgency_color}; font-size: 13px; font-weight: 600;'>
+                    <strong>{urgency}:</strong> Churn risk is '{churn_risk}' ({churn_score:.1f}/100). {action}
+                </p>
+                <p style='margin: 8px 0 0 0; color: #374151; font-size: 12px;'>
+                    {specific_action}
+                </p>
+            </div>
+            <div style='background: #f0fdf4; border: 1px solid #16a34a; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #15803d; font-size: 13px;'>
+                    <strong>🎯 Business Value:</strong> Proactive churn prevention protects revenue and reduces acquisition costs. 
+                    Early intervention is 5-10x cheaper than customer re-acquisition.
+                </p>
+            </div>
+        </div>
+        """
+
+    def _get_values_business_notes(self):
+        """Generate contextual values-driven business insights"""
+        sustainability_score = self.sustainability_preference_score or 0
+        premium_score = self.premium_product_propensity or 0
+        social_score = self.social_responsibility_score or 0
+
+        # Get preference detection thresholds from configuration
+        config = self.env["res.config.settings"].get_analytics_config()
+        strong_preference_threshold = config.get(
+            "values_strong_preference_threshold", 50.0
+        )
+
+        # Identify strongest preferences
+        preferences = []
+        if sustainability_score > strong_preference_threshold:
+            preferences.append(f"eco-friendly products ({sustainability_score:.0f}%)")
+        if premium_score > strong_preference_threshold:
+            preferences.append(f"premium quality ({premium_score:.0f}%)")
+        if social_score > strong_preference_threshold:
+            preferences.append(f"socially responsible brands ({social_score:.0f}%)")
+
+        if preferences:
+            preference_text = "Strong preferences for: " + ", ".join(preferences)
+            recommendation = "Focus product recommendations on these value categories for higher conversion rates"
+        else:
+            preference_text = "No strong value preferences detected"
+            recommendation = "Focus on functional benefits, competitive pricing, and general product quality"
+
+        # Top value for targeting
+        values = {
+            "Sustainability": sustainability_score,
+            "Premium Quality": premium_score,
+            "Social Responsibility": social_score,
+        }
+        targeting_threshold = config.get("values_targeting_threshold", 30.0)
+        top_value = (
+            max(values, key=values.get)
+            if max(values.values()) > targeting_threshold
+            else None
+        )
+
+        targeting_tip = (
+            f"Primary targeting angle: {top_value} messaging"
+            if top_value
+            else "Use broad appeal messaging"
+        )
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #e0f2fe; border: 1px solid #0288d1; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #01579b; font-size: 13px;'>
+                    <strong>💡 Business Insight:</strong> {preference_text}. {recommendation}
+                    {targeting_tip} to maximize relevance and engagement.
+                </p>
+            </div>
+        </div>
+        """
+
+    def _get_social_business_notes(self):
+        """Generate contextual social commerce business value and performance notes"""
+        social_source = self.social_media_source or "none"
+        conversion_rate = self.social_conversion_rate or 0
+        referral_count = self.social_referral_count or 0
+
+        # Platform-specific strategies
+        if social_source != "none" and conversion_rate > 10:
+            strategy = f"High-performing {social_source} customer ({conversion_rate:.1f}% conversion). Increase ad spend on this platform"
+            performance = "Excellent"
+        elif social_source != "none" and referral_count > 0:
+            strategy = f"Active on {social_source} but low conversion. Test new creative and offer strategies"
+            performance = "Needs optimization"
+        elif social_source != "none":
+            strategy = f"Present on {social_source} but no conversions yet. Consider retargeting campaigns"
+            performance = "Underperforming"
+        else:
+            strategy = "No social media activity detected. Consider social media outreach or focus on other channels"
+            performance = "No data"
+
+        # Platform-specific recommendations
+        platform_tips = {
+            "facebook": "Focus on community engagement and lookalike audiences",
+            "instagram": "Use visual storytelling and influencer partnerships",
+            "tiktok": "Create viral content and trend-based campaigns",
+            "linkedin": "B2B-focused content and professional networking",
+            "twitter": "Real-time engagement and customer service",
+        }
+
+        platform_tip = platform_tips.get(
+            social_source.lower(), "Test multiple platforms to find optimal channels"
+        )
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #f0fdf4; border: 1px solid #16a34a; border-radius: 6px; padding: 12px; margin-bottom: 12px;'>
+                <p style='margin: 0; color: #15803d; font-size: 13px;'>
+                    <strong>🎯 Business Value:</strong> {strategy}
+                    Platform strategy: {platform_tip}
+                </p>
+            </div>
+            <div style='background: #eff6ff; border: 1px solid #3b82f6; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #1d4ed8; font-size: 13px;'>
+                    <strong>📊 Performance Note:</strong> Social commerce tracking requires proper UTM parameters and source attribution. 
+                    Ensure consistent campaign tagging for accurate ROI measurement across platforms.
+                </p>
+            </div>
+        </div>
+        """
+
+    def _get_bnpl_business_notes(self):
+        """Generate contextual BNPL business insights"""
+        bnpl_frequency = self.bnpl_usage_frequency or "never"
+        bnpl_score = self.bnpl_preference_score or 0
+
+        # BNPL strategy recommendations
+        if bnpl_frequency in ["frequently", "always"]:
+            strategy = f"High BNPL usage ({bnpl_frequency}, {bnpl_score:.0f}%). Prominently feature BNPL options to reduce cart abandonment"
+            checkout_tip = "Place BNPL options above traditional payment methods"
+        elif bnpl_frequency in ["sometimes", "rarely"]:
+            strategy = f"Occasional BNPL usage ({bnpl_frequency}). Offer BNPL for items >$100 and test conversion impact"
+            checkout_tip = "Show BNPL as alternative payment option during checkout"
+        else:
+            strategy = "No BNPL usage detected. Customer prefers traditional payments - focus on security and ease of use"
+            checkout_tip = (
+                "Emphasize payment security badges and quick checkout options"
+            )
+
+        # Mobile commerce note (intentionally disabled)
+        mobile_note = (
+            "Mobile commerce metrics are intentionally disabled to avoid misleading heuristics. "
+            "Order patterns don't reliably indicate device usage. Enable when proper device tracking is available."
+        )
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #e0f2fe; border: 1px solid #0288d1; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #01579b; font-size: 13px;'>
+                    <strong>💡 Business Insight:</strong> {strategy}
+                    Checkout optimization: {checkout_tip}
+                </p>
+                <p style='margin: 8px 0 0 0; color: #6b7280; font-size: 12px;'>
+                    <strong>Note:</strong> {mobile_note}
+                </p>
+            </div>
+        </div>
+        """
+
+    def _get_demographics_business_notes(self):
+        """Generate contextual demographics business value and configuration notes"""
+        age_group = self.customer_age_group or "unknown"
+        spending_tier = self.customer_spending_tier or "bronze"
+        acquisition_source = (
+            self.acquisition_source_id.name if self.acquisition_source_id else "unknown"
+        )
+        lifetime_days = self.customer_lifetime_days or 0
+
+        # Age-based marketing strategies
+        age_strategies = {
+            "gen_z": "Digital-first approach with social media, mobile optimization, and sustainability focus",
+            "millennial": "Value-conscious messaging with convenience, reviews, and authenticity emphasis",
+            "gen_x": "Information-rich content with detailed comparisons and loyalty program benefits",
+            "baby_boomer": "Traditional service approach with phone support and reliability messaging",
+            "unknown": "Multi-generational approach until age data is available",
+        }
+
+        # Spending tier strategies
+        tier_strategies = {
+            "platinum": "VIP treatment with exclusive access, premium support, and high-value upselling",
+            "gold": "Loyalty rewards, priority service, and premium product recommendations",
+            "silver": "Growth-focused approach with targeted promotions and loyalty enrollment",
+            "bronze": "Value-oriented offerings with starter packages and engagement building",
+        }
+
+        age_strategy = age_strategies.get(age_group, "Standard demographic approach")
+        tier_strategy = tier_strategies.get(spending_tier, "Standard tier approach")
+
+        # Acquisition source insight
+        if acquisition_source != "unknown":
+            source_insight = f"Acquired via {acquisition_source} - track this channel's customer quality and LTV"
+        else:
+            source_insight = (
+                "Acquisition source unknown - improve tracking for future customers"
+            )
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #f0fdf4; border: 1px solid #16a34a; border-radius: 6px; padding: 12px; margin-bottom: 12px;'>
+                <p style='margin: 0; color: #15803d; font-size: 13px;'>
+                    <strong>🎯 Business Value:</strong> {age_group.title()} customer in {spending_tier} tier ({lifetime_days} days).
+                    Age strategy: {age_strategy}. Tier strategy: {tier_strategy}. {source_insight}
+                </p>
+            </div>
+            <div style='background: #fef3c7; border: 1px solid #fbbf24; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #92400e; font-size: 13px;'>
+                    <strong>📋 Business Note:</strong> Age groups and spending tiers are fully configurable in system settings. 
+                    Adjust ranges and names to match your target market demographics and business model.
+                </p>
+            </div>
+        </div>
+        """
+
+    def _get_category_business_notes(self):
+        """Generate contextual category business value and performance notes"""
+        config = self.env["res.config.settings"].get_analytics_config()
+
+        top_category = self.top_category_name or "None"
+        diversity_score = self.category_diversity_score or 0
+
+        # Category-specific strategies
+        if top_category != "None":
+            category_strategy = f"Primary focus on '{top_category}'. Leverage this preference for targeted recommendations and inventory planning"
+        else:
+            category_strategy = "No clear category preference detected. Use discovery campaigns to identify interests"
+
+        # Diversity-based cross-sell strategies
+        high_diversity_threshold = config.get("diversity_score_high_threshold", 70.0)
+        medium_diversity_threshold = config.get(
+            "diversity_score_medium_threshold", 40.0
+        )
+
+        if diversity_score > high_diversity_threshold:
+            cross_sell_strategy = f"High category exploration ({diversity_score:.0f}%) - excellent cross-sell potential across multiple categories"
+            approach = "Recommend complementary products from different categories"
+        elif diversity_score > medium_diversity_threshold:
+            cross_sell_strategy = f"Moderate category diversity ({diversity_score:.0f}%) - focus on adjacent category expansion"
+            approach = "Introduce products from 1-2 related categories"
+        else:
+            cross_sell_strategy = f"Category specialist ({diversity_score:.0f}%) - deepen offerings within preferred categories"
+            approach = "Focus on premium options and accessories within top category"
+
+        # Inventory insights
+        if top_category != "None" and diversity_score > 50:
+            inventory_insight = (
+                f"Stock depth in {top_category} with breadth across multiple categories"
+            )
+        elif top_category != "None":
+            inventory_insight = f"Ensure strong inventory depth in {top_category}"
+        else:
+            inventory_insight = "Maintain balanced inventory across all categories"
+
+        return f"""
+        <div style='font-family: system-ui, -apple-system, sans-serif; font-size: 14px; line-height: 1.5;'>
+            <div style='background: #f0fdf4; border: 1px solid #16a34a; border-radius: 6px; padding: 12px; margin-bottom: 12px;'>
+                <p style='margin: 0; color: #15803d; font-size: 13px;'>
+                    <strong>🎯 Business Value:</strong> {category_strategy}. {cross_sell_strategy}
+                    {approach}. Inventory planning: {inventory_insight}
+                </p>
+            </div>
+            <div style='background: #eff6ff; border: 1px solid #3b82f6; border-radius: 6px; padding: 12px;'>
+                <p style='margin: 0; color: #1d4ed8; font-size: 13px;'>
+                    <strong>📊 Performance Note:</strong> Category analysis uses 6-month purchase patterns with configurable thresholds 
+                    (20% change detection, diversity scoring). Adjust analysis periods in system configuration for seasonal businesses.
+                </p>
+            </div>
+        </div>
+        """
+
     def _force_analytics_computation(self):
         """Force computation of all analytics fields for existing customers"""
         import logging
+
         _logger = logging.getLogger(__name__)
-        
+
         _logger.info(f"Force computing analytics for {len(self)} customers")
-        
+
         # Compute all analytics fields
         compute_methods = [
-            '_compute_age',
-            '_compute_rfm_data', 
-            '_compute_engagement_metrics',
-            '_compute_journey_stage',
-            '_compute_multichannel_behavior',
-            '_compute_churn_prediction',
-            '_compute_values_driven_propensity',
-            '_compute_social_commerce_metrics',
-            '_compute_bnpl_mobile_behavior'
+            "_compute_age",
+            "_compute_rfm_data",
+            "_compute_product_category_analytics",
+            "_compute_engagement_metrics",
+            "_compute_journey_stage",
+            "_compute_multichannel_behavior",
+            "_compute_churn_prediction",
+            "_compute_values_driven_propensity",
+            "_compute_social_commerce_metrics",
+            "_compute_bnpl_mobile_behavior",
         ]
-        
+
         for method_name in compute_methods:
             if hasattr(self, method_name):
                 try:
@@ -1919,7 +3298,7 @@ class ResPartner(models.Model):
                     _logger.info(f"✓ {method_name} completed")
                 except Exception as e:
                     _logger.error(f"✗ Error in {method_name}: {e}")
-        
+
         # Force RFM scoring computation
         try:
             _logger.info("Computing RFM scores...")
@@ -1927,5 +3306,5 @@ class ResPartner(models.Model):
             _logger.info("✓ RFM scores computed")
         except Exception as e:
             _logger.error(f"✗ Error computing RFM scores: {e}")
-        
+
         _logger.info("Analytics computation complete")

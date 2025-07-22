@@ -68,6 +68,9 @@
                                     <strong>Use this to:</strong> Identify your most valuable customers for VIP treatment and find at-risk customers who need special attention
                                 </div>
                             </group>
+                            <group name="rfm_business_notes">
+                                <field name="rfm_business_notes" nolabel="1" readonly="1"/>
+                            </group>
                             <group name="rfm_thresholds">
                                 <div class="alert alert-success" role="alert">
                                     <field name="rfm_thresholds_display" nolabel="1" readonly="1"/>
@@ -117,6 +120,9 @@
                                     <strong>Use this to:</strong> Choose the best communication channel for each customer and identify highly engaged customers for special offers
                                 </div>
                             </group>
+                            <group name="engagement_business_notes">
+                                <field name="engagement_business_notes" nolabel="1" readonly="1"/>
+                            </group>
                             <group name="engagement_calculation_details">
                                 <div class="alert alert-success" role="alert">
                                     <field name="engagement_calculation_display" nolabel="1" readonly="1"/>
@@ -161,6 +167,9 @@
                                     <strong>Use this to:</strong> Identify customers who need immediate attention with special offers, personal outreach, or loyalty programs to prevent them from leaving
                                 </div>
                             </group>
+                            <group name="churn_business_notes">
+                                <field name="churn_business_notes" nolabel="1" readonly="1"/>
+                            </group>
                             <group name="churn_calculation_details">
                                 <div class="alert alert-success" role="alert">
                                     <field name="churn_calculation_display" nolabel="1" readonly="1"/>
@@ -191,6 +200,9 @@
                                     <strong>Data sources:</strong> Analysis of their purchase history looking for eco-friendly, premium, and socially responsible products<br /><br />
                                     <strong>Use this to:</strong> Recommend products that match their values, create targeted marketing campaigns, and personalize product suggestions
                                 </div>
+                            </group>
+                            <group name="values_business_notes">
+                                <field name="values_business_notes" nolabel="1" readonly="1"/>
                             </group>
                             <group name="values_calculation_details">
                                 <div class="alert alert-success" role="alert">
@@ -226,6 +238,9 @@
                                     <strong>Data sources:</strong> Order source tracking, UTM parameters, referral URLs, and social media campaign data<br /><br />
                                     <strong>Use this to:</strong> Focus your social media marketing on the platforms where this customer is most active and likely to buy
                                 </div>
+                            </group>
+                            <group name="social_business_notes">
+                                <field name="social_business_notes" nolabel="1" readonly="1"/>
                             </group>
                             <group name="social_calculation_details">
                                 <div class="alert alert-success" role="alert">
@@ -279,9 +294,113 @@
                                     <strong>Use BNPL data to:</strong> Offer appropriate payment options and understand customer payment preferences
                                 </div>
                             </group>
+                            <group name="bnpl_business_notes">
+                                <field name="bnpl_business_notes" nolabel="1" readonly="1"/>
+                            </group>
                             <group name="bnpl_calculation_details">
                                 <div class="alert alert-success" role="alert">
                                     <field name="bnpl_calculation_display" nolabel="1" readonly="1"/>
+                                </div>
+                            </group>
+                        </page>
+                        
+                        <!-- Demographics & Source Sub-tab -->
+                        <page name="demographics_source" string="Demographics &amp; Source"
+                            invisible="not customer_rank">
+                            <group name="demographics_overview">
+                                <group name="demographics_info" string="Customer Demographics">
+                                    <field name="age_display" readonly="1" />
+                                    <field name="customer_age_group" readonly="1" />
+                                    <field name="customer_age_group_display" readonly="1" />
+                                </group>
+                                <group name="spending_tier_info" string="Spending Classification">
+                                    <field name="customer_spending_tier" readonly="1" />
+                                    <field name="customer_spending_tier_display" readonly="1" />
+                                </group>
+                            </group>
+                            <group name="acquisition_overview">
+                                <group name="acquisition_info" string="Customer Acquisition">
+                                    <field name="acquisition_source_id" />
+                                    <field name="acquisition_date" readonly="1" />
+                                    <field name="customer_lifetime_days" readonly="1" />
+                                    <field name="is_new_customer" readonly="1" widget="boolean_badge" />
+                                </group>
+                                <group name="customer_status" string="Customer Status">
+                                    <field name="sale_order_count" readonly="1" />
+                                    <field name="customer_rank" readonly="1" />
+                                </group>
+                            </group>
+                            <group name="demographics_help">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Customer Demographics &amp; Acquisition:</strong><br />
+                                    This shows key demographic information and how this customer was acquired.<br /><br />
+                                    <strong>What we track:</strong>
+                                    <ul>
+                                        <li><strong>Age Group:</strong> Customer's age category based on their date of birth</li>
+                                        <li><strong>Spending Tier:</strong> Customer classification based on their total purchase amount</li>
+                                        <li><strong>Acquisition Source:</strong> How the customer first found and purchased from your business</li>
+                                        <li><strong>Customer Lifetime:</strong> How long they've been a customer (days since first purchase)</li>
+                                        <li><strong>New vs Existing:</strong> Customers with 1 or fewer purchases are considered new</li>
+                                    </ul>
+                                    <strong>Data sources:</strong> Customer profile data, purchase history, and manually tracked acquisition sources<br /><br />
+                                    <strong>Use this to:</strong> Understand customer demographics, track acquisition channel effectiveness, and identify customer lifecycle stage
+                                </div>
+                            </group>
+                            <group name="demographics_business_notes">
+                                <field name="demographics_business_notes" nolabel="1" readonly="1"/>
+                            </group>
+                            <group name="demographics_calculation_details">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="demographics_calculation_display" nolabel="1" readonly="1"/>
+                                </div>
+                            </group>
+                            <group name="acquisition_calculation_details">
+                                <div class="alert alert-warning" role="alert">
+                                    <field name="acquisition_calculation_display" nolabel="1" readonly="1"/>
+                                </div>
+                            </group>
+                        </page>
+                        
+                        <!-- Product Category Analytics Sub-tab -->
+                        <page name="category_analytics" string="Product Categories"
+                            invisible="not customer_rank">
+                            <group name="category_overview">
+                                <group name="category_preferences" string="Category Preferences">
+                                    <field name="top_category_name" readonly="1" />
+                                    <field name="category_diversity_score" readonly="1" />
+                                    <field name="favorite_product_categories" readonly="1" widget="text" />
+                                </group>
+                                <group name="category_patterns" string="Purchase Patterns">
+                                    <field name="category_purchase_pattern" readonly="1" widget="text" />
+                                </group>
+                            </group>
+                            <group name="category_breakdown">
+                                <group name="spending_breakdown" string="Category Spending Details">
+                                    <field name="category_spending_breakdown" readonly="1" widget="text" />
+                                </group>
+                            </group>
+                            <group name="category_help">
+                                <div class="alert alert-info" role="alert">
+                                    <strong>Product Category Insights:</strong><br />
+                                    This shows what types of products this customer prefers and their purchasing patterns across different categories.<br /><br />
+                                    <strong>What we analyze:</strong>
+                                    <ul>
+                                        <li><strong>Top Category:</strong> The product category where this customer spends the most money</li>
+                                        <li><strong>Favorite Categories:</strong> Top 3 categories ranked by spending amount and purchase frequency</li>
+                                        <li><strong>Diversity Score:</strong> How many different product categories they buy from (0-100)</li>
+                                        <li><strong>Purchase Patterns:</strong> Recent trends and changes in category preferences over time</li>
+                                        <li><strong>Spending Breakdown:</strong> Detailed analysis of spending across all product categories</li>
+                                    </ul>
+                                    <strong>Data sources:</strong> All confirmed sales orders, product line items, and Odoo's product category hierarchy<br /><br />
+                                    <strong>Use this to:</strong> Recommend relevant products, create targeted category-based campaigns, identify cross-sell opportunities, and understand customer preferences for inventory planning
+                                </div>
+                            </group>
+                            <group name="category_business_notes">
+                                <field name="category_business_notes" nolabel="1" readonly="1"/>
+                            </group>
+                            <group name="category_calculation_details">
+                                <div class="alert alert-success" role="alert">
+                                    <field name="category_analytics_calculation_display" nolabel="1" readonly="1"/>
                                 </div>
                             </group>
                         </page>
@@ -376,6 +495,11 @@
                     decoration-muted="mobile_device_preference == 'mixed'" />
                 <field name="mobile_commerce_score" optional="hide" invisible="not metrics_mobile_enabled" />
                 <field name="mobile_conversion_rate" optional="hide" invisible="not metrics_mobile_enabled" />
+
+                <!-- Product Category Analytics -->
+                <field name="top_category_name" optional="hide" />
+                <field name="category_diversity_score" optional="hide" />
+                <field name="favorite_product_categories" optional="hide" />
             </field>
         </field>
     </record>

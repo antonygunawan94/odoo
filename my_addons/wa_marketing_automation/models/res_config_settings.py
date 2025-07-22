@@ -141,6 +141,21 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='wa_marketing_automation.enable_cohort_analysis',
         default=True,
     )
+    
+    # Demographics & Source Analytics (Core Package)
+    enable_demographics_analytics = fields.Boolean(
+        string='Demographics Analytics',
+        help='Analyze customer age groups, spending tiers, and demographic patterns to optimize marketing strategies and customer segmentation',
+        config_parameter='wa_marketing_automation.enable_demographics_analytics',
+        default=True,
+    )
+    
+    enable_source_analytics = fields.Boolean(
+        string='Source Analytics',
+        help='Track customer acquisition sources and channels to measure marketing ROI and optimize acquisition spend across different touchpoints',
+        config_parameter='wa_marketing_automation.enable_source_analytics',
+        default=True,
+    )
 
     # Behavioral Analytics (Behavioral Package)
     enable_values_analytics = fields.Boolean(
@@ -168,6 +183,13 @@ class ResConfigSettings(models.TransientModel):
         string='Social Responsibility',
         help='Track customer preference for socially responsible brands, fair-trade products, and charitable cause alignments through purchase patterns',
         config_parameter='wa_marketing_automation.enable_social_responsibility',
+        default=False,
+    )
+    
+    enable_product_category_analytics = fields.Boolean(
+        string='Product Category Analytics',
+        help='Analyze customer purchase patterns across product categories to identify preferences, diversity, and changes in buying behavior over time',
+        config_parameter='wa_marketing_automation.enable_product_category_analytics',
         default=False,
     )
 
@@ -442,13 +464,7 @@ class ResConfigSettings(models.TransientModel):
         default=25.0,
     )
     
-    # Time Windows
-    rfm_analysis_period = fields.Integer(
-        string='RFM Analysis Period (Days)',
-        help='Number of days to consider for RFM analysis',
-        config_parameter='wa_marketing_automation.rfm_analysis_period',
-        default=365,
-    )
+    # Time Windows (removed duplicate rfm_analysis_period - using rfm_analysis_period_days instead)
     
     email_engagement_period = fields.Integer(
         string='Email Engagement Period (Days)',
@@ -658,6 +674,13 @@ class ResConfigSettings(models.TransientModel):
         help='Minimum score for low churn risk classification',
         config_parameter='wa_marketing_automation.churn_risk_low_threshold',
         default=21.0,
+    )
+    
+    churn_risk_min_tier_threshold = fields.Float(
+        string='Minimum Valuable Customer Spending Threshold',
+        help='Minimum spending tier threshold (in currency) to consider customers valuable for churn risk analysis. Customers in tiers below this amount will be excluded from win-back campaigns.',
+        config_parameter='wa_marketing_automation.churn_risk_min_tier_threshold',
+        default=500.0,
     )
     
     # Churn Risk Factors
@@ -933,6 +956,107 @@ class ResConfigSettings(models.TransientModel):
         config_parameter='wa_marketing_automation.rfm_quintile_4',
         default=0.8,
     )
+    
+    # =====================================
+    # Demographics & Product Category Advanced Configuration
+    # =====================================
+    
+    # Age and Customer Validation
+    age_validation_limit = fields.Integer(
+        string='Age Validation Limit (Years)',
+        help='Maximum reasonable age for customer demographics validation',
+        config_parameter='wa_marketing_automation.age_validation_limit',
+        default=150,
+    )
+    
+    new_customer_threshold = fields.Integer(
+        string='New Customer Order Threshold',
+        help='Maximum number of orders to consider a customer as "new"',
+        config_parameter='wa_marketing_automation.new_customer_threshold',
+        default=1,
+    )
+    
+    # Analysis Time Periods  
+    rfm_analysis_period_days = fields.Integer(
+        string='RFM Analysis Period (Days)',
+        help='Number of days to look back for RFM (Recency, Frequency, Monetary) analysis',
+        config_parameter='wa_marketing_automation.rfm_analysis_period_days',
+        default=365,
+    )
+    
+    category_analysis_period_days = fields.Integer(
+        string='Category Analysis Period (Days)',
+        help='Number of days to look back for product category analysis and diversity scoring',
+        config_parameter='wa_marketing_automation.category_analysis_period_days',
+        default=180,
+    )
+    
+    # Product Category Analytics Configuration
+    max_reasonable_categories = fields.Integer(
+        string='Maximum Reasonable Categories',
+        help='Maximum number of product categories considered reasonable for diversity scoring',
+        config_parameter='wa_marketing_automation.max_reasonable_categories',
+        default=20,
+    )
+    
+    category_change_positive_threshold = fields.Float(
+        string='Category Change Positive Threshold (%)',
+        help='Percentage increase required to detect significant positive change in category spending',
+        config_parameter='wa_marketing_automation.category_change_positive_threshold',
+        default=20.0,
+    )
+    
+    category_change_negative_threshold = fields.Float(
+        string='Category Change Negative Threshold (%)',
+        help='Percentage decrease required to detect significant negative change in category spending (positive value)',
+        config_parameter='wa_marketing_automation.category_change_negative_threshold',
+        default=20.0,
+    )
+    
+    # Diversity Score Thresholds
+    diversity_score_high_threshold = fields.Float(
+        string='High Diversity Score Threshold',
+        help='Minimum score to classify customer as having high product diversity',
+        config_parameter='wa_marketing_automation.diversity_score_high_threshold',
+        default=70.0,
+    )
+    
+    diversity_score_medium_threshold = fields.Float(
+        string='Medium Diversity Score Threshold',
+        help='Minimum score to classify customer as having medium product diversity',
+        config_parameter='wa_marketing_automation.diversity_score_medium_threshold',
+        default=40.0,
+    )
+    
+    # Category Ranking Weights
+    category_spending_weight = fields.Float(
+        string='Category Spending Weight',
+        help='Weight factor for spending amount in category ranking calculation (0.0-1.0)',
+        config_parameter='wa_marketing_automation.category_spending_weight',
+        default=0.7,
+    )
+    
+    category_frequency_weight = fields.Float(
+        string='Category Frequency Weight',
+        help='Weight factor for purchase frequency in category ranking calculation (0.0-1.0)',
+        config_parameter='wa_marketing_automation.category_frequency_weight',
+        default=0.3,
+    )
+    
+    # Values Preference Detection Thresholds
+    values_strong_preference_threshold = fields.Float(
+        string='Strong Preference Threshold (%)',
+        help='Minimum score to be considered as having a strong preference for a value category',
+        config_parameter='wa_marketing_automation.values_strong_preference_threshold',
+        default=50.0,
+    )
+    
+    values_targeting_threshold = fields.Float(
+        string='Targeting Preference Threshold (%)',
+        help='Minimum score for a value category to be used as primary targeting angle',
+        config_parameter='wa_marketing_automation.values_targeting_threshold',
+        default=30.0,
+    )
 
     # =====================================
     # Package Selection Onchange Methods
@@ -950,6 +1074,9 @@ class ResConfigSettings(models.TransientModel):
             self.enable_churn_prediction = True
             self.enable_multichannel_behavior = True
             self.enable_cohort_analysis = True
+            # Demographics & Source Analytics (Core Package)
+            self.enable_demographics_analytics = True
+            self.enable_source_analytics = True
         else:
             # If core is disabled, disable all packages
             self.analytics_behavioral_enabled = False
@@ -962,10 +1089,16 @@ class ResConfigSettings(models.TransientModel):
             self.enable_churn_prediction = False
             self.enable_multichannel_behavior = False
             self.enable_cohort_analysis = False
+            # Demographics & Source Analytics (Core Package)
+            self.enable_demographics_analytics = False
+            self.enable_source_analytics = False
+            # Behavioral Analytics
             self.enable_values_analytics = False
             self.enable_eco_friendly_score = False
             self.enable_premium_propensity = False
             self.enable_social_responsibility = False
+            self.enable_product_category_analytics = False
+            # Digital Marketing Analytics
             self.enable_social_commerce = False
             self.enable_utm_tracking = False
             self.enable_social_engagement = False
@@ -985,6 +1118,7 @@ class ResConfigSettings(models.TransientModel):
             self.enable_eco_friendly_score = True
             self.enable_premium_propensity = True
             self.enable_social_responsibility = True
+            self.enable_product_category_analytics = True
         else:
             # If behavioral is disabled, disable commerce too
             self.analytics_commerce_enabled = False
@@ -992,6 +1126,7 @@ class ResConfigSettings(models.TransientModel):
             self.enable_eco_friendly_score = False
             self.enable_premium_propensity = False
             self.enable_social_responsibility = False
+            self.enable_product_category_analytics = False
             self.enable_social_commerce = False
             self.enable_utm_tracking = False
             self.enable_social_engagement = False
@@ -1150,11 +1285,15 @@ class ResConfigSettings(models.TransientModel):
             'enable_churn_prediction': True,
             'enable_multichannel_behavior': True,
             'enable_cohort_analysis': True,
+            # Keep core demographics & source analytics enabled
+            'enable_demographics_analytics': True,
+            'enable_source_analytics': True,
             # Disable behavioral analytics
             'enable_values_analytics': False,
             'enable_eco_friendly_score': False,
             'enable_premium_propensity': False,
             'enable_social_responsibility': False,
+            'enable_product_category_analytics': False,
             # Disable commerce analytics
             'enable_social_commerce': False,
             'enable_utm_tracking': False,
@@ -1249,6 +1388,10 @@ class ResConfigSettings(models.TransientModel):
             'enable_email_engagement': params.get_param('wa_marketing_automation.enable_email_engagement', 'True') == 'True',
             'enable_website_engagement': params.get_param('wa_marketing_automation.enable_website_engagement', 'True') == 'True',
             'enable_whatsapp_engagement': params.get_param('wa_marketing_automation.enable_whatsapp_engagement', 'True') == 'True',
+            # Demographics & Product Category Analytics
+            'enable_demographics_analytics': params.get_param('wa_marketing_automation.enable_demographics_analytics', 'True') == 'True',
+            'enable_source_analytics': params.get_param('wa_marketing_automation.enable_source_analytics', 'True') == 'True',
+            'enable_product_category_analytics': params.get_param('wa_marketing_automation.enable_product_category_analytics', 'False') == 'True',
             
             # Keywords (combined from separate fields)
             'eco_friendly_keywords': self._get_combined_keywords([
@@ -1289,7 +1432,7 @@ class ResConfigSettings(models.TransientModel):
             'values_default_score': float(params.get_param('wa_marketing_automation.values_default_score', '25.0')),
             
             # Time periods
-            'rfm_analysis_period': int(params.get_param('wa_marketing_automation.rfm_analysis_period', '365')),
+            # 'rfm_analysis_period' removed - using 'rfm_analysis_period_days' instead
             'email_engagement_period': int(params.get_param('wa_marketing_automation.email_engagement_period', '90')),
             'website_engagement_period': int(params.get_param('wa_marketing_automation.website_engagement_period', '90')),
             
@@ -1372,6 +1515,35 @@ class ResConfigSettings(models.TransientModel):
             'rfm_quintile_2': float(params.get_param('wa_marketing_automation.rfm_quintile_2', '0.4')),
             'rfm_quintile_3': float(params.get_param('wa_marketing_automation.rfm_quintile_3', '0.6')),
             'rfm_quintile_4': float(params.get_param('wa_marketing_automation.rfm_quintile_4', '0.8')),
+            
+            # =========================================================
+            # Demographics & Product Category Advanced Configuration
+            # =========================================================
+            
+            # Age and Customer Validation
+            'age_validation_limit': int(params.get_param('wa_marketing_automation.age_validation_limit', '150')),
+            'new_customer_threshold': int(params.get_param('wa_marketing_automation.new_customer_threshold', '1')),
+            
+            # Analysis Time Periods
+            'rfm_analysis_period_days': int(params.get_param('wa_marketing_automation.rfm_analysis_period_days', '365')),
+            'category_analysis_period_days': int(params.get_param('wa_marketing_automation.category_analysis_period_days', '180')),
+            
+            # Product Category Analytics Configuration
+            'max_reasonable_categories': int(params.get_param('wa_marketing_automation.max_reasonable_categories', '20')),
+            'category_change_positive_threshold': float(params.get_param('wa_marketing_automation.category_change_positive_threshold', '20.0')),
+            'category_change_negative_threshold': float(params.get_param('wa_marketing_automation.category_change_negative_threshold', '20.0')),
+            
+            # Diversity Score Thresholds
+            'diversity_score_high_threshold': float(params.get_param('wa_marketing_automation.diversity_score_high_threshold', '70.0')),
+            'diversity_score_medium_threshold': float(params.get_param('wa_marketing_automation.diversity_score_medium_threshold', '40.0')),
+            
+            # Category Ranking Weights
+            'category_spending_weight': float(params.get_param('wa_marketing_automation.category_spending_weight', '0.7')),
+            'category_frequency_weight': float(params.get_param('wa_marketing_automation.category_frequency_weight', '0.3')),
+            
+            # Values Preference Detection Thresholds
+            'values_strong_preference_threshold': float(params.get_param('wa_marketing_automation.values_strong_preference_threshold', '50.0')),
+            'values_targeting_threshold': float(params.get_param('wa_marketing_automation.values_targeting_threshold', '30.0')),
         }
         
         return config
@@ -1386,3 +1558,67 @@ class ResConfigSettings(models.TransientModel):
         for record in self:
             if record.whatsapp_base_url and not record.whatsapp_base_url.startswith(('http://', 'https://')):
                 raise ValidationError(_("WhatsApp Base API URL must start with http:// or https://"))
+                
+    @api.constrains('age_validation_limit', 'new_customer_threshold', 'rfm_analysis_period_days', 'category_analysis_period_days', 'max_reasonable_categories', 'values_strong_preference_threshold', 'values_targeting_threshold')
+    def _check_positive_values(self):
+        """Validate that numeric parameters are positive and reasonable"""
+        for record in self:
+            if record.age_validation_limit and (record.age_validation_limit < 50 or record.age_validation_limit > 200):
+                raise ValidationError(_("Age validation limit must be between 50 and 200 years"))
+                
+            if record.new_customer_threshold and record.new_customer_threshold < 1:
+                raise ValidationError(_("New customer threshold must be at least 1 order"))
+                
+            if record.rfm_analysis_period_days and (record.rfm_analysis_period_days < 30 or record.rfm_analysis_period_days > 1095):
+                raise ValidationError(_("RFM analysis period must be between 30 and 1095 days (3 years)"))
+                
+            if record.category_analysis_period_days and (record.category_analysis_period_days < 30 or record.category_analysis_period_days > 730):
+                raise ValidationError(_("Category analysis period must be between 30 and 730 days (2 years)"))
+                
+            if record.max_reasonable_categories and (record.max_reasonable_categories < 5 or record.max_reasonable_categories > 100):
+                raise ValidationError(_("Maximum reasonable categories must be between 5 and 100"))
+                
+            if record.values_strong_preference_threshold and (record.values_strong_preference_threshold < 10.0 or record.values_strong_preference_threshold > 90.0):
+                raise ValidationError(_("Strong preference threshold must be between 10% and 90%"))
+                
+            if record.values_targeting_threshold and (record.values_targeting_threshold < 5.0 or record.values_targeting_threshold > 80.0):
+                raise ValidationError(_("Targeting threshold must be between 5% and 80%"))
+                
+    @api.constrains('category_change_positive_threshold', 'category_change_negative_threshold')
+    def _check_change_thresholds(self):
+        """Validate change detection thresholds are reasonable percentages"""
+        for record in self:
+            if record.category_change_positive_threshold and (record.category_change_positive_threshold < 5.0 or record.category_change_positive_threshold > 100.0):
+                raise ValidationError(_("Category change positive threshold must be between 5% and 100%"))
+                
+            if record.category_change_negative_threshold and (record.category_change_negative_threshold < 5.0 or record.category_change_negative_threshold > 100.0):
+                raise ValidationError(_("Category change negative threshold must be between 5% and 100%"))
+                
+    @api.constrains('diversity_score_high_threshold', 'diversity_score_medium_threshold')
+    def _check_diversity_thresholds(self):
+        """Validate diversity score thresholds are logical and within range"""
+        for record in self:
+            if record.diversity_score_high_threshold and (record.diversity_score_high_threshold < 0.0 or record.diversity_score_high_threshold > 100.0):
+                raise ValidationError(_("High diversity score threshold must be between 0 and 100"))
+                
+            if record.diversity_score_medium_threshold and (record.diversity_score_medium_threshold < 0.0 or record.diversity_score_medium_threshold > 100.0):
+                raise ValidationError(_("Medium diversity score threshold must be between 0 and 100"))
+                
+            if (record.diversity_score_high_threshold and record.diversity_score_medium_threshold and 
+                record.diversity_score_high_threshold <= record.diversity_score_medium_threshold):
+                raise ValidationError(_("High diversity threshold must be greater than medium diversity threshold"))
+                
+    @api.constrains('category_spending_weight', 'category_frequency_weight')
+    def _check_category_weights(self):
+        """Validate category ranking weights sum to 1.0"""
+        for record in self:
+            if record.category_spending_weight is not False and record.category_frequency_weight is not False:
+                total_weight = record.category_spending_weight + record.category_frequency_weight
+                if abs(total_weight - 1.0) > 0.001:  # Allow small floating point precision errors
+                    raise ValidationError(_("Category spending weight and frequency weight must sum to 1.0 (currently: %.3f)") % total_weight)
+                    
+            if record.category_spending_weight and (record.category_spending_weight < 0.0 or record.category_spending_weight > 1.0):
+                raise ValidationError(_("Category spending weight must be between 0.0 and 1.0"))
+                
+            if record.category_frequency_weight and (record.category_frequency_weight < 0.0 or record.category_frequency_weight > 1.0):
+                raise ValidationError(_("Category frequency weight must be between 0.0 and 1.0"))

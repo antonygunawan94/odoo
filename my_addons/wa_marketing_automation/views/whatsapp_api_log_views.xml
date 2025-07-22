@@ -79,10 +79,6 @@
                 <filter string="Test Execution" name="filter_test"
                     domain="[('execution_type', '=', 'test')]" />
                 <separator />
-                <filter string="Recent (Last 7 Days)" name="filter_recent"
-                    domain="[('at', '>=', '2025-07-12')]" />
-                <filter string="This Month" name="filter_month"
-                    domain="[('at', '>=', '2025-07-01')]" />
                 <group expand="0" string="Group By">
                     <filter string="Status" name="group_status" context="{'group_by': 'status'}" />
                     <filter string="Campaign" name="group_campaign"

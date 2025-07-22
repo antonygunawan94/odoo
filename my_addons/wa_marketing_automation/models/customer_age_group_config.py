@@ -136,28 +136,21 @@ class CustomerAgeGroupConfig(models.Model):
             if not group.active:
                 continue
                 
-            # Find overlapping groups
-            overlapping_domain = [
-                ('id', '!=', group.id),
-                ('active', '=', True),
-            ]
+            # Use manual overlap checking with proper range overlap algorithm
+            all_other_groups = self.search([('id', '!=', group.id), ('active', '=', True)])
+            overlapping_groups = self.browse()
             
-            # Check for overlaps with groups that have upper limits
-            if group.max_age is not False:
-                overlapping_domain += [
-                    '|',
-                    '&', ('min_age', '<=', group.max_age), ('min_age', '>=', group.min_age),
-                    '&', ('max_age', '>=', group.min_age), ('max_age', '!=', False)
-                ]
-            else:
-                # Group has no upper limit, check for overlaps
-                overlapping_domain += [
-                    '|',
-                    ('min_age', '>=', group.min_age),
-                    '&', ('max_age', '>=', group.min_age), ('max_age', '!=', False)
-                ]
-            
-            overlapping_groups = self.search(overlapping_domain)
+            for other_group in all_other_groups:
+                # Check if ranges overlap using standard algorithm: 
+                # [A1,A2] overlaps [B1,B2] if A1 <= B2 AND B1 <= A2
+                
+                # Handle infinite upper bounds (max_age = False means infinity)
+                group_max = group.max_age if group.max_age is not False else float('inf')
+                other_max = other_group.max_age if other_group.max_age is not False else float('inf')
+                
+                # Check overlap condition
+                if group.min_age <= other_max and other_group.min_age <= group_max:
+                    overlapping_groups |= other_group
             
             if overlapping_groups:
                 overlapping_names = ', '.join(overlapping_groups.mapped('display_name'))
@@ -304,6 +297,49 @@ class CustomerAgeGroupConfig(models.Model):
             }
         }
 
+    def _recompute_all_partner_age_groups(self):
+        """Recompute age groups for all customers"""
+        customers = self.env['res.partner'].search([
+            ('is_company', '=', False),
+            ('customer_rank', '>', 0)
+        ])
+        if customers:
+            _logger.info(f"Recomputing age groups for {len(customers)} customers")
+            customers._compute_customer_age_group()
+            _logger.info("Age group recomputation completed")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Override create to trigger partner recomputation (batch-aware)"""
+        records = super().create(vals_list)
+        # Recompute partner age groups when new age group config is created
+        if records:
+            records[0]._recompute_all_partner_age_groups()  # Only call once for batch
+        return records
+
+    def write(self, vals):
+        """Override write to trigger partner recomputation when age ranges change"""
+        # Check if age-related fields are being modified
+        age_fields = {'min_age', 'max_age', 'active', 'group_code'}
+        if any(field in vals for field in age_fields):
+            result = super().write(vals)
+            # Recompute partner age groups when age configuration changes
+            self._recompute_all_partner_age_groups()
+            return result
+        else:
+            return super().write(vals)
+
+    def unlink(self):
+        """Override unlink to trigger partner recomputation when age groups are deleted"""
+        result = super().unlink()
+        # Recompute partner age groups when age group config is deleted
+        if self.env['res.partner']:
+            self.env['res.partner'].search([
+                ('is_company', '=', False),
+                ('customer_rank', '>', 0)
+            ])._compute_customer_age_group()
+        return result
+
     def name_get(self):
         """Custom name display for better UX"""
         result = []
@@ -312,6 +348,97 @@ class CustomerAgeGroupConfig(models.Model):
             name = f"{record.display_name} ({record.min_age}-{max_age_display} years)"
             result.append((record.id, name))
         return result
+
+    @api.model
+    def create_default_age_groups_if_empty(self):
+        """Create default age groups only if database is empty"""
+        # Check if any age groups exist
+        existing_count = self.search_count([])
+        if existing_count > 0:
+            _logger.info(f"Age groups already exist ({existing_count} records), skipping default creation")
+            return True
+            
+        _logger.info("No age groups found, creating default age groups")
+        
+        default_groups = [
+            {
+                'group_code': 'young',
+                'display_name': 'Young (Under 18)',
+                'min_age': 0,
+                'max_age': 17,
+                'sequence': 10,
+                'active': True,
+                'group_color': '#E8F4FD',
+                'group_description': 'Young customers under 18 years old. Requires parental consent for services.'
+            },
+            {
+                'group_code': '18_25',
+                'display_name': 'Youth (18-25)',
+                'min_age': 18,
+                'max_age': 25,
+                'sequence': 20,
+                'active': True,
+                'group_color': '#FFE6CC',
+                'group_description': 'Young adults starting their careers. Digital-native, budget-conscious.'
+            },
+            {
+                'group_code': '26_35',
+                'display_name': 'Young Adult (26-35)',
+                'min_age': 26,
+                'max_age': 35,
+                'sequence': 30,
+                'active': True,
+                'group_color': '#FFCCDD',
+                'group_description': 'Career-building professionals, often starting families.'
+            },
+            {
+                'group_code': '36_45',
+                'display_name': 'Adult (36-45)',
+                'min_age': 36,
+                'max_age': 45,
+                'sequence': 40,
+                'active': True,
+                'group_color': '#E6CCFF',
+                'group_description': 'Established professionals with families. Peak earning years.'
+            },
+            {
+                'group_code': '46_55',
+                'display_name': 'Mature Professional (46-55)',
+                'min_age': 46,
+                'max_age': 55,
+                'sequence': 50,
+                'active': True,
+                'group_color': '#CCFFCC',
+                'group_description': 'Mature professionals with higher disposable income.'
+            },
+            {
+                'group_code': '56_65',
+                'display_name': 'Senior (56-64)',
+                'min_age': 56,
+                'max_age': 64,
+                'sequence': 60,
+                'active': True,
+                'group_color': '#FFFFCC',
+                'group_description': 'Pre-retirement customers with time and resources for self-care.'
+            },
+            {
+                'group_code': '65_plus',
+                'display_name': 'Elder (65+)',
+                'min_age': 65,
+                'max_age': False,
+                'sequence': 70,
+                'active': True,
+                'group_color': '#F0F0F0',
+                'group_description': 'Retirement-age customers focused on skin health and comfort.'
+            }
+        ]
+        
+        # Create default groups with validation disabled
+        for group_data in default_groups:
+            self.with_context(skip_overlap_validation=True).create(group_data)
+            
+        _logger.info(f"Created {len(default_groups)} default age groups")
+        return True
 
     @api.model
     def migrate_to_new_codes(self):
@@ -344,11 +471,8 @@ class CustomerAgeGroupConfig(models.Model):
         # Update spending tiers - delete ALL existing tiers first
         tier_model = self.env['wa_marketing_automation.customer_spending_tier_config']
         
-        # Force delete all tiers to prevent conflicts
+        # Force delete all tiers to prevent conflicts - XML data will reload them
         self.env.cr.execute("DELETE FROM wa_marketing_automation_customer_spending_tier_config")
-        
-        # Create new VIP tiers
-        tier_model.create_default_indonesian_spending_tiers()
         
         # Recompute customer fields
         customers = self.env['res.partner'].search([('is_company', '=', False), ('customer_rank', '>', 0)])

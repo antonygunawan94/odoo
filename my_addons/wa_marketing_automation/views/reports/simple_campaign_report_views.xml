@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Simple Campaign Report Search View -->
+        <record id="view_simple_campaign_report_search" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.simple_campaign_report.search</field>
+            <field name="model">wa_marketing_automation.simple_campaign_report</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="campaign_name" string="Campaign" filter_domain="[('campaign_name', 'ilike', self)]"/>
+                    <field name="state"/>
+                    <field name="campaign_type"/>
+                    <field name="date"/>
+                    
+                    <separator/>
+                    <filter name="filter_running" string="Running" domain="[('state', '=', 'running')]"/>
+                    <filter name="filter_finished" string="Finished" domain="[('state', '=', 'finished')]"/>
+                    <filter name="filter_with_failures" string="Has Failures" domain="[('messages_failed', '>', 0)]"/>
+                    
+                    <separator/>
+                    <filter name="filter_time_based" string="Time Based" domain="[('campaign_type', '=', 'time_based')]"/>
+                    <filter name="filter_forever" string="Forever" domain="[('campaign_type', '=', 'forever')]"/>
+                    
+                    <separator/>
+                    <filter name="filter_this_month" string="This Month" 
+                            domain="[('date', '>=', (context_today() - relativedelta(months=1)).strftime('%Y-%m-01')),
+                                     ('date', '&lt;', (context_today().replace(day=1) + relativedelta(months=1)).strftime('%Y-%m-01'))]"/>
+                    <filter name="filter_last_month" string="Last Month" 
+                            domain="[('date', '>=', (context_today() - relativedelta(months=2)).strftime('%Y-%m-01')),
+                                     ('date', '&lt;', (context_today() - relativedelta(months=1)).strftime('%Y-%m-01'))]"/>
+                    
+                    <group expand="0" string="Group By">
+                        <filter name="group_campaign" string="Campaign" domain="[]" context="{'group_by': 'campaign_name'}"/>
+                        <filter name="group_state" string="Status" domain="[]" context="{'group_by': 'state'}"/>
+                        <filter name="group_type" string="Campaign Type" domain="[]" context="{'group_by': 'campaign_type'}"/>
+                        <filter name="group_date" string="Date" domain="[]" context="{'group_by': 'date'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Simple Campaign Report List View -->
+        <record id="view_simple_campaign_report_list" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.simple_campaign_report.list</field>
+            <field name="model">wa_marketing_automation.simple_campaign_report</field>
+            <field name="arch" type="xml">
+                <list string="Simple Campaign Report" create="false" edit="false" delete="false"
+                      decoration-info="state == 'running'"
+                      decoration-success="state == 'finished'"
+                      decoration-warning="messages_failed > 0"
+                      decoration-muted="state == 'cancelled'">
+                    <field name="campaign_name"/>
+                    <field name="date"/>
+                    <field name="state" widget="badge"/>
+                    <field name="campaign_type"/>
+                    <field name="messages_sent"/>
+                    <field name="messages_failed"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Simple Campaign Report Form View -->
+        <record id="view_simple_campaign_report_form" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.simple_campaign_report.form</field>
+            <field name="model">wa_marketing_automation.simple_campaign_report</field>
+            <field name="arch" type="xml">
+                <form string="Simple Campaign Report" create="false" edit="false" delete="false">
+                    <sheet>
+                        <!-- Button box removed for simplicity -->
+                        
+                        <div class="oe_title">
+                            <h1>
+                                <field name="campaign_name"/>
+                            </h1>
+                        </div>
+                        
+                        <group>
+                            <group name="campaign_info">
+                                <field name="campaign_id"/>
+                                <field name="date"/>
+                                <field name="state"/>
+                                <field name="campaign_type"/>
+                            </group>
+                            <group name="metrics">
+                                <field name="messages_sent"/>
+                                <field name="messages_failed"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Simple Campaign Report Pivot View -->
+        <record id="view_simple_campaign_report_pivot" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.simple_campaign_report.pivot</field>
+            <field name="model">wa_marketing_automation.simple_campaign_report</field>
+            <field name="arch" type="xml">
+                <pivot string="Campaign Analytics">
+                    <!-- 📍 DEFAULT POSITIONING (users can drag & drop to change) -->
+                    <field name="state" type="row"/>                    <!-- Left side: Status groups -->
+                    <field name="campaign_type" type="row"/>            <!-- Left side: Type subgroups -->
+                    <field name="date" type="col" interval="month"/>    <!-- Top: Month columns -->
+                    
+                    <!-- 📊 MEASURES (the actual numbers in cells) -->
+                    <field name="messages_sent" type="measure"/>        <!-- Sum of messages sent -->
+                    <field name="messages_failed" type="measure"/>      <!-- Sum of messages failed -->
+                </pivot>
+            </field>
+        </record>
+
+        <!-- Simple Campaign Report Graph View -->
+        <record id="view_simple_campaign_report_graph" model="ir.ui.view">
+            <field name="name">wa_marketing_automation.simple_campaign_report.graph</field>
+            <field name="model">wa_marketing_automation.simple_campaign_report</field>
+            <field name="arch" type="xml">
+                <graph string="Campaign Performance" type="bar">
+                    <field name="date" type="row" interval="month"/>
+                    <field name="messages_sent" type="measure"/>
+                    <field name="messages_failed" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <!-- Simple Campaign Report Action -->
+        <record id="action_simple_campaign_report" model="ir.actions.act_window">
+            <field name="name">Simple Campaign Report</field>
+            <field name="res_model">wa_marketing_automation.simple_campaign_report</field>
+            <field name="view_mode">pivot,graph,list,form</field>  <!-- 🎯 Pivot first for analytics focus -->
+            <field name="search_view_id" ref="view_simple_campaign_report_search"/>
+            <field name="context">{
+                'search_default_filter_this_month': 1,
+                'search_default_group_state': 1
+            }</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No campaign data found!
+                </p>
+                <p>
+                    <strong>📊 Pivot View:</strong> Drag and drop fields between rows and columns for custom analysis.<br/>
+                    <strong>📈 Graph View:</strong> Visual charts of your campaign performance.<br/>
+                    <strong>📋 List View:</strong> Detailed table view of individual campaigns.
+                </p>
+                <p>Use the search filters above to focus on specific time periods, campaign types, or statuses.</p>
+            </field>
+        </record>
+
+        <!-- Menu Item -->
+        <menuitem id="menu_simple_campaign_report"
+                  name="Simple Campaign Report"
+                  parent="wa_marketing_automation_menu_reports"
+                  action="action_simple_campaign_report"
+                  sequence="25"/>
+
+    </data>
+</odoo>

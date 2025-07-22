@@ -26,6 +26,7 @@
         sequence="20"
     />
 
+
     <!-- Configuration Submenu -->
     <menuitem id="wa_marketing_automation_menu_configuration"
         name="Configuration"
@@ -49,6 +50,15 @@
         groups="base.group_user"
     />
 
+    <menuitem id="wa_marketing_automation_menu_customer_acquisition_source"
+        name="Customer Acquisition Sources"
+        parent="wa_marketing_automation_menu_configuration"
+        action="wa_marketing_automation.action_customer_acquisition_source"
+        sequence="40"
+        groups="base.group_user"
+    />
+
+
     <menuitem id="wa_marketing_automation_menu_whatsapp_api_log"
         name="WhatsApp API Logs"
         parent="wa_marketing_automation_menu_campaign"
@@ -63,47 +73,14 @@
         sequence="40"
     />
 
-    <menuitem id="wa_marketing_automation_menu_customer_demographics_report"
-        name="Customer Demographics Analysis"
+    <menuitem id="wa_marketing_automation_menu_performance_analytics"
+        name="Performance Analytics Report"
         parent="wa_marketing_automation_menu_reports"
-        action="wa_marketing_automation.action_customer_demographics_report"
+        action="wa_marketing_automation.action_performance_analytics_report"
         sequence="10"
+        groups="base.group_user"
     />
 
-    <menuitem id="wa_marketing_automation_menu_age_distribution"
-        name="Age Distribution Analysis"
-        parent="wa_marketing_automation_menu_reports"
-        action="wa_marketing_automation.action_customer_age_distribution"
-        sequence="20"
-    />
-
-    <menuitem id="wa_marketing_automation_menu_spending_tier_distribution"
-        name="Spending Tier Distribution"
-        parent="wa_marketing_automation_menu_reports"
-        action="wa_marketing_automation.action_customer_spending_tier_distribution"
-        sequence="25"
-    />
-
-    <menuitem id="wa_marketing_automation_menu_rfm_analysis"
-        name="RFM Analysis"
-        parent="wa_marketing_automation_menu_reports"
-        action="wa_marketing_automation.action_customer_rfm_analysis"
-        sequence="30"
-    />
-
-    <menuitem id="wa_marketing_automation_menu_churn_risk"
-        name="Churn Risk Analysis"
-        parent="wa_marketing_automation_menu_reports"
-        action="wa_marketing_automation.action_customer_churn_risk"
-        sequence="40"
-    />
-
-    <menuitem id="wa_marketing_automation_menu_cohort_analysis"
-        name="Cohort Analysis"
-        parent="wa_marketing_automation_menu_reports"
-        action="wa_marketing_automation.action_cohort_analysis_report"
-        sequence="50"
-    />
 
     <menuitem id="wa_marketing_automation_menu_scheduled_actions"
         name="Scheduled Actions"
@@ -120,11 +97,5 @@
         sequence="10"
     />
 
-    <menuitem id="wa_marketing_automation_menu_advanced_filter"
-        name="Advanced Analytics Filter"
-        parent="wa_marketing_automation_menu_base"
-        action="wa_marketing_automation.action_advanced_analytics_filter"
-        sequence="30"
-    />
 
 </odoo>

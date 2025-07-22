@@ -2,7 +2,24 @@
 
 ## Complete Guide to Customer Analytics and Segmentation
 
-This comprehensive guide covers all advanced analytics features in the WhatsApp Marketing Automation module, including engagement scoring, churn prediction, cohort analysis, and emerging 2025 trends like social commerce and BNPL analytics.
+This comprehensive guide covers all advanced analytics features in the WhatsApp Marketing Automation module, including engagement scoring, churn prediction, cohort analysis, product category analytics, and emerging trends like social commerce and BNPL analytics.
+
+### 🎉 Quick Update Summary
+
+**New Features Added:**
+- ✅ **Product Category Analytics** on customer records (new tab)
+- ✅ **Category Performance Reports** suite (7 new reports)
+- ✅ **Calculation Transparency** for all metrics
+- ✅ **Fully Configurable Settings** (no more hardcoded values)
+- ✅ **Multi-Currency Support** with automatic conversion
+- ✅ **Dynamic Date Calculations** (no hardcoded years)
+
+**Key Improvements:**
+- All metrics now show "How is this calculated?" explanations
+- Spending tier × category matrix analysis (matches Excel requirements)
+- Customer spending tiers fully customizable (supports A-H naming)
+- Age groups, acquisition sources all configurable
+- Complete removal of hardcoded values and assumptions
 
 ## Table of Contents
 
@@ -11,12 +28,14 @@ This comprehensive guide covers all advanced analytics features in the WhatsApp 
 3. [Business User Quick Guide](#business-user-quick-guide)
 4. [Core Analytics Features](#core-analytics-features)
 5. [Advanced Analytics Features](#advanced-analytics-features)
-6. [Emerging Trends Analytics](#emerging-trends-analytics)
-7. [Reports and Dashboards](#reports-and-dashboards)
-8. [Practical Applications](#practical-applications)
-9. [Best Practices](#best-practices)
-10. [Troubleshooting](#troubleshooting)
-11. [Integration Guide](#integration-guide)
+6. [Product Category Analytics](#product-category-analytics)
+7. [Emerging Trends Analytics](#emerging-trends-analytics)
+8. [Reports and Dashboards](#reports-and-dashboards)
+9. [Category Performance Reports](#category-performance-reports)
+10. [Practical Applications](#practical-applications)
+11. [Best Practices](#best-practices)
+12. [Troubleshooting](#troubleshooting)
+13. [Integration Guide](#integration-guide)
 
 ## Overview
 
@@ -24,14 +43,24 @@ This comprehensive guide covers all advanced analytics features in the WhatsApp 
 
 The WhatsApp Marketing Automation module now includes cutting-edge customer analytics capabilities that go far beyond traditional RFM analysis. These features help you understand your customers at a deeper level and create more effective marketing campaigns.
 
+#### 🆕 Latest Updates
+
+- **Product Category Analytics**: Deep insights into customer preferences by product category
+- **Category Performance Reports**: Spending tier × category matrix analysis matching Excel requirements
+- **Calculation Transparency**: All metrics now show clear explanations of how they're calculated
+- **Dynamic Configuration**: All thresholds and settings are now fully configurable (no hardcoded values)
+- **Multi-Currency Support**: Automatic currency conversion using company base currency
+
 ### Key Benefits
 
 - **Predictive Capabilities**: Know which customers will churn before they do
 - **Multi-Channel Insights**: Understand customer behavior across all touchpoints
+- **Product Category Intelligence**: Understand what customers buy and predict future preferences
 - **2025 Trend Alignment**: Leverage social commerce and BNPL analytics
 - **Automated Scoring**: Real-time calculation of engagement and risk scores
 - **Cohort Analysis**: Track customer behavior over time
 - **Values-Based Targeting**: Segment by sustainability and social responsibility preferences
+- **Business Transparency**: Every metric shows exactly how it's calculated
 
 ## Getting Started
 
@@ -46,6 +75,55 @@ The WhatsApp Marketing Automation module now includes cutting-edge customer anal
    - Values & Preferences
    - Social Commerce
    - BNPL & Mobile Commerce
+   - Demographics & Source
+   - Product Categories
+
+4. **Calculation Transparency**: Look for the "How is this calculated?" expandable sections in each tab to understand exactly how metrics are computed
+
+### Understanding Calculation Transparency
+
+#### What is Calculation Transparency?
+
+Every analytics metric now includes a detailed explanation of how it's calculated. This transparency helps you:
+- Understand the logic behind each score
+- Trust the analytics recommendations
+- Explain metrics to stakeholders
+- Customize calculations if needed
+
+#### How to Access Calculation Details
+
+1. **In Customer Records**: Look for blue info boxes with "How is this calculated?" links
+2. **Expandable Sections**: Click to expand and see:
+   - Data sources used
+   - Calculation formulas
+   - Thresholds and scoring logic
+   - Update frequency
+
+#### Example Calculation Transparencies
+
+**Engagement Score**:
+```
+Shows how actively customers interact with your business.
+Looks at email opens and clicks, website visits and purchases, 
+and WhatsApp message responses over the last 90 days.
+
+Calculation:
+- Email Score: (Opens × 1 + Clicks × 2) / Days × 100
+- Website Score: Based on order recency and frequency
+- WhatsApp Score: Response rate to campaigns
+- Overall: Weighted average of available channels
+```
+
+**Demographics Analysis**:
+```
+Provides insights into customer age, location, and demographics.
+
+We analyze:
+- Age: Calculated from birth date if available
+- Location: From primary address
+- Age Group: Automatic categorization (18-24, 25-34, etc.)
+- Missing Data: Clearly indicated when information unavailable
+```
 
 ### Initial Setup
 
@@ -463,6 +541,155 @@ Based on product purchase history analysis:
 - **Optimize Retention**: Compare retention rates across cohorts
 - **Budget Allocation**: Invest more in high-performing acquisition channels
 
+## Product Category Analytics
+
+### Overview
+
+**Purpose**: Understand customer preferences and predict future purchases based on their product category buying patterns
+
+Product Category Analytics provides deep insights into what types of products each customer prefers, helping you:
+- Personalize product recommendations
+- Optimize inventory by customer segment
+- Create category-specific marketing campaigns
+- Identify cross-selling opportunities
+
+### Available Metrics
+
+#### 1. Favorite Product Categories
+
+**What it shows**: The top 3 product categories the customer purchases most frequently
+
+**How it's calculated**:
+- Analyzes all confirmed sales orders
+- Groups products by category
+- Ranks by combination of:
+  - Total spending in category (60% weight)
+  - Number of purchases (30% weight)
+  - Recency of purchases (10% weight)
+
+**Business Application**:
+- Use for personalized product recommendations
+- Create category-specific promotions
+- Focus inventory on popular categories
+
+#### 2. Category Diversity Score (0-100)
+
+**What it measures**: How varied the customer's purchases are across different categories
+
+**Score Interpretation**:
+- **80-100**: Very diverse buyer (8+ categories)
+- **60-79**: Diverse buyer (6-7 categories)
+- **40-59**: Moderate diversity (4-5 categories)
+- **20-39**: Focused buyer (2-3 categories)
+- **0-19**: Single category buyer
+
+**Business Value**:
+- **High diversity**: Good candidates for cross-selling
+- **Low diversity**: Deep expertise in specific categories
+
+#### 3. Category Purchase Patterns
+
+**Insights Provided**:
+- **Recent Focus**: Categories purchased in last 6 months
+- **Historical Preferences**: All-time category preferences
+- **Seasonal Patterns**: Time-based category preferences
+- **Growth Categories**: Categories with increasing purchase frequency
+
+#### 4. Top Category Analysis
+
+**Metrics**:
+- **Primary Category**: Most purchased category by revenue
+- **Category Share**: Percentage of total spending in top category
+- **Category Loyalty**: Consistency of category preferences over time
+
+### Category Spending Breakdown
+
+The system provides detailed spending analysis:
+- Revenue by category
+- Average order value by category
+- Purchase frequency by category
+- Last purchase date by category
+
+### Using Category Analytics for Segmentation
+
+#### High-Value Category Segments
+
+```python
+# Premium Electronics Buyers
+[
+    ('top_category_name', '=', 'Electronics'),
+    ('average_order_value', '>', 500),
+    ('rfm_segment', 'in', ['champions', 'loyal_customers'])
+]
+
+# Fashion Enthusiasts
+[
+    ('favorite_product_categories', 'ilike', '%Fashion%'),
+    ('category_diversity_score', '<', 40),  # Focused on fashion
+    ('purchase_count', '>', 5)
+]
+```
+
+#### Cross-Selling Opportunities
+
+```python
+# Customers buying in only one category (ripe for expansion)
+[
+    ('category_diversity_score', '<', 20),
+    ('total_spent', '>', 1000),
+    ('customer_journey_stage', 'in', ['purchase', 'loyalty'])
+]
+
+# Diverse buyers for new category launches
+[
+    ('category_diversity_score', '>', 70),
+    ('engagement_level', 'in', ['high', 'very_high'])
+]
+```
+
+### Category-Based Campaign Examples
+
+#### 1. Category Abandonment Prevention
+
+Target customers who haven't purchased from their favorite category recently:
+```python
+[
+    ('favorite_product_categories', 'ilike', '%Electronics%'),
+    ('days_since_last_purchase', '>', 90),
+    ('rfm_segment', '!=', 'lost')
+]
+```
+
+#### 2. New Category Introduction
+
+Introduce complementary categories to single-category buyers:
+```python
+[
+    ('top_category_name', '=', 'Home & Garden'),
+    ('category_diversity_score', '<', 30),
+    ('total_spent', '>', 500)
+]
+```
+
+#### 3. Seasonal Category Campaigns
+
+Target based on historical seasonal patterns:
+```python
+[
+    ('category_purchase_pattern', 'ilike', '%Winter Sports%'),
+    ('rfm_monetary_score', '>=', 3)
+]
+```
+
+### Integration with Other Analytics
+
+Category analytics enhances other metrics:
+
+1. **With RFM Analysis**: Identify champion customers in specific categories
+2. **With Churn Prediction**: Detect category-specific churn risks
+3. **With Values Analytics**: Match eco-friendly products to sustainability-conscious customers
+4. **With Engagement Scores**: Correlate category preferences with channel engagement
+
 ## Emerging Trends Analytics
 
 ### 1. Social Commerce Integration
@@ -541,10 +768,23 @@ The system analyzes:
 
 ### Available Reports
 
+#### Customer Analytics Reports
+
 1. **Customer Demographics Analysis**: Age, location, purchase patterns
 2. **RFM Analysis**: Recency, Frequency, Monetary segmentation
 3. **Cohort Analysis**: Time-based customer behavior tracking
 4. **Churn Risk Analysis**: Predictive customer retention insights
+5. **Customer Acquisition Report**: Source performance and channel analysis
+
+#### Category Performance Reports
+
+6. **Category Sales Performance**: Spending tier × category matrix analysis
+7. **Category × Spending Tier Matrix**: Cross-analysis visualization
+8. **Category Growth Trends**: Time-based category performance
+9. **Top Products by Category**: Product-level performance analysis
+10. **Top Products Analysis**: Best performing products across all categories
+11. **Top Services Analysis**: Service-specific performance metrics
+12. **Products by Customer Tier**: Tier preference analysis
 
 ### Creating Custom Views
 
@@ -571,6 +811,182 @@ The system analyzes:
 - **Excel Export**: All analytics data can be exported for external analysis
 - **API Access**: Integrate with BI tools via Odoo API
 - **Scheduled Reports**: Set up automated report generation
+
+## Category Performance Reports
+
+### Overview
+
+The Category Performance Reports provide comprehensive analysis of how different product categories perform across customer segments, matching the Excel requirements for spending tier × category matrix analysis.
+
+### Available Reports
+
+Navigate to **WhatsApp Marketing Automation > Reports > Category Performance**:
+
+#### 1. Category Sales Performance
+
+**Purpose**: Comprehensive analysis of sales performance by category and customer spending tier
+
+**Key Metrics**:
+- Total Revenue by Category × Spending Tier
+- Order Count and Customer Count
+- Average Order Value
+- Revenue Growth Rate (vs previous period)
+- Market Share Analysis
+
+**Views Available**:
+- **Pivot View**: Spending tier × category matrix (matches Excel DAYA BELI × PRODUK JASA)
+- **Graph View**: Visual comparisons and trends
+- **List View**: Detailed records with growth indicators
+
+**Business Applications**:
+- Identify which categories perform best with premium vs budget customers
+- Optimize product mix for different customer segments
+- Focus marketing efforts on high-performing combinations
+
+#### 2. Category × Spending Tier Matrix
+
+**Purpose**: Cross-analysis matrix showing the intersection of customer spending power and product preferences
+
+**Special Features**:
+- Heat map visualization in pivot view
+- Automatic calculation of revenue share percentages
+- Period comparison (default: last month with YoY comparison)
+- Drill-down to specific category-tier combinations
+
+**How to Use**:
+1. Open the report
+2. Select time period (default: 1 month)
+3. Use pivot view for matrix analysis
+4. Click cells to drill down to customer lists
+
+#### 3. Category Growth Trends
+
+**Purpose**: Track category performance over time with growth analysis
+
+**Insights Provided**:
+- Month-over-month growth rates
+- Seasonal patterns by category
+- Emerging and declining categories
+- Forecast based on historical trends
+
+**Visualization Options**:
+- Line charts for trend analysis
+- Bar charts for period comparison
+- Stacked charts for market share evolution
+
+#### 4. Top Products by Category
+
+**Purpose**: Detailed product-level analysis within each category
+
+**Key Features**:
+- Top 20 products per category
+- Customer tier breakdown for each product
+- Shows which products appeal to VIP vs budget customers
+- Growth metrics and ranking
+
+**Special Insights**:
+- **Tier Revenue Breakdown**: See revenue from VIP, Premium, Gold, etc. for each product
+- **Cross-Tier Appeal**: Identify products that work across all customer segments
+- **Category Champions**: Best performers in each category
+
+#### 5. Top Products/Services Analysis
+
+**Separate Reports for**:
+- **Top Products Analysis**: Physical products ranking
+- **Top Services Analysis**: Service offerings ranking
+
+These match your Excel requirements for "Top Products by Category" and "Top Services by Category" analysis.
+
+### Using Category Reports Effectively
+
+#### Quick Start Guide
+
+1. **Daily Review**:
+   - Check Category × Tier Matrix for yesterday's performance
+   - Identify any unusual patterns or opportunities
+   - Note categories with declining performance
+
+2. **Weekly Analysis**:
+   - Review Category Growth Trends
+   - Compare week-over-week performance
+   - Identify categories needing attention
+
+3. **Monthly Planning**:
+   - Analyze full month Category Sales Performance
+   - Plan inventory based on tier preferences
+   - Adjust marketing focus based on insights
+
+#### Advanced Analysis Techniques
+
+**1. Finding Hidden Opportunities**:
+```
+Filters to apply:
+- Revenue Growth Rate > 20%
+- Customer Spending Tier = "Silver" or "Bronze"
+- Total Revenue < $10,000
+→ Identifies growing categories in mid-tier segments
+```
+
+**2. Premium Customer Focus**:
+```
+Filters to apply:
+- Customer Spending Tier in ["VIP", "Premium", "Gold"]
+- Category Revenue Share > 5%
+→ Shows categories that matter to high-value customers
+```
+
+**3. Cross-Selling Candidates**:
+```
+Steps:
+1. Go to Top Products by Category
+2. Filter for products with diverse tier appeal
+3. Note products with balanced revenue across tiers
+→ These products work for cross-tier campaigns
+```
+
+### Report Customization
+
+#### Time Period Configuration
+
+All reports support flexible time periods:
+- **Default**: Last month (configurable)
+- **Options**: 1-12 months
+- **Comparison**: Automatic vs previous period
+- **Custom Ranges**: Use date filters
+
+#### Filters and Grouping
+
+**Common Filters**:
+- Period filters (Current Month, Last 3 Months, etc.)
+- Spending tier filters (Premium Tiers, Budget Tiers, etc.)
+- Performance filters (High Revenue, Growing Categories, etc.)
+- Product type filters (Products, Services, Consumables)
+
+**Grouping Options**:
+- By Category
+- By Spending Tier
+- By Period
+- By Parent Category
+- By Product Type
+
+### Integration with Customer Analytics
+
+Category reports complement customer-level analytics:
+
+1. **From Customer to Category**:
+   - View customer's favorite categories
+   - Click through to category performance
+   - See how their preferences compare to their tier
+
+2. **From Category to Customers**:
+   - Start with high-performing category
+   - Drill down to customer list
+   - Create targeted segments
+
+3. **Campaign Creation**:
+   - Use insights to create segments
+   - Target based on category preferences
+   - Personalize by spending tier
 
 ## Practical Applications
 
@@ -765,25 +1181,84 @@ The module provides REST API access to:
 - Cohort analysis results
 - Campaign performance metrics
 
+## Configuration and Customization
+
+### Fully Configurable Analytics
+
+All analytics thresholds and settings are now fully configurable through the user interface - no hardcoded values remain in the system.
+
+#### Configurable Elements
+
+**1. Customer Spending Tiers**
+- Navigate to: **WhatsApp Marketing Automation > Configuration > Customer Spending Tiers**
+- Configure: Tier names, codes, thresholds, and colors
+- Default: 8 tiers (VIP, Premium, Gold, Silver, Bronze, Standard, Basic, Entry)
+- Customizable to match your business model (e.g., A/B/C/D/E/F/G/H)
+
+**2. Age Group Configuration**
+- Navigate to: **WhatsApp Marketing Automation > Configuration > Customer Age Groups**
+- Configure: Age ranges, group names, and display order
+- Default groups: 18-24, 25-34, 35-44, 45-54, 55-64, 65+
+- Add custom groups as needed
+
+**3. Acquisition Source Management**
+- Navigate to: **WhatsApp Marketing Automation > Configuration > Customer Acquisition Sources**
+- Configure: Source names, codes, and categories
+- Track custom channels specific to your business
+
+**4. Analytics Package Settings**
+- Navigate to: **Settings > WhatsApp Marketing > Analytics Configuration**
+- Enable/disable specific analytics modules
+- Configure calculation parameters
+- Set update frequencies
+
+#### Multi-Currency Support
+
+The system automatically handles multiple currencies:
+- All monetary values converted to company base currency
+- Consistent analysis across international customers
+- No hardcoded currency assumptions
+- Automatic exchange rate updates
+
+#### Dynamic Date Calculations
+
+All date-based analytics use dynamic calculations:
+- No hardcoded years or dates
+- Automatic adjustment for current period
+- Configurable lookback periods
+- Timezone-aware calculations
+
+### Customization Best Practices
+
+1. **Start with Defaults**: The system includes sensible defaults for all configurations
+2. **Test Changes**: Make configuration changes in a test environment first
+3. **Document Customizations**: Keep notes on why specific thresholds were chosen
+4. **Regular Review**: Review configurations quarterly as your business evolves
+
 ## Conclusion
 
-Advanced Analytics transforms your WhatsApp marketing from basic messaging to sophisticated, data-driven customer engagement. By leveraging engagement scoring, churn prediction, cohort analysis, and emerging trends like social commerce and BNPL, you can:
+Advanced Analytics transforms your WhatsApp marketing from basic messaging to sophisticated, data-driven customer engagement. With the latest enhancements including product category analytics, calculation transparency, and fully configurable settings, you can:
 
 1. **Predict Customer Behavior**: Know who will churn before they do
-2. **Optimize Channel Mix**: Focus on preferred customer channels
-3. **Personalize at Scale**: Target based on values and preferences
-4. **Maximize ROI**: Invest in high-value customer segments
-5. **Stay Ahead of Trends**: Leverage 2025 commerce trends
+2. **Understand Product Preferences**: Deep insights into category buying patterns
+3. **Optimize Channel Mix**: Focus on preferred customer channels
+4. **Personalize at Scale**: Target based on values, categories, and preferences
+5. **Cross-Analyze Performance**: Spending tier × category matrix insights
+6. **Trust Your Data**: Full transparency on how every metric is calculated
+7. **Customize Everything**: No hardcoded values - configure to match your business
+8. **Stay Ahead of Trends**: Leverage 2025 commerce trends
 
-### Next Steps
+### What's Next
 
-1. **Explore Your Data**: Review the analytics tabs in customer records
-2. **Create Test Segments**: Start with simple engagement-based segments
-3. **Run Pilot Campaigns**: Test with small customer groups
-4. **Monitor Results**: Track performance and adjust strategies
-5. **Scale Success**: Expand successful segments and strategies
+1. **Explore Category Analytics**: Review the new Product Categories tab in customer records
+2. **Run Category Reports**: Access the new Category Performance reports suite
+3. **Check Calculation Transparency**: Understand how each metric is calculated
+4. **Configure Settings**: Customize spending tiers, age groups, and sources
+5. **Create Category Segments**: Use category preferences for targeted campaigns
+6. **Analyze Tier × Category Matrix**: Discover which products work for which customers
+7. **Monitor Growth Trends**: Track category performance over time
 
-The advanced analytics platform positions your business at the forefront of customer intelligence, enabling sophisticated marketing strategies that drive growth and customer satisfaction.
+The enhanced analytics platform now provides complete visibility into both customer behavior and product performance, with full transparency and configurability. This positions your business at the forefront of customer intelligence, enabling sophisticated marketing strategies that drive growth and customer satisfaction.
 
 ---
 

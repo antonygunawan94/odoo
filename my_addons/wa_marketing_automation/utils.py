@@ -88,7 +88,10 @@ def format_price_with_currency(price, currency_code=None, company_currency=None)
 
     except Exception as e:
         _logger.warning(f"Error formatting price {price}: {e}")
-        return f"Rp{int(round(price))}"
+        # Use company currency symbol if available, otherwise generic formatting
+        if company_currency and hasattr(company_currency, 'symbol'):
+            return f"{company_currency.symbol}{int(round(price))}"
+        return f"{int(round(price))}"
 
 
 def add_thousand_separators(number_str, separator=",", decimal_sep="."):

@@ -51,11 +51,64 @@ source venv/bin/activate
 
 ## Development Workflow
 
+### 🚨 MANDATORY REQUIREMENTS FOR ALL CODE CHANGES
+
+⚠️ **CRITICAL - ALWAYS RUN MODULE UPDATE AFTER ANY CHANGE**: 
+```bash
+make run-update
+```
+
+**This is MANDATORY after EVERY code change, including:**
+- Model modifications (fields, methods, constraints)
+- View updates (XML files)
+- Data changes (XML data files)
+- Security rule changes
+- Any Python code modifications
+
+**Why this is mandatory:**
+- Odoo caches Python code and needs restart to reload changes
+- XML files need to be reloaded into the database
+- Model schema changes require database updates
+- Without update, changes are not applied and testing is invalid
+
+⚠️ **PROCESS - NEVER SKIP THIS**:
+1. ✅ Make your code changes  
+2. ✅ **ALWAYS run `make run-update`** 
+3. ✅ Verify no errors in update output
+4. ✅ Test the changes in browser
+5. ✅ Only then consider the change complete
+
 ### Important Note for Claude Code Assistant
 ⚠️ **IMPORTANT**: When testing changes, DO NOT run `make run-dev` or `python odoo-bin` commands directly as they will timeout after 2 minutes. Instead, notify the user to test the changes manually. The assistant should focus on:
 1. Making code changes
-2. Running module updates (`make run-update`)
+2. **ALWAYS running module updates (`make run-update`) - THIS IS MANDATORY**
 3. Asking the user to test the running server at `http://localhost:8070`
+
+🚨 **CRITICAL - BUSINESS CALCULATIONS WARNING**:
+**NEVER make changes to sensitive business logic without explicit discussion and approval first.**
+
+**Examples of sensitive business calculations:**
+- AOV (Average Order Value) calculations
+- Revenue computations  
+- Customer counting logic
+- Aggregation methods (sum, avg, count)
+- Data model structure changes that affect business metrics
+
+**Required Process for Business Logic Changes:**
+1. **STOP** - Do not implement immediately
+2. **ANALYZE** - Understand the root cause thoroughly
+3. **DISCUSS** - Present the analysis and proposed solution to user
+4. **GET APPROVAL** - Wait for explicit permission before changing anything
+5. **DOCUMENT** - Explain the change and impact clearly
+
+**What NOT to do:**
+- ❌ Make "quick fixes" to business calculations
+- ❌ Change data aggregation logic without discussion  
+- ❌ Apply fractional counting or complex formulas without approval
+- ❌ Modify field types or computation methods on sensitive fields
+- ❌ Change record creation logic that affects business metrics
+
+**Remember**: Business calculations directly impact financial reporting and decision-making. Getting them wrong can cause serious business problems.
 
 ### Starting Development Server
 ```bash

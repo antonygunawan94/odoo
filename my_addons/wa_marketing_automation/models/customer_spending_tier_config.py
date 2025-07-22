@@ -42,6 +42,7 @@ class CustomerSpendingTierConfig(models.Model):
     
     max_spending_amount = fields.Float(
         string='Maximum Spending Amount (IDR)', 
+        default=False,  # False = NULL in Odoo, prevents 0.0 default for unlimited tiers
         help='Maximum total customer spending for this tier (leave empty for highest tier)'
     )
     
@@ -231,106 +232,6 @@ class CustomerSpendingTierConfig(models.Model):
         _logger.debug(f"Generated {len(options)} spending tier selection options")
         return options
 
-    @api.model
-    def create_default_indonesian_spending_tiers(self):
-        """
-        Create default Indonesian beauty clinic customer spending tiers
-        Based on client's requirements from MARKETING REPORT MEI 2025 KUDUS 2
-        """
-        default_spending_tiers = [
-            {
-                'tier_code': 'vip',
-                'display_name': 'VIP',
-                'min_spending_amount': 2500000.0,  # > 2.5M IDR
-                'max_spending_amount': False,      # No upper limit
-                'sequence': 1,
-                'tier_color': '#9c27b0',  # Purple for VIP
-                'tier_description': 'VIP customers with highest spending (> Rp 2.5M)'
-            },
-            {
-                'tier_code': 'premium',
-                'display_name': 'Premium',
-                'min_spending_amount': 2000000.0,  # 2M IDR
-                'max_spending_amount': 2499999.0,  # 2.5M IDR
-                'sequence': 2,
-                'tier_color': '#2196f3',  # Blue for premium
-                'tier_description': 'Premium customers (Rp 2M - 2.5M)'
-            },
-            {
-                'tier_code': 'gold',
-                'display_name': 'Gold',
-                'min_spending_amount': 1500000.0,  # 1.5M IDR
-                'max_spending_amount': 1999999.0,  # 2M IDR
-                'sequence': 3,
-                'tier_color': '#ffc107',  # Gold color
-                'tier_description': 'Gold tier customers (Rp 1.5M - 2M)'
-            },
-            {
-                'tier_code': 'silver',
-                'display_name': 'Silver',
-                'min_spending_amount': 1000000.0,  # 1M IDR
-                'max_spending_amount': 1499999.0,  # 1.5M IDR
-                'sequence': 4,
-                'tier_color': '#607d8b',  # Silver/grey color
-                'tier_description': 'Silver tier customers (Rp 1M - 1.5M)'
-            },
-            {
-                'tier_code': 'bronze',
-                'display_name': 'Bronze',
-                'min_spending_amount': 500000.0,   # 500K IDR
-                'max_spending_amount': 999999.0,   # 1M IDR
-                'sequence': 5,
-                'tier_color': '#ff6f00',  # Bronze/orange color
-                'tier_description': 'Bronze tier customers (Rp 500K - 1M)'
-            },
-            {
-                'tier_code': 'standard',
-                'display_name': 'Standard',
-                'min_spending_amount': 250000.0,   # 250K IDR
-                'max_spending_amount': 499999.0,   # 500K IDR
-                'sequence': 6,
-                'tier_color': '#4caf50',  # Green for standard
-                'tier_description': 'Standard customers (Rp 250K - 500K)'
-            },
-            {
-                'tier_code': 'basic',
-                'display_name': 'Basic',
-                'min_spending_amount': 100000.0,   # 100K IDR
-                'max_spending_amount': 249999.0,   # 250K IDR
-                'sequence': 7,
-                'tier_color': '#00bcd4',  # Cyan for basic
-                'tier_description': 'Basic customers (Rp 100K - 250K)'
-            },
-            {
-                'tier_code': 'entry',
-                'display_name': 'Entry',
-                'min_spending_amount': 0.0,        # 0 IDR
-                'max_spending_amount': 99999.0,    # 100K IDR
-                'sequence': 8,
-                'tier_color': '#9e9e9e',  # Grey for entry level
-                'tier_description': 'Entry level customers (< Rp 100K)'
-            },
-        ]
-        
-        created_count = 0
-        for tier_data in default_spending_tiers:
-            # Check if tier already exists
-            existing_tier = self.search([('tier_code', '=', tier_data['tier_code'])])
-            if not existing_tier:
-                self.create(tier_data)
-                created_count += 1
-                _logger.info(f"Created default spending tier: {tier_data['tier_code']} - {tier_data['display_name']}")
-        
-        _logger.info(f"Created {created_count} default Indonesian customer spending tiers")
-        
-        # Force recomputation of customer spending tiers after creating defaults
-        if created_count > 0:
-            partners = self.env['res.partner'].search([('is_company', '=', False), ('customer_rank', '>', 0)])
-            if partners:
-                partners._compute_customer_spending_tier()
-                _logger.info(f"Recomputed spending tiers for {len(partners)} customers")
-        
-        return created_count
 
     def action_refresh_tier_analytics(self):
         """Manually refresh tier analytics"""
@@ -345,14 +246,66 @@ class CustomerSpendingTierConfig(models.Model):
             }
         }
 
+    def _recompute_all_partner_spending_tiers(self):
+        """Recompute spending tiers for all customers"""
+        customers = self.env['res.partner'].search([
+            ('is_company', '=', False),
+            ('customer_rank', '>', 0)
+        ])
+        if customers:
+            _logger.info(f"Recomputing spending tiers for {len(customers)} customers")
+            customers._compute_customer_spending_tier()
+            _logger.info("Spending tier recomputation completed")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Override create to trigger partner recomputation (batch-aware)"""
+        records = super().create(vals_list)
+        # Recompute partner spending tiers when new tier config is created
+        if records:
+            records[0]._recompute_all_partner_spending_tiers()  # Only call once for batch
+        return records
+
+    def write(self, vals):
+        """Override write to trigger partner recomputation when tier ranges change"""
+        # Check if tier-related fields are being modified
+        tier_fields = {'min_spending_amount', 'max_spending_amount', 'active', 'tier_code'}
+        if any(field in vals for field in tier_fields):
+            result = super().write(vals)
+            # Recompute partner spending tiers when tier configuration changes
+            self._recompute_all_partner_spending_tiers()
+            return result
+        else:
+            return super().write(vals)
+
+    def unlink(self):
+        """Override unlink to trigger partner recomputation when tiers are deleted"""
+        result = super().unlink()
+        # Recompute partner spending tiers when tier config is deleted
+        if self.env['res.partner']:
+            self.env['res.partner'].search([
+                ('is_company', '=', False),
+                ('customer_rank', '>', 0)
+            ])._compute_customer_spending_tier()
+        return result
+
     def name_get(self):
         """Custom name display for better UX"""
+        context = self._context
         result = []
         for tier in self:
-            name = f"{tier.tier_code}: {tier.display_name}"
-            if tier.max_spending_amount:
-                name += f" (Rp {tier.min_spending_amount:,.0f} - {tier.max_spending_amount:,.0f})"
+            # Check if we want the compact format (for pivot tables)
+            if context.get('show_spending_range', False):
+                if tier.max_spending_amount:
+                    name = f"{tier.display_name} (Rp {tier.min_spending_amount:,.0f} - {tier.max_spending_amount:,.0f})"
+                else:
+                    name = f"{tier.display_name} (> Rp {tier.min_spending_amount:,.0f})"
             else:
-                name += f" (> Rp {tier.min_spending_amount:,.0f})"
+                # Default format
+                name = f"{tier.tier_code}: {tier.display_name}"
+                if tier.max_spending_amount:
+                    name += f" (Rp {tier.min_spending_amount:,.0f} - {tier.max_spending_amount:,.0f})"
+                else:
+                    name += f" (> Rp {tier.min_spending_amount:,.0f})"
             result.append((tier.id, name))
         return result
