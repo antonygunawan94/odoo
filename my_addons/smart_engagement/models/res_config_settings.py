@@ -1059,6 +1059,101 @@ class ResConfigSettings(models.TransientModel):
     )
 
     # =====================================
+    # Webhook Duplicate Detection Configuration
+    # =====================================
+    
+    # Feature Toggle
+    webhook_duplicate_detection_enabled = fields.Boolean(
+        string='Enable Webhook Duplicate Detection',
+        help='Enable intelligent duplicate detection for webhook contact synchronization with weighted scoring system',
+        config_parameter='smart_engagement.webhook_duplicate_detection_enabled',
+        default=True,
+    )
+    
+    # Field Enable/Disable Toggles
+    webhook_check_name = fields.Boolean(
+        string='Check Name Similarity',
+        help='Include name similarity in duplicate detection scoring using fuzzy matching algorithms',
+        config_parameter='smart_engagement.webhook_check_name',
+        default=True,
+    )
+    
+    webhook_check_phone = fields.Boolean(
+        string='Check Phone Number',
+        help='Include phone number matching in duplicate detection (normalized format: 628xxx)',
+        config_parameter='smart_engagement.webhook_check_phone',
+        default=True,
+    )
+    
+    webhook_check_mobile = fields.Boolean(
+        string='Check Mobile Number',
+        help='Include mobile number matching in duplicate detection (normalized format: 628xxx)',
+        config_parameter='smart_engagement.webhook_check_mobile',
+        default=True,
+    )
+    
+    webhook_check_email = fields.Boolean(
+        string='Check Email Address',
+        help='Include email address matching in duplicate detection using exact comparison',
+        config_parameter='smart_engagement.webhook_check_email',
+        default=True,
+    )
+    
+    # Weight Configuration (as percentages for user-friendly display)
+    webhook_name_weight = fields.Float(
+        string='Name Similarity Weight (%)',
+        help='Weight percentage for name similarity in overall duplicate score calculation (0-100%). Names are the most important identifier for human identity.',
+        config_parameter='smart_engagement.webhook_name_weight',
+        default=40.0,
+    )
+    
+    webhook_phone_weight = fields.Float(
+        string='Phone Number Weight (%)',
+        help='Weight percentage for phone number matching in overall duplicate score calculation (0-100%). Phone numbers are very reliable identifiers.',
+        config_parameter='smart_engagement.webhook_phone_weight',
+        default=25.0,
+    )
+    
+    webhook_mobile_weight = fields.Float(
+        string='Mobile Number Weight (%)',
+        help='Weight percentage for mobile number matching in overall duplicate score calculation (0-100%). Mobile numbers are very reliable identifiers.',
+        config_parameter='smart_engagement.webhook_mobile_weight',
+        default=25.0,
+    )
+    
+    webhook_email_weight = fields.Float(
+        string='Email Address Weight (%)',
+        help='Weight percentage for email address matching in overall duplicate score calculation (0-100%). Email addresses can change and are less reliable.',
+        config_parameter='smart_engagement.webhook_email_weight',
+        default=10.0,
+    )
+    
+    # Confidence Threshold
+    webhook_confidence_threshold = fields.Float(
+        string='Auto-Merge Confidence Threshold (%)',
+        help='Minimum confidence score (0-100%) required to automatically merge duplicate contacts. Scores above this threshold will auto-merge, below will create new contacts.',
+        config_parameter='smart_engagement.webhook_confidence_threshold',
+        default=90.0,
+    )
+    
+    # Additional Configuration
+    webhook_similarity_algorithm = fields.Selection([
+        ('levenshtein', 'Levenshtein Distance (Default)'),
+        ('exact', 'Exact Match Only'),
+    ], string='Name Similarity Algorithm',
+       help='Algorithm used for name similarity calculation. Levenshtein handles typos and variations, Exact requires perfect matches.',
+       config_parameter='smart_engagement.webhook_similarity_algorithm',
+       default='levenshtein',
+    )
+    
+    webhook_name_similarity_threshold = fields.Float(
+        string='Name Similarity Threshold (%)',
+        help='Minimum similarity percentage (0-100%) for names to be considered a match using fuzzy matching',
+        config_parameter='smart_engagement.webhook_name_similarity_threshold',
+        default=80.0,
+    )
+
+    # =====================================
     # Package Selection Onchange Methods
     # =====================================
     
@@ -1371,6 +1466,37 @@ class ResConfigSettings(models.TransientModel):
         return json.dumps(result)
     
     @api.model
+    def get_webhook_duplicate_config(self):
+        """Get webhook duplicate detection configuration values"""
+        params = self.env['ir.config_parameter'].sudo()
+        
+        config = {
+            # Feature toggle
+            'enabled': params.get_param('smart_engagement.webhook_duplicate_detection_enabled', 'True') == 'True',
+            
+            # Field checks
+            'check_name': params.get_param('smart_engagement.webhook_check_name', 'True') == 'True',
+            'check_phone': params.get_param('smart_engagement.webhook_check_phone', 'True') == 'True',
+            'check_mobile': params.get_param('smart_engagement.webhook_check_mobile', 'True') == 'True',
+            'check_email': params.get_param('smart_engagement.webhook_check_email', 'True') == 'True',
+            
+            # Weights (convert from percentage to decimal)
+            'name_weight': float(params.get_param('smart_engagement.webhook_name_weight', '40.0')) / 100.0,
+            'phone_weight': float(params.get_param('smart_engagement.webhook_phone_weight', '25.0')) / 100.0,
+            'mobile_weight': float(params.get_param('smart_engagement.webhook_mobile_weight', '25.0')) / 100.0,
+            'email_weight': float(params.get_param('smart_engagement.webhook_email_weight', '10.0')) / 100.0,
+            
+            # Thresholds (convert from percentage to decimal)
+            'confidence_threshold': float(params.get_param('smart_engagement.webhook_confidence_threshold', '90.0')) / 100.0,
+            'name_similarity_threshold': float(params.get_param('smart_engagement.webhook_name_similarity_threshold', '80.0')) / 100.0,
+            
+            # Algorithm
+            'similarity_algorithm': params.get_param('smart_engagement.webhook_similarity_algorithm', 'levenshtein'),
+        }
+        
+        return config
+    
+    @api.model
     def get_analytics_config(self):
         """Get analytics configuration values"""
         params = self.env['ir.config_parameter'].sudo()
@@ -1544,6 +1670,9 @@ class ResConfigSettings(models.TransientModel):
             # Values Preference Detection Thresholds
             'values_strong_preference_threshold': float(params.get_param('smart_engagement.values_strong_preference_threshold', '50.0')),
             'values_targeting_threshold': float(params.get_param('smart_engagement.values_targeting_threshold', '30.0')),
+            
+            # Webhook Duplicate Detection Configuration
+            'webhook_duplicate_detection': self.get_webhook_duplicate_config(),
         }
         
         return config
@@ -1622,3 +1751,54 @@ class ResConfigSettings(models.TransientModel):
                 
             if record.category_frequency_weight and (record.category_frequency_weight < 0.0 or record.category_frequency_weight > 1.0):
                 raise ValidationError(_("Category frequency weight must be between 0.0 and 1.0"))
+                
+    @api.constrains('webhook_name_weight', 'webhook_phone_weight', 'webhook_mobile_weight', 'webhook_email_weight')
+    def _check_webhook_weights(self):
+        """Validate webhook duplicate detection weights sum to 100% and are within range"""
+        for record in self:
+            # Only validate if duplicate detection is enabled
+            if not record.webhook_duplicate_detection_enabled:
+                continue
+                
+            weights = []
+            enabled_fields = []
+            
+            if record.webhook_check_name:
+                weights.append(record.webhook_name_weight or 0.0)
+                enabled_fields.append('Name')
+            if record.webhook_check_phone:
+                weights.append(record.webhook_phone_weight or 0.0)
+                enabled_fields.append('Phone')
+            if record.webhook_check_mobile:
+                weights.append(record.webhook_mobile_weight or 0.0)
+                enabled_fields.append('Mobile')
+            if record.webhook_check_email:
+                weights.append(record.webhook_email_weight or 0.0)
+                enabled_fields.append('Email')
+            
+            # Check that at least one field is enabled
+            if not enabled_fields:
+                raise ValidationError(_("At least one field must be enabled for webhook duplicate detection"))
+            
+            # Check individual weight ranges
+            for weight in weights:
+                if weight < 0.0 or weight > 100.0:
+                    raise ValidationError(_("All webhook duplicate detection weights must be between 0% and 100%"))
+            
+            # Check that enabled weights sum to 100%
+            total_weight = sum(weights)
+            if abs(total_weight - 100.0) > 0.1:  # Allow small floating point precision errors
+                raise ValidationError(
+                    _("Enabled webhook duplicate detection weights must sum to 100%% (currently: %.1f%%)\n"
+                      "Enabled fields: %s") % (total_weight, ', '.join(enabled_fields))
+                )
+                
+    @api.constrains('webhook_confidence_threshold', 'webhook_name_similarity_threshold')
+    def _check_webhook_thresholds(self):
+        """Validate webhook duplicate detection thresholds are within reasonable ranges"""
+        for record in self:
+            if record.webhook_confidence_threshold and (record.webhook_confidence_threshold < 50.0 or record.webhook_confidence_threshold > 100.0):
+                raise ValidationError(_("Webhook confidence threshold must be between 50% and 100%"))
+                
+            if record.webhook_name_similarity_threshold and (record.webhook_name_similarity_threshold < 50.0 or record.webhook_name_similarity_threshold > 100.0):
+                raise ValidationError(_("Webhook name similarity threshold must be between 50% and 100%"))

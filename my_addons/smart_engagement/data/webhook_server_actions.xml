@@ -4,7 +4,7 @@
         <!-- Contact Data Smart Sync Server Action -->
         <record id="action_webhook_contact_smart_sync" model="ir.actions.server">
             <field name="name">Webhook: Contact Smart Sync</field>
-            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="model_id" ref="base.model_res_partner" />
             <field name="state">code</field>
             <field name="code"><![CDATA[
 # Smart Sync for Contact Data
@@ -21,9 +21,7 @@
 #   "state_name": "string",      # State name (e.g., "Jawa Tengah")
 #   "date_of_birth": "date"      # Date of birth (YYYY-MM-DD)
 # }
-
-if 'payload' in env.context:
-    payload = env.context.get('payload')
+if payload:
     result = model.smart_sync(payload)
     action = result
 else:
@@ -34,7 +32,7 @@ else:
         <!-- Product Category Smart Sync Server Action -->
         <record id="action_webhook_category_smart_sync" model="ir.actions.server">
             <field name="name">Webhook: Product Category Smart Sync</field>
-            <field name="model_id" ref="product.model_product_category"/>
+            <field name="model_id" ref="product.model_product_category" />
             <field name="state">code</field>
             <field name="code"><![CDATA[
 # Smart Sync for Product Category
@@ -44,8 +42,7 @@ else:
 #   "parent_name": "string"   # Parent category name (optional)
 # }
 
-if 'payload' in env.context:
-    payload = env.context.get('payload')
+if payload:
     result = model.smart_sync(payload)
     action = result
 else:
@@ -56,7 +53,7 @@ else:
         <!-- Product Smart Sync Server Action -->
         <record id="action_webhook_product_smart_sync" model="ir.actions.server">
             <field name="name">Webhook: Product Smart Sync</field>
-            <field name="model_id" ref="product.model_product_product"/>
+            <field name="model_id" ref="product.model_product_product" />
             <field name="state">code</field>
             <field name="code"><![CDATA[
 # Smart Sync for Product Data
@@ -70,8 +67,7 @@ else:
 #   "categ_name": "string",     # Category name (e.g., "Services", "Products")
 # }
 
-if 'payload' in env.context:
-    payload = env.context.get('payload')
+if payload:
     result = model.smart_sync(payload)
     action = result
 else:
@@ -82,7 +78,7 @@ else:
         <!-- Sale Order Smart Sync Server Action -->
         <record id="action_webhook_sale_order_smart_sync" model="ir.actions.server">
             <field name="name">Webhook: Sale Order Smart Sync</field>
-            <field name="model_id" ref="sale.model_sale_order"/>
+            <field name="model_id" ref="sale.model_sale_order" />
             <field name="state">code</field>
             <field name="code"><![CDATA[
 # Smart Sync for Sale Order Data
@@ -106,8 +102,7 @@ else:
 #   ]
 # }
 
-if 'payload' in env.context:
-    payload = env.context.get('payload')
+if payload:
     result = model.smart_sync(payload)
     action = result
 else:

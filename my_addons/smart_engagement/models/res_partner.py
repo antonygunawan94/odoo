@@ -3327,85 +3327,112 @@ class ResPartner(models.Model):
         
         if not name:
             return False, 0.0
+        
+        # Get webhook duplicate detection configuration
+        webhook_config = self.env['res.config.settings'].get_webhook_duplicate_config()
+        
+        # Skip duplicate detection if disabled
+        if not webhook_config.get('enabled', True):
+            return False, 0.0
             
         # Search for potential duplicates - check ALL contacts, not just customers
         existing_partners = self.search([
             ('is_company', '=', False),  # Only individuals, not companies
         ])
         
-        # Weighted scoring configuration
-        DUPLICATE_DETECTION_WEIGHTS = {
-            'name': 0.40,      # 40% - Most important for human identity
-            'phone': 0.25,     # 25% - Very reliable identifier  
-            'mobile': 0.25,    # 25% - Very reliable identifier
-            'email': 0.10,     # 10% - Can change, less reliable
-        }
-        
-        # Confidence thresholds
-        HIGH_CONFIDENCE_THRESHOLD = 0.90   # Auto-merge
-        
         best_match = None
         best_score = 0.0
         
         for partner in existing_partners:
-            score = self._calculate_duplicate_score(partner, payload, DUPLICATE_DETECTION_WEIGHTS)
+            score = self._calculate_duplicate_score(partner, payload, webhook_config)
             
             if score > best_score:
                 best_score = score
                 best_match = partner
         
         # Return match and score if confidence is high enough
-        if best_score >= HIGH_CONFIDENCE_THRESHOLD:
+        confidence_threshold = webhook_config.get('confidence_threshold', 0.90)
+        if best_score >= confidence_threshold:
             return best_match, best_score
             
         return False, best_score
     
-    def _calculate_duplicate_score(self, existing_partner, new_data, weights):
+    def _calculate_duplicate_score(self, existing_partner, new_data, webhook_config):
         """Calculate weighted similarity score between existing and new contact"""
         
         total_score = 0.0
         total_weight = 0.0
         
-        # Name similarity (40% weight)
-        if existing_partner.name and new_data.get('name'):
-            name_similarity = calculate_similarity(
-                existing_partner.name.strip().lower(), 
-                new_data['name'].strip().lower()
-            )
-            total_score += name_similarity * weights['name']
-            total_weight += weights['name']
+        # Name similarity - configurable weight and algorithm
+        if (webhook_config.get('check_name', True) and 
+            existing_partner.name and new_data.get('name')):
+            
+            existing_name = existing_partner.name.strip().lower()
+            new_name = new_data['name'].strip().lower()
+            
+            # Use configured similarity algorithm
+            similarity_algorithm = webhook_config.get('similarity_algorithm', 'levenshtein')
+            name_similarity_threshold = webhook_config.get('name_similarity_threshold', 0.8)
+            
+            if similarity_algorithm == 'exact':
+                name_similarity = 1.0 if existing_name == new_name else 0.0
+            else:  # levenshtein (default)
+                name_similarity = calculate_similarity(existing_name, new_name)
+                # Apply minimum threshold for fuzzy matching
+                if name_similarity < name_similarity_threshold:
+                    name_similarity = 0.0
+            
+            weight = webhook_config.get('name_weight', 0.4)
+            total_score += name_similarity * weight
+            total_weight += weight
         
-        # Phone similarity (25% weight) 
-        new_phone = normalize_phone(new_data.get('phone') or new_data.get('mobile'))
-        if existing_partner.phone and new_phone:
+        # Phone similarity - configurable weight
+        if (webhook_config.get('check_phone', True) and 
+            existing_partner.phone and (new_data.get('phone') or new_data.get('mobile'))):
+            
+            new_phone = normalize_phone(new_data.get('phone') or new_data.get('mobile'))
             partner_phone = normalize_phone(existing_partner.phone)
+            
             if partner_phone == new_phone:
                 phone_similarity = 1.0  # Exact match
             else:
                 phone_similarity = calculate_similarity(partner_phone, new_phone)
-            total_score += phone_similarity * weights['phone']
-            total_weight += weights['phone']
+                
+            weight = webhook_config.get('phone_weight', 0.25)
+            total_score += phone_similarity * weight
+            total_weight += weight
         
-        # Mobile similarity (25% weight)
-        if existing_partner.mobile and new_phone:
+        # Mobile similarity - configurable weight
+        if (webhook_config.get('check_mobile', True) and 
+            existing_partner.mobile and (new_data.get('phone') or new_data.get('mobile'))):
+            
+            new_phone = normalize_phone(new_data.get('phone') or new_data.get('mobile'))
             partner_mobile = normalize_phone(existing_partner.mobile)
+            
             if partner_mobile == new_phone:
                 mobile_similarity = 1.0  # Exact match
             else:
                 mobile_similarity = calculate_similarity(partner_mobile, new_phone)
-            total_score += mobile_similarity * weights['mobile']
-            total_weight += weights['mobile']
+                
+            weight = webhook_config.get('mobile_weight', 0.25)
+            total_score += mobile_similarity * weight
+            total_weight += weight
         
-        # Email similarity (10% weight)
-        if existing_partner.email and new_data.get('email'):
+        # Email similarity - configurable weight
+        if (webhook_config.get('check_email', True) and 
+            existing_partner.email and new_data.get('email')):
+            
             existing_email = existing_partner.email.strip().lower()
             new_email = new_data['email'].strip().lower()
+            
             if existing_email == new_email:
                 email_similarity = 1.0  # Exact match
             else:
                 email_similarity = calculate_similarity(existing_email, new_email)
-            total_score += email_similarity * weights['email']
-            total_weight += weights['email']
+                
+            weight = webhook_config.get('email_weight', 0.1)
+            total_score += email_similarity * weight
+            total_weight += weight
         
         # Calculate final weighted score
         if total_weight > 0:

@@ -710,6 +710,154 @@
                             </setting>
                         </block>
 
+                        <!-- Webhook Duplicate Detection Configuration -->
+                        <block title="Webhook Duplicate Detection Configuration">
+                            <setting string="Enable Webhook Duplicate Detection"
+                                help="Enable intelligent duplicate detection for webhook contact synchronization with weighted scoring system. When enabled, incoming webhook contact data will be compared against existing contacts using configurable similarity algorithms and confidence thresholds.">
+                                <field name="webhook_duplicate_detection_enabled" />
+                                
+                                <!-- Quick Configuration Notice -->
+                                <div class="content-group mt16"
+                                    invisible="not webhook_duplicate_detection_enabled">
+                                    <div class="alert alert-info" role="alert">
+                                        <strong>🎯 Smart Duplicate Detection:</strong><br />
+                                        Automatically identifies and merges duplicate contacts from webhook data using advanced weighted scoring:<br /><br />
+                                        
+                                        <strong>How it works:</strong>
+                                        <ul>
+                                            <li><strong>Name Matching:</strong> Uses fuzzy matching to handle typos and variations</li>
+                                            <li><strong>Phone Normalization:</strong> Handles multiple formats (08xxx → 628xxx, +62xxx → 628xxx)</li>
+                                            <li><strong>Weighted Scoring:</strong> Combines multiple fields with configurable importance</li>
+                                            <li><strong>Confidence Threshold:</strong> Only auto-merges when highly confident</li>
+                                        </ul>
+                                        
+                                        <strong>Use this to:</strong> Prevent duplicate contacts, improve data quality, and maintain clean customer database from webhook integrations.
+                                    </div>
+                                </div>
+                            </setting>
+                            
+                            <!-- Field Selection -->
+                            <setting string="Fields to Check"
+                                help="Select which contact fields to include in duplicate detection analysis"
+                                invisible="not webhook_duplicate_detection_enabled">
+                                <div class="content-group">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <field name="webhook_check_name" />
+                                            <label for="webhook_check_name" class="o_light_label">Name Similarity</label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <field name="webhook_check_phone" />
+                                            <label for="webhook_check_phone" class="o_light_label">Phone Number</label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <field name="webhook_check_mobile" />
+                                            <label for="webhook_check_mobile" class="o_light_label">Mobile Number</label>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <field name="webhook_check_email" />
+                                            <label for="webhook_check_email" class="o_light_label">Email Address</label>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted mt-1">
+                                        <small>At least one field must be enabled. Name uses fuzzy matching, others use exact matching after normalization.</small>
+                                    </div>
+                                </div>
+                            </setting>
+                            
+                            <!-- Weight Configuration -->
+                            <setting string="Field Importance Weights"
+                                help="Configure how much each field contributes to the overall duplicate confidence score. Weights must sum to 100% for enabled fields."
+                                invisible="not webhook_duplicate_detection_enabled">
+                                <div class="content-group">
+                                    <div class="row">
+                                        <div class="col-md-3" invisible="not webhook_check_name">
+                                            <label for="webhook_name_weight" class="o_light_label">Name Weight (%)</label>
+                                            <field name="webhook_name_weight" />
+                                            <small class="text-muted">Most important for human identity</small>
+                                        </div>
+                                        <div class="col-md-3" invisible="not webhook_check_phone">
+                                            <label for="webhook_phone_weight" class="o_light_label">Phone Weight (%)</label>
+                                            <field name="webhook_phone_weight" />
+                                            <small class="text-muted">Very reliable identifier</small>
+                                        </div>
+                                        <div class="col-md-3" invisible="not webhook_check_mobile">
+                                            <label for="webhook_mobile_weight" class="o_light_label">Mobile Weight (%)</label>
+                                            <field name="webhook_mobile_weight" />
+                                            <small class="text-muted">Very reliable identifier</small>
+                                        </div>
+                                        <div class="col-md-3" invisible="not webhook_check_email">
+                                            <label for="webhook_email_weight" class="o_light_label">Email Weight (%)</label>
+                                            <field name="webhook_email_weight" />
+                                            <small class="text-muted">Can change, less reliable</small>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-warning mt-2" role="alert">
+                                        <small><strong>⚠️ Important:</strong> Enabled field weights must sum to exactly 100%. Default: Name 40%, Phone 25%, Mobile 25%, Email 10%.</small>
+                                    </div>
+                                </div>
+                            </setting>
+                            
+                            <!-- Confidence and Algorithm Settings -->
+                            <setting string="Detection Thresholds"
+                                help="Configure confidence thresholds and similarity algorithms"
+                                invisible="not webhook_duplicate_detection_enabled">
+                                <div class="content-group">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="webhook_confidence_threshold" class="o_light_label">Auto-Merge Confidence Threshold (%)</label>
+                                            <field name="webhook_confidence_threshold" />
+                                            <small class="text-muted">Minimum score to automatically merge contacts (recommended: 90%)</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="webhook_name_similarity_threshold" class="o_light_label">Name Similarity Threshold (%)</label>
+                                            <field name="webhook_name_similarity_threshold" />
+                                            <small class="text-muted">Minimum similarity for names to be considered a match (recommended: 80%)</small>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <label for="webhook_similarity_algorithm" class="o_light_label">Name Similarity Algorithm</label>
+                                            <field name="webhook_similarity_algorithm" />
+                                            <small class="text-muted">Levenshtein handles typos and variations, Exact requires perfect matches</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </setting>
+                            
+                            <!-- Advanced Configuration -->
+                            <setting string="Advanced Configuration"
+                                help="Advanced settings for fine-tuning duplicate detection behavior"
+                                invisible="not webhook_duplicate_detection_enabled">
+                                <div class="content-group">
+                                    <details>
+                                        <summary class="text-info" style="cursor: pointer; user-select: none;">
+                                            <i class="fa fa-wrench"/> Performance and Security Settings
+                                        </summary>
+                                        <div class="content-group mt8">
+                                            <div class="alert alert-info" role="alert">
+                                                <strong>📊 Confidence Score Examples:</strong><br />
+                                                <ul class="mb-0">
+                                                    <li><strong>≥90% Score:</strong> Auto-merge (high confidence) - "John Doe" + same phone</li>
+                                                    <li><strong>70-89% Score:</strong> Create new contact - "Jon Doe" vs "John Doe" + different phone</li>
+                                                    <li><strong>&lt;70% Score:</strong> Create new contact - Only name similarity, no phone/email match</li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <div class="alert alert-success" role="alert">
+                                                <strong>✅ Best Practices:</strong><br />
+                                                <ul class="mb-0">
+                                                    <li>Use consistent external_id across systems for best results</li>
+                                                    <li>Monitor duplicate_score in webhook responses to tune thresholds</li>
+                                                    <li>Test with real data before deploying to production</li>
+                                                    <li>Enable built-in webhook logging to track performance</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+                            </setting>
+                        </block>
 
                         <!-- Configuration Guide -->
                         <block title="Configuration Guide">

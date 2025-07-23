@@ -51,3 +51,4 @@ package.json
 /src/
 
 venv
+local-webhook-urls*
