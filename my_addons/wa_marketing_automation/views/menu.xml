@@ -76,7 +76,7 @@
     <menuitem id="wa_marketing_automation_menu_performance_analytics"
         name="Performance Analytics Report"
         parent="wa_marketing_automation_menu_reports"
-        action="wa_marketing_automation.action_performance_analytics_report"
+        action="wa_marketing_automation.performance_analytics_report_action"
         sequence="10"
         groups="base.group_user"
     />

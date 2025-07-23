@@ -1,212 +1,200 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Main Performance Analytics Pivot View -->
-        <record id="performance_analytics_report_pivot" model="ir.ui.view">
-            <field name="name">Performance Analytics Report - Pivot</field>
+
+        <!-- Performance Analytics Report - List View -->
+        <record id="performance_analytics_report_list" model="ir.ui.view">
+            <field name="name">Performance Analytics Report List</field>
             <field name="model">wa_marketing_automation.performance_analytics_report</field>
             <field name="arch" type="xml">
-                <pivot string="Performance Analytics Dashboard"
-                    disable_linking="True"
-                    display_quantity="1">
+                <list string="Performance Analytics">
+                    <!-- Core Identifiers -->
+                    <field name="order_id" optional="show" />
+                    <field name="order_date" optional="show" />
+                    <field name="customer_name" optional="show" />
 
-                    <!-- Default: DAYA BELI View (A-H × PRODUK/JASA) -->
-                    <field name="spending_tier_display" type="row" />
-                    <field name="category_name" type="col" />
+                    <!-- Spending Analysis -->
+                    <field name="spending_tier_name" optional="show" />
+                    <field name="spending_tier_display" optional="show" />
 
-                    <!-- All Available Dimensions -->
-                    <field name="spending_tier_id" string="Spending Tier Config" context="{'show_spending_range': True}" />
-                    <field name="spending_tier_name" string="Spending Tier Name" />
-                    <field name="spending_tier_display" string="Spending Tier (with Range)" />
-                    <field name="customer_age_group" string="Age Group" />
-                    <field name="product_type" string="Product Type" />
-                    <field name="product_category_id" string="Product Category" />
-                    <field name="customer_country_id" string="Country" />
-                    <field name="customer_state_id" string="State" />
+                    <!-- Product Dimensions -->
+                    <field name="product_name" optional="show" />
+                    <field name="category_name" optional="show" />
 
-                    <!-- Customer Acquisition & Segmentation -->
-                    <field name="customer_acquisition_source_name" string="Acquisition Source" />
-                    <field name="customer_type" string="Customer Type (New/Existing)" />
+                    <!-- Customer Dimensions -->
+                    <field name="customer_age_group" optional="show" />
+                    <field name="customer_acquisition_source_name" optional="show" />
+                    <field name="customer_type" optional="show" />
 
                     <!-- Sales Dimensions -->
-                    <field name="salesperson_id" string="Salesperson" />
-                    <field name="sales_team_id" string="Sales Team" />
-                    <field name="sales_source_name" string="Sales Source" />
-                    <field name="order_month" string="Month" />
-                    <field name="order_quarter" string="Quarter" />
-                    <field name="order_year" string="Year" />
+                    <field name="salesperson_id" optional="show" />
+                    <field name="sales_source_name" optional="show" />
+                    <field name="order_month" optional="show" />
+                    <field name="order_quarter" optional="show" />
+                    <field name="order_year" optional="show" />
 
-                    <!-- Measures -->
-                    <field name="quantity_ordered" type="measure" />
+                    <!-- Key Measures -->
+                    <field name="units_sold" optional="show" sum="Total Units" />
+                    <field name="revenue" optional="show" sum="Total Revenue" />
+                    <field name="avg_order_value" optional="show" avg="Average AOV" />
+                    <field name="order_count" optional="show" sum="Total Orders" widget="integer" />
+                    <field name="customer_count" optional="show" sum="Total Customers" />
+
+                </list>
+            </field>
+        </record>
+
+        <!-- Performance Analytics Report - Pivot View -->
+        <record id="performance_analytics_report_pivot" model="ir.ui.view">
+            <field name="name">Performance Analytics Report Pivot</field>
+            <field name="model">wa_marketing_automation.performance_analytics_report</field>
+            <field name="arch" type="xml">
+                <pivot string="Performance Analytics">
+                    <!-- Default Row Grouping -->
+                    <field name="spending_tier_display" type="row" />
+                    <field name="category_name" type="column" />
+
+                    <!-- Default Measures -->
+                    <field name="order_count" type="measure" widget="integer" />
+                    <field name="units_sold" type="measure" />
                     <field name="revenue" type="measure" />
                     <field name="avg_order_value" type="measure" />
-                    <field name="order_count" type="measure" />
                     <field name="customer_count" type="measure" />
                 </pivot>
             </field>
         </record>
 
-        <!-- Graph View -->
+        <!-- Performance Analytics Report - Graph View -->
         <record id="performance_analytics_report_graph" model="ir.ui.view">
-            <field name="name">Performance Analytics Report - Graph</field>
+            <field name="name">Performance Analytics Report Graph</field>
             <field name="model">wa_marketing_automation.performance_analytics_report</field>
             <field name="arch" type="xml">
-                <graph string="Performance Analytics" type="bar" stacked="True">
-                    <field name="spending_tier_name" />
-                    <field name="category_name" type="col" />
+                <graph string="Performance Analytics" type="bar">
+                    <field name="category_name" />
                     <field name="revenue" type="measure" />
+                    <field name="avg_order_value" type="measure" />
                 </graph>
             </field>
         </record>
 
-        <!-- List View (for drill-down) -->
-        <record id="performance_analytics_report_list" model="ir.ui.view">
-            <field name="name">Performance Analytics Report - List</field>
-            <field name="model">wa_marketing_automation.performance_analytics_report</field>
-            <field name="arch" type="xml">
-                <list string="Performance Analytics Details" create="false" edit="false"
-                    delete="false">
-                    <field name="order_date" optional="show" />
-                    <field name="order_id" optional="show" />
-                    <field name="customer_name" optional="show" />
-                    <field name="product_name" optional="show" />
-                    <field name="spending_tier_id" optional="show" />
-                    <field name="spending_tier_name" optional="show" />
-                    <field name="spending_tier_display" optional="show" />
-                    <field name="category_name" optional="show" />
-                    <field name="customer_acquisition_source_name" optional="show" />
-                    <field name="sales_source_name" optional="show" />
-                    <field name="quantity_ordered" optional="show" />
-                    <field name="revenue" widget="monetary" optional="show" />
-                </list>
-            </field>
-        </record>
-
-        <!-- Search View -->
+        <!-- Performance Analytics Report - Search View -->
         <record id="performance_analytics_report_search" model="ir.ui.view">
-            <field name="name">Performance Analytics Report - Search</field>
+            <field name="name">Performance Analytics Report Search</field>
             <field name="model">wa_marketing_automation.performance_analytics_report</field>
             <field name="arch" type="xml">
-                <search string="Performance Analytics">
-                    <!-- Quick Filters -->
-                    <field name="customer_name" string="Customer" />
-                    <field name="product_name" string="Product" />
-                    <field name="spending_tier_name" string="Spending Tier" />
-                    <field name="category_name" string="Category" />
+                <search>
+                    <!-- Search Fields -->
+                    <field name="customer_name" string="Customer"
+                        filter_domain="[('customer_name', 'ilike', self)]" />
+                    <field name="product_name" string="Product"
+                        filter_domain="[('product_name', 'ilike', self)]" />
+                    <field name="category_name" string="Category"
+                        filter_domain="[('category_name', 'ilike', self)]" />
+                    <field name="spending_tier_name" string="Spending Tier"
+                        filter_domain="[('spending_tier_name', 'ilike', self)]" />
+                    <field name="sales_source_name" string="Sales Source"
+                        filter_domain="[('sales_source_name', 'ilike', self)]" />
 
-                    <!-- Separator -->
+                    <!-- Quick Filters -->
+                    <filter string="This Year" name="filter_this_year"
+                        domain="[('order_date', '&gt;=', datetime.datetime.now().strftime('%Y-01-01'))]" />
+                    <filter string="This Month" name="filter_this_month"
+                        domain="[('order_date', '&gt;=', datetime.datetime.now().strftime('%Y-%m-01'))]" />
+                    <filter string="New Customers" name="filter_new_customers"
+                        domain="[('is_new_customer', '=', True)]" />
+                    <filter string="PRODUK Category" name="filter_produk"
+                        domain="[('category_name', '=', 'PRODUK')]" />
+                    <filter string="JASA Category" name="filter_jasa"
+                        domain="[('category_name', '=', 'JASA')]" />
+
                     <separator />
 
                     <!-- Group By Options -->
-                    <filter string="By Spending Tier" name="group_spending_tier"
-                        context="{'group_by': 'spending_tier_name'}" />
-                    <filter string="By Product Category" name="group_category"
-                        context="{'group_by': 'category_name'}" />
-                    <filter string="By Customer Type" name="group_customer_type"
-                        context="{'group_by': 'customer_type'}" />
-                    <filter string="By Acquisition Source" name="group_acquisition"
-                        context="{'group_by': 'customer_acquisition_source_name'}" />
-                    <filter string="By Sales Source" name="group_sales_source"
-                        context="{'group_by': 'sales_source_name'}" />
-
-                    <!-- Separator -->
-                    <separator />
-
-                    <!-- Date Filters -->
-                    <filter string="This Year" name="filter_this_year"
-                        domain="[('order_year', '=', context_today().year)]" />
-                    <filter string="Last Year" name="filter_last_year"
-                        domain="[('order_year', '=', context_today().year - 1)]" />
-                    <filter string="This Month" name="filter_this_month"
-                        domain="[('order_month', '=', time.strftime('%Y-%m'))]" />
-
-                    <!-- Group By Date -->
                     <group expand="0" string="Group By">
-                        <filter string="Order Date" name="group_date"
+                        <filter string="Product" name="group_product"
+                            context="{'group_by': 'product_name'}" />
+                        <filter string="Category" name="group_category"
+                            context="{'group_by': 'category_name'}" />
+                        <filter string="Spending Tier" name="group_spending_tier"
+                            context="{'group_by': 'spending_tier_display'}" />
+                        <filter string="Customer" name="group_customer"
+                            context="{'group_by': 'customer_name'}" />
+                        <filter string="Sales Source" name="group_sales_source"
+                            context="{'group_by': 'sales_source_name'}" />
+                        <filter string="Age Group" name="group_age_group"
+                            context="{'group_by': 'customer_age_group'}" />
+                        <filter string="Customer Type" name="group_customer_type"
+                            context="{'group_by': 'customer_type'}" />
+                        <filter string="Acquisition Source" name="group_acquisition"
+                            context="{'group_by': 'customer_acquisition_source_name'}" />
+                        <separator />
+                        <filter string="Order Date" name="group_order_date"
                             context="{'group_by': 'order_date'}" />
-                        <filter string="Month" name="group_month"
+                        <filter string="Order Month" name="group_order_month"
                             context="{'group_by': 'order_month'}" />
-                        <filter string="Quarter" name="group_quarter"
+                        <filter string="Order Quarter" name="group_order_quarter"
                             context="{'group_by': 'order_quarter'}" />
-                        <filter string="Year" name="group_year"
+                        <filter string="Order Year" name="group_order_year"
                             context="{'group_by': 'order_year'}" />
                     </group>
                 </search>
             </field>
         </record>
 
-        <!-- Action Window -->
-        <record id="action_performance_analytics_report" model="ir.actions.act_window">
+        <!-- Server Action to Generate Data First -->
+        <record id="performance_analytics_report_server_action" model="ir.actions.server">
+            <field name="name">Generate Performance Analytics Data</field>
+            <field name="model_id"
+                ref="model_wa_marketing_automation_performance_analytics_report" />
+            <field name="binding_model_id"
+                ref="model_wa_marketing_automation_performance_analytics_report" />
+            <field name="state">code</field>
+            <field name="code">
+# Generate fresh report data
+model.refresh_data()
+
+# Open the pivot view with fresh data
+action = {
+'type': 'ir.actions.act_window',
+'name': 'Performance Analytics Report',
+'res_model': 'wa_marketing_automation.performance_analytics_report',
+'view_mode': 'pivot,graph,list',
+'context': {
+'search_default_filter_this_year': 1,
+'search_default_group_spending_tier': 1,
+'search_default_group_category': 1
+}
+}
+</field>
+        </record>
+
+        <!-- Performance Analytics Report - Action -->
+        <record id="performance_analytics_report_action" model="ir.actions.act_window">
             <field name="name">Performance Analytics Report</field>
             <field name="res_model">wa_marketing_automation.performance_analytics_report</field>
             <field name="view_mode">pivot,graph,list</field>
-            <field name="view_id" ref="performance_analytics_report_pivot" />
+            <field name="search_view_id" ref="performance_analytics_report_search" />
             <field name="context">{
+                'search_default_filter_this_year': 1,
                 'search_default_group_spending_tier': 1,
-                'search_default_filter_this_year': 1
+                'search_default_group_category': 1
                 }</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
-                    Welcome to Performance Analytics!
+                    Performance Analytics Report (Transient Model with Server Action)
                 </p>
                 <p>
-                    This powerful dashboard lets you analyze sales performance from multiple angles:
+                    This report uses direct Python calculation with transient model
+                    for mathematically correct Average Order Value calculations.
                 </p>
-                <ul>
-                    <li><strong>Spending Tiers (A-H):</strong> Customer categorization by spending
-                        amounts</li>
-                    <li><strong>Product Categories:</strong> Performance by product/service types</li>
-                    <li><strong>Customer Acquisition:</strong> Track which channels bring the best
-                        customers</li>
-                    <li><strong>Sales Sources:</strong> Analyze business classification performance</li>
-                </ul>
                 <p>
-                    <strong>How to use:</strong> Drag dimensions between rows and columns to create
-                    custom views. Click on any data point to drill down for detailed analysis. </p>
+                    <strong>Key Features:</strong><br /> • Always fresh data (server action +
+                    transient model)<br /> • Direct calculation: AOV = Revenue ÷ Orders<br /> • No
+                    computed field aggregation issues<br /> • Simple Python logic approach </p>
             </field>
         </record>
 
-        <!-- Shortcut Action for DAYA BELI Analysis -->
-        <record id="action_daya_beli_analysis" model="ir.actions.act_window">
-            <field name="name">DAYA BELI Analysis (A-H × Category)</field>
-            <field name="res_model">wa_marketing_automation.performance_analytics_report</field>
-            <field name="view_mode">pivot,graph</field>
-            <field name="view_id" ref="performance_analytics_report_pivot" />
-            <field name="context">{
-                'pivot_row_groupby': ['spending_tier_name'],
-                'pivot_column_groupby': ['category_name'],
-                'pivot_measures': ['revenue', 'order_count'],
-                'search_default_filter_this_year': 1
-                }</field>
-        </record>
-
-        <!-- Shortcut Action for Age Group vs Acquisition Source -->
-        <record id="action_age_acquisition_analysis" model="ir.actions.act_window">
-            <field name="name">Age Group vs Acquisition Source Analysis</field>
-            <field name="res_model">wa_marketing_automation.performance_analytics_report</field>
-            <field name="view_mode">pivot,graph</field>
-            <field name="view_id" ref="performance_analytics_report_pivot" />
-            <field name="context">{
-                'pivot_row_groupby': ['customer_age_group'],
-                'pivot_column_groupby': ['customer_acquisition_source_name'],
-                'pivot_measures': ['customer_count', 'revenue'],
-                'search_default_filter_this_year': 1
-                }</field>
-        </record>
-
-        <!-- Shortcut Action for Customer Type vs Acquisition Source -->
-        <record id="action_customer_type_analysis" model="ir.actions.act_window">
-            <field name="name">Customer Segmentation Analysis</field>
-            <field name="res_model">wa_marketing_automation.performance_analytics_report</field>
-            <field name="view_mode">pivot,graph</field>
-            <field name="view_id" ref="performance_analytics_report_pivot" />
-            <field name="context">{
-                'pivot_row_groupby': ['customer_type'],
-                'pivot_column_groupby': ['customer_acquisition_source_name'],
-                'pivot_measures': ['customer_count', 'revenue'],
-                'search_default_filter_this_year': 1
-                }</field>
-        </record>
+        <!-- V2 Report Menu Item - Removed as V2 is now the default -->
 
     </data>
 </odoo>

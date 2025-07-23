@@ -1,6 +1,5 @@
 from . import (
     campaign,
-    configuration,
     customer_acquisition_source_config,
     customer_age_group_config,
     customer_segmentation,

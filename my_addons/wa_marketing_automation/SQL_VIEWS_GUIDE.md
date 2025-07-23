@@ -299,32 +299,32 @@ from . import campaign_report
 
 ## 🔍 **Working Example**
 
-Our module includes a complete working example: **`simple_campaign_report.py`**
+Our module includes a complete working example: **`performance_analytics_report.py`**
 
 ### **File Structure:**
 ```
 my_addons/wa_marketing_automation/
-├── models/
-│   └── simple_campaign_report.py          # ✅ Working example
-├── views/
-│   └── simple_campaign_report_views.xml   # ✅ Complete views
+├── reports/
+│   └── performance_analytics_report.py          # ✅ Working example
+├── views/reports/
+│   └── performance_analytics_report_views.xml   # ✅ Complete views
 ├── security/
-│   └── ir.model.access.csv               # ✅ Security rules
-└── SQL_VIEWS_GUIDE.md                    # ✅ This guide
+│   └── ir.model.access.csv                      # ✅ Security rules
+└── SQL_VIEWS_GUIDE.md                           # ✅ This guide
 ```
 
 ### **Test the Example:**
 1. **Start Odoo:** `make run-dev`
-2. **Navigate to:** `WhatsApp Marketing Automation → Reports → Simple Campaign Report`
-3. **Explore:** List, pivot, and graph views with real data
+2. **Navigate to:** `WhatsApp Marketing Automation → Reports → Performance Analytics Report`
+3. **Explore:** List, pivot, and graph views with real business data
 
 ### **Key Features Demonstrated:**
-- ✅ PostgreSQL view creation
-- ✅ Multi-table data aggregation
-- ✅ Computed fields (percentages)
-- ✅ Search filters and grouping
-- ✅ Multiple view types
-- ✅ Proper security model
+- ✅ Standard Odoo model with computed fields
+- ✅ Multi-table data aggregation and relationships
+- ✅ Complex business logic (AOV, customer segmentation)
+- ✅ Advanced search filters and grouping
+- ✅ Multiple view types (list, pivot, graph)
+- ✅ Proper security model and permissions
 
 ---
 
@@ -614,7 +614,7 @@ LIMIT 10000
 - [ ] Views disable editing: `create="false" edit="false" delete="false"`
 
 ### **Next Steps**
-1. **Study the working example** in `simple_campaign_report.py`
+1. **Study the working example** in `performance_analytics_report.py`
 2. **Copy and modify** for your specific needs
 3. **Test with real data** to validate performance
 4. **Add to production** with confidence
