@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="smart_engagement_menu_base"
+        name="Smart Engagement"
+        web_icon="smart_engagement,static/description/icon.png"
+    />
+
+    <!-- Campaigns Menu (now a parent menu) -->
+    <menuitem id="smart_engagement_menu_campaign"
+        name="Campaigns"
+        parent="smart_engagement_menu_base"
+        sequence="10"
+    />
+    
+    <menuitem id="smart_engagement_menu_campaign_list"
+        name="Campaign Management"
+        parent="smart_engagement_menu_campaign"
+        action="smart_engagement.smart_engagement_campaign_action"
+        sequence="10"
+    />
+
+    <menuitem id="smart_engagement_menu_customer_segmentation"
+        name="Customer Segmentations"
+        parent="smart_engagement_menu_base"
+        action="smart_engagement.smart_engagement_customer_segmentation_action"
+        sequence="20"
+    />
+
+
+    <!-- Configuration Submenu -->
+    <menuitem id="smart_engagement_menu_configuration"
+        name="Configuration"
+        parent="smart_engagement_menu_base"
+        sequence="90"
+    />
+
+    <menuitem id="smart_engagement_menu_customer_spending_tier_config"
+        name="Customer Spending Tiers"
+        parent="smart_engagement_menu_configuration"
+        action="smart_engagement.action_customer_spending_tier_config"
+        sequence="20"
+        groups="base.group_user"
+    />
+
+    <menuitem id="smart_engagement_menu_customer_age_group_config"
+        name="Customer Age Groups"
+        parent="smart_engagement_menu_configuration"
+        action="smart_engagement.action_customer_age_group_config"
+        sequence="30"
+        groups="base.group_user"
+    />
+
+    <menuitem id="smart_engagement_menu_customer_acquisition_source"
+        name="Customer Acquisition Sources"
+        parent="smart_engagement_menu_configuration"
+        action="smart_engagement.action_customer_acquisition_source"
+        sequence="40"
+        groups="base.group_user"
+    />
+
+
+    <menuitem id="smart_engagement_menu_whatsapp_api_log"
+        name="WhatsApp API Logs"
+        parent="smart_engagement_menu_campaign"
+        action="smart_engagement.smart_engagement_whatsapp_api_log_action"
+        sequence="20"
+    />
+
+    <!-- Reports Menu -->
+    <menuitem id="smart_engagement_menu_reports"
+        name="Reports"
+        parent="smart_engagement_menu_base"
+        sequence="40"
+    />
+
+    <menuitem id="smart_engagement_menu_performance_analytics"
+        name="Performance Analytics Report"
+        parent="smart_engagement_menu_reports"
+        action="smart_engagement.performance_analytics_report_action"
+        sequence="10"
+        groups="base.group_user"
+    />
+
+
+    <menuitem id="smart_engagement_menu_scheduled_actions"
+        name="Scheduled Actions"
+        parent="smart_engagement_menu_campaign"
+        action="smart_engagement.smart_engagement_scheduled_actions_action"
+        sequence="30"
+    />
+
+    <!-- General Settings - Opens Settings > General Settings > Smart Engagement -->
+    <menuitem id="smart_engagement_menu_config"
+        name="General Settings"
+        parent="smart_engagement_menu_configuration"
+        action="smart_engagement.action_wa_marketing_config"
+        sequence="10"
+    />
+
+
+</odoo>

@@ -174,7 +174,7 @@ else ifeq ($(UNAME_S),Darwin)
 else
 	@powershell -Command "Write-Host 'Starting Odoo server with module update...' -ForegroundColor Yellow"
 endif
-	$(ODOO_BIN) --config=$(CONFIG_FILE) -d odoo --update=wa_marketing_automation --stop-after-init
+	$(ODOO_BIN) --config=$(CONFIG_FILE) -d odoo --update=smart_engagement --stop-after-init
 
 # Run Odoo server with database initialization
 run-init:
@@ -185,7 +185,7 @@ else ifeq ($(UNAME_S),Darwin)
 else
 	@powershell -Command "Write-Host 'Initializing Odoo database...' -ForegroundColor Yellow"
 endif
-	$(ODOO_BIN) --config=$(CONFIG_FILE) -d odoo --init=wa_marketing_automation --stop-after-init
+	$(ODOO_BIN) --config=$(CONFIG_FILE) -d odoo --init=smart_engagement --stop-after-init
 
 # Run Odoo shell
 run-shell:

@@ -119,7 +119,7 @@ mkdir models views security data static/description
 
 ## Step 3: Create Module Files
 
-Based on the `wa_marketing_automation` reference module, here's how to create each component:
+Based on the `smart_engagement` reference module, here's how to create each component:
 
 ### 3.1 Create **manifest**.py
 
@@ -436,12 +436,12 @@ Navigate to your module through the main menu you created.
 3. **View errors**: Check XML syntax and field names in view definitions
 4. **Import errors**: Ensure all `__init__.py` files are present and contain correct imports
 
-## Reference Structure (wa_marketing_automation)
+## Reference Structure (smart_engagement)
 
-This guide is based on the existing `wa_marketing_automation` module structure:
+This guide is based on the existing `smart_engagement` module structure:
 
 ```
-wa_marketing_automation/
+smart_engagement/
 ├── __init__.py
 ├── __manifest__.py
 ├── models/

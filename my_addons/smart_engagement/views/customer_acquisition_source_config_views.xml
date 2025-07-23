@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Form View -->
+        <record id="view_customer_acquisition_source_form" model="ir.ui.view">
+            <field name="name">smart_engagement.customer_acquisition_source_config.form</field>
+            <field name="model">smart_engagement.customer_acquisition_source_config</field>
+            <field name="arch" type="xml">
+                <form string="Customer Acquisition Source">
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <button name="%(base.action_partner_form)d" 
+                                type="action"
+                                class="oe_stat_button"
+                                icon="fa-users"
+                                context="{'search_default_acquisition_source_id': id}">
+                                <field name="customer_count" widget="statinfo" string="Customers"/>
+                            </button>
+                        </div>
+                        <widget name="web_ribbon" title="Archived" bg_color="bg-danger" invisible="active"/>
+                        <div class="oe_title">
+                            <label for="name"/>
+                            <h1>
+                                <field name="name" placeholder="e.g., Social Media"/>
+                            </h1>
+                        </div>
+                        <group>
+                            <group>
+                                <field name="display_name" placeholder="e.g., Social Media Marketing"/>
+                                <field name="code" placeholder="e.g., social_media"/>
+                                <field name="sequence"/>
+                                <field name="active" invisible="1"/>
+                            </group>
+                            <group>
+                                <field name="is_digital" widget="boolean_toggle"/>
+                                <field name="is_social" widget="boolean_toggle"/>
+                                <field name="icon" placeholder="e.g., fa-instagram"/>
+                                <field name="color" widget="color_picker"/>
+                            </group>
+                        </group>
+                        <separator string="Description"/>
+                        <field name="description" placeholder="Describe this acquisition source..."/>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- List View -->
+        <record id="view_customer_acquisition_source_list" model="ir.ui.view">
+            <field name="name">smart_engagement.customer_acquisition_source_config.list</field>
+            <field name="model">smart_engagement.customer_acquisition_source_config</field>
+            <field name="arch" type="xml">
+                <list string="Customer Acquisition Sources" editable="top">
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="display_name"/>
+                    <field name="code"/>
+                    <field name="is_digital" widget="boolean_toggle"/>
+                    <field name="is_social" widget="boolean_toggle"/>
+                    <field name="customer_count" readonly="1"/>
+                    <field name="active" invisible="1"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Search View -->
+        <record id="view_customer_acquisition_source_search" model="ir.ui.view">
+            <field name="name">smart_engagement.customer_acquisition_source_config.search</field>
+            <field name="model">smart_engagement.customer_acquisition_source_config</field>
+            <field name="arch" type="xml">
+                <search string="Search Acquisition Sources">
+                    <field name="name"/>
+                    <field name="display_name"/>
+                    <field name="code"/>
+                    <separator/>
+                    <filter string="Digital Channels" name="digital" domain="[('is_digital', '=', True)]"/>
+                    <filter string="Social Media" name="social" domain="[('is_social', '=', True)]"/>
+                    <filter string="Offline Channels" name="offline" domain="[('is_digital', '=', False)]"/>
+                    <separator/>
+                    <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                    <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Digital/Offline" name="group_by_digital" context="{'group_by': 'is_digital'}"/>
+                        <filter string="Social Media" name="group_by_social" context="{'group_by': 'is_social'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_customer_acquisition_source" model="ir.actions.act_window">
+            <field name="name">Customer Acquisition Sources</field>
+            <field name="res_model">smart_engagement.customer_acquisition_source_config</field>
+            <field name="view_mode">list,form</field>
+            <field name="search_view_id" ref="view_customer_acquisition_source_search"/>
+            <field name="context">{'search_default_active': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first acquisition source!
+                </p>
+                <p>
+                    Track how customers find and purchase from your business.
+                    Configure different acquisition sources like social media,
+                    search engines, referrals, or direct visits.
+                </p>
+            </field>
+        </record>
+    </data>
+</odoo>

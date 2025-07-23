@@ -1,9 +1,11 @@
 # Odoo 18.0 Development Project - Operations Guide
 
 ## Project Overview
+
 This is an Odoo 18.0 ERP system with custom modules and UI theme enhancements. The project includes WhatsApp marketing automation capabilities and modern UI themes.
 
 ## Important Odoo 18.0 Changes
+
 - **Tree View → List View**: In Odoo 18.0, the `<tree>` XML tag has been renamed to `<list>` in view definitions
 - **View Mode**: Use `view_mode="list,form"` instead of `view_mode="tree,form"`
 - **View Names**: Update view names from `*.tree.*` to `*.list.*` (e.g., `res.partner.tree.dob` → `res.partner.list.dob`)
@@ -11,13 +13,14 @@ This is an Odoo 18.0 ERP system with custom modules and UI theme enhancements. T
 - **Migration Note**: All custom modules migrating from Odoo 17 to 18 need to update tree views to list views
 
 ## Project Structure
+
 ```
 odoo/
 ├── addons/                   # Core Odoo modules (1000+ modules)
 ├── my_addons/               # Custom modules directory
 │   ├── muk_web_theme/       # Modern backend theme
 │   ├── muk_web_*           # UI enhancement modules
-│   └── wa_marketing_automation/  # WhatsApp marketing module
+│   └── smart_engagement/  # Smart engagement platform
 ├── odoo/                    # Core Odoo framework
 ├── venv/                    # Python virtual environment
 ├── .odoorc                  # Odoo configuration file
@@ -30,17 +33,20 @@ odoo/
 ## Development Environment Setup
 
 ### Prerequisites
+
 - Python 3.10+ (configured in setup.py:68)
 - PostgreSQL database server
 - Virtual environment activated
 
 ### Configuration
+
 - **Database**: odoo/odoo (configured in .odoorc:4)
 - **Database User**: odoo (configured in .odoorc:2)
 - **Addons Path**: addons,my_addons,odoo/addons (configured in .odoorc:5)
 - **Web Port**: Default 8069
 
 ### Virtual Environment
+
 ```bash
 # Activate virtual environment (Windows)
 .\venv\Scripts\Activate.ps1
@@ -53,12 +59,14 @@ source venv/bin/activate
 
 ### 🚨 MANDATORY REQUIREMENTS FOR ALL CODE CHANGES
 
-⚠️ **CRITICAL - ALWAYS RUN MODULE UPDATE AFTER ANY CHANGE**: 
+⚠️ **CRITICAL - ALWAYS RUN MODULE UPDATE AFTER ANY CHANGE**:
+
 ```bash
 make run-update
 ```
 
 **This is MANDATORY after EVERY code change, including:**
+
 - Model modifications (fields, methods, constraints)
 - View updates (XML files)
 - Data changes (XML data files)
@@ -66,20 +74,24 @@ make run-update
 - Any Python code modifications
 
 **Why this is mandatory:**
+
 - Odoo caches Python code and needs restart to reload changes
 - XML files need to be reloaded into the database
 - Model schema changes require database updates
 - Without update, changes are not applied and testing is invalid
 
 ⚠️ **PROCESS - NEVER SKIP THIS**:
-1. ✅ Make your code changes  
-2. ✅ **ALWAYS run `make run-update`** 
+
+1. ✅ Make your code changes
+2. ✅ **ALWAYS run `make run-update`**
 3. ✅ Verify no errors in update output
 4. ✅ Test the changes in browser
 5. ✅ Only then consider the change complete
 
 ### Important Note for Claude Code Assistant
+
 ⚠️ **IMPORTANT**: When testing changes, DO NOT run `make run-dev` or `python odoo-bin` commands directly as they will timeout after 2 minutes. Instead, notify the user to test the changes manually. The assistant should focus on:
+
 1. Making code changes
 2. **ALWAYS running module updates (`make run-update`) - THIS IS MANDATORY**
 3. Asking the user to test the running server at `http://localhost:8070`
@@ -88,13 +100,15 @@ make run-update
 **NEVER make changes to sensitive business logic without explicit discussion and approval first.**
 
 **Examples of sensitive business calculations:**
+
 - AOV (Average Order Value) calculations
-- Revenue computations  
+- Revenue computations
 - Customer counting logic
 - Aggregation methods (sum, avg, count)
 - Data model structure changes that affect business metrics
 
 **Required Process for Business Logic Changes:**
+
 1. **STOP** - Do not implement immediately
 2. **ANALYZE** - Understand the root cause thoroughly
 3. **DISCUSS** - Present the analysis and proposed solution to user
@@ -102,8 +116,9 @@ make run-update
 5. **DOCUMENT** - Explain the change and impact clearly
 
 **What NOT to do:**
+
 - ❌ Make "quick fixes" to business calculations
-- ❌ Change data aggregation logic without discussion  
+- ❌ Change data aggregation logic without discussion
 - ❌ Apply fractional counting or complex formulas without approval
 - ❌ Modify field types or computation methods on sensitive fields
 - ❌ Change record creation logic that affects business metrics
@@ -111,6 +126,7 @@ make run-update
 **Remember**: Business calculations directly impact financial reporting and decision-making. Getting them wrong can cause serious business problems.
 
 ### Starting Development Server
+
 ```bash
 # Quick start (recommended for development)
 make run-dev
@@ -123,6 +139,7 @@ python odoo-bin --config=.odoorc --dev=all
 ```
 
 ### Database Operations
+
 ```bash
 # Initialize database
 make run-init
@@ -135,6 +152,7 @@ make db-create
 ```
 
 ### Development Tools
+
 ```bash
 # Install dependencies
 make install
@@ -159,7 +177,9 @@ make clean
 ## Custom Module Development
 
 ### Module Structure
+
 Follow standard Odoo module structure in `my_addons/`:
+
 ```
 your_module/
 ├── __init__.py
@@ -172,18 +192,21 @@ your_module/
 ```
 
 ### Creating New Modules
+
 1. Reference the comprehensive guide: `HOW_TO_CREATE_MODULE.MD`
-2. Use existing modules as templates (wa_marketing_automation, muk_web_theme)
+2. Use existing modules as templates (smart_engagement, muk_web_theme)
 3. Follow Odoo naming conventions
 
 ### Module Dependencies
+
 - Core dependencies defined in requirements.txt (lines 1-92)
-- Odoo module dependencies in __manifest__.py files
+- Odoo module dependencies in **manifest**.py files
 - UI themes depend on MuK modules chain
 
 ## Installed Custom Modules
 
 ### UI Theme Stack
+
 - **muk_web_theme**: Main backend theme
 - **muk_web_appsbar**: Enhanced app navigation
 - **muk_web_chatter**: Improved messaging interface
@@ -191,101 +214,116 @@ your_module/
 - **muk_web_dialog**: Enhanced dialog components
 
 ### Business Modules
-- **wa_marketing_automation**: WhatsApp marketing campaigns
+
+- **smart_engagement**: Smart engagement platform
   - Campaign management
-  - Customer segmentation  
+  - Customer segmentation
   - API integration
   - Scheduled actions
 
-## WhatsApp Marketing Automation Module
+## Smart Engagement Module
 
 ### Module Overview
-**Location**: `my_addons/wa_marketing_automation/`
+
+**Location**: `my_addons/smart_engagement/`
 **Version**: 18.0.1.0.0  
 **Author**: Antony Gunawan
 **Dependencies**: base, mail, crm
 
-This is the primary business module for WhatsApp marketing automation with sophisticated campaign management, customer segmentation, and CRM integration.
+This is the primary business module for smart engagement with sophisticated campaign management, customer segmentation, and CRM integration.
 
 ### Architecture & Key Models
 
 #### Core Models (4 main models):
-1. **`wa_marketing_automation.campaign`** *(models/campaign.py:16)*
+
+1. **`smart_engagement.campaign`** _(models/campaign.py:16)_
+
    - **Purpose**: Main campaign management with complex scheduling logic
    - **Key Methods**: `action_run()`, `action_test()`, `action_preview_messages()`
    - **Features**: State management, cron job scheduling, product recommendations
 
-2. **`wa_marketing_automation.customer_segmentation`** *(models/customer_segmentation.py:10)*
+2. **`smart_engagement.customer_segmentation`** _(models/customer_segmentation.py:10)_
+
    - **Purpose**: Customer targeting with manual/rule-based segmentation
    - **Validation**: Ensures customers have phone/mobile fields
    - **Rules Engine**: Safe domain expression evaluation
 
-3. **`wa_marketing_automation.configuration`** *(models/configuration.py:9)*
+3. **`smart_engagement.configuration`** _(models/configuration.py:9)_
+
    - **Purpose**: Singleton API configuration management
    - **Features**: Connection testing, URL validation
    - **Security**: Prevents multiple configurations
 
-4. **`wa_marketing_automation.whatsapp_api_log`** *(models/whatsapp_api_log.py:4)*
+4. **`smart_engagement.whatsapp_api_log`** _(models/whatsapp_api_log.py:4)_
    - **Purpose**: API call logging and monitoring
    - **Tracking**: Success/error status, execution types, recipient counts
 
 ### Development Workflows
 
 #### Working with Campaign Logic
+
 ```bash
 # Access models directly via Odoo shell
 make run-shell
 
 # In shell - test campaign methods
-campaign = env['wa_marketing_automation.campaign'].browse(1)
+campaign = env['smart_engagement.campaign'].browse(1)
 campaign.action_preview_messages()  # Test message rendering
 campaign.action_test()              # Send test message
 ```
 
 #### Template Development
+
 **File**: `utils.py:334` - `MessageTemplateRenderer` class
+
 - **Template parsing**: Handles nested braces and complex expressions
 - **Product formatting**: Multi-currency support with custom templates
 - **Validation**: Template-product consistency checking
 
 #### Debugging Scheduled Actions
+
 ```bash
 # View active cron jobs
 grep -r "Campaign" /var/log/odoo/odoo.log
 
 # Check scheduled actions in UI
-# Navigate to: WhatsApp Marketing Automation > Scheduled Actions
+# Navigate to: Smart Engagement > Scheduled Actions
 ```
 
 ### Key File Locations
 
 #### Models
+
 - **Campaign logic**: `models/campaign.py` (1669 lines)
-- **Customer segmentation**: `models/customer_segmentation.py` 
+- **Customer segmentation**: `models/customer_segmentation.py`
 - **Configuration**: `models/configuration.py`
 - **API logging**: `models/whatsapp_api_log.py`
 
-#### Views  
+#### Views
+
 - **Campaign UI**: `views/campaign_views.xml`
 - **Menu structure**: `views/menu.xml`
 - **Configuration**: `views/configuration_views.xml`
 
 #### Utils & Helpers
+
 - **Template rendering**: `utils.py:334-495`
-- **Phone validation**: `utils.py:244-268` 
+- **Phone validation**: `utils.py:244-268`
 - **Currency formatting**: `utils.py:14-91`
 - **Message sanitization**: `utils.py:271-311`
 
 #### Data & Security
+
 - **Cron cleanup job**: `data/ir_cron_data.xml`
 - **Access rights**: `security/ir.model.access.csv`
 
 ### Testing & Debugging
 
 #### Module-Specific Testing
+
 ```bash
 # Test individual campaign components
-python odoo-bin --test-enable --stop-after-init -i wa_marketing_automation
+python odoo-bin --test-enable --stop-after-init -i smart_engagement
 
 # Debug template rendering
 # Set logging level in utils.py:11 to DEBUG
@@ -294,58 +332,68 @@ python odoo-bin --test-enable --stop-after-init -i wa_marketing_automation
 #### Common Development Tasks
 
 1. **Adding New Template Variables**:
-   - Update `MessageTemplateRenderer.render()` method *(utils.py:348)*
-   - Add to context dictionary *(utils.py:364-367)*
+
+   - Update `MessageTemplateRenderer.render()` method _(utils.py:348)_
+   - Add to context dictionary _(utils.py:364-367)_
 
 2. **Modifying Campaign States**:
-   - Update state selection *(campaign.py:24-34)*
+
+   - Update state selection _(campaign.py:24-34)_
    - Add corresponding action methods
-   - Update UI buttons *(views/campaign_views.xml:36-48)*
+   - Update UI buttons _(views/campaign_views.xml:36-48)_
 
 3. **Extending Product Recommendations**:
-   - Modify `product_recommendation_type` selection *(campaign.py:60-69)*
-   - Add validation in `_check_template_products_consistency()` *(campaign.py:605)*
+
+   - Modify `product_recommendation_type` selection _(campaign.py:60-69)_
+   - Add validation in `_check_template_products_consistency()` _(campaign.py:605)_
 
 4. **API Integration Changes**:
-   - Update `_action_send_messages()` method *(campaign.py:1473)*
-   - Modify configuration model *(models/configuration.py)*
+   - Update `_action_send_messages()` method _(campaign.py:1473)_
+   - Modify configuration model _(models/configuration.py)_
 
 ### Integration Points
 
 #### CRM Integration
-- **Opportunity creation**: `_create_opportunities()` *(campaign.py:930)*
-- **UTM source tracking**: `_get_or_create_campaign_source()` *(campaign.py:997)*
+
+- **Opportunity creation**: `_create_opportunities()` _(campaign.py:930)_
+- **UTM source tracking**: `_get_or_create_campaign_source()` _(campaign.py:997)_
 - **Stage management**: Methods for handling won/lost opportunities
 
-#### Product Integration  
+#### Product Integration
+
 - **Dynamic recommendations**: Via domain rules with `safe_eval()`
-- **Price formatting**: Multi-currency support *(utils.py:14-91)*
+- **Price formatting**: Multi-currency support _(utils.py:14-91)_
 - **Template formatting**: Custom product display templates
 
 #### Cron Job Management
+
 - **Cleanup automation**: `data/ir_cron_data.xml:6` (runs every 5 minutes)
-- **Dynamic job creation**: Per-campaign scheduling *(campaign.py:1092-1185)*
+- **Dynamic job creation**: Per-campaign scheduling _(campaign.py:1092-1185)_
 
 ### Documentation
+
 The module includes 15 comprehensive documentation files:
+
 - **Quick Start**: `QUICK_START_GUIDE.md`
-- **User Guide**: `USER_GUIDE.md` 
+- **User Guide**: `USER_GUIDE.md`
 - **Technical Reference**: `UTILS_GUIDE.md`
 - **Visual Guides**: Multiple step-by-step guides
 - **Best Practices**: `BEST_PRACTICES_GUIDE.md`
 
 ### Performance Considerations
+
 - **Batch processing**: Multiple recipients per API call
-- **Async scheduling**: Cron jobs prevent UI blocking  
+- **Async scheduling**: Cron jobs prevent UI blocking
 - **Cleanup automation**: Prevents cron job accumulation
 - **Safe evaluation**: Secure rule processing with `odoo.tools.safe_eval`
 
 ### Module Update Workflow
+
 ```bash
 # After model changes
 make run-update
 
-# For view changes only 
+# For view changes only
 # Refresh browser or restart with --dev=all flag
 
 # For adding new dependencies
@@ -355,9 +403,10 @@ make run-update
 
 ### Analytics Metric Description Standards
 
-When adding new analytics metrics to the WhatsApp Marketing Automation module, follow these business-friendly description standards to ensure consistency and user understanding:
+When adding new analytics metrics to the Smart Engagement module, follow these business-friendly description standards to ensure consistency and user understanding:
 
 #### Configuration Settings Description Format
+
 All metric descriptions in `views/res_config_settings_views.xml` should follow this structure:
 
 ```xml
@@ -365,17 +414,20 @@ All metric descriptions in `views/res_config_settings_views.xml` should follow t
 ```
 
 **Required components:**
+
 1. **What it shows**: Clear explanation of what the metric measures in business terms
 2. **What it analyzes**: Specific data or behavior patterns examined
 3. **Data sources**: Where the data comes from (orders, emails, website, etc.)
 4. **How to use it**: Actionable business insights and use cases
 
 **Example:**
+
 ```xml
 <setting string="Eco-Friendly Score" help="Shows how much customers prefer environmentally-friendly products. Calculates the percentage of their purchases that include eco-friendly, organic, sustainable, green, bio, or natural products. Based on product purchase history and keyword analysis. Use this to target customers with sustainable product offerings and create eco-focused marketing campaigns." />
 ```
 
 #### Customer Views Description Format
+
 All metric descriptions in `views/res_partner_views.xml` should follow this structure:
 
 ```xml
@@ -403,11 +455,13 @@ All metric descriptions in `views/res_partner_views.xml` should follow this stru
 #### Examples of Good vs Bad Descriptions
 
 **❌ Bad (Technical):**
+
 ```
 "Multi-channel engagement analysis with adaptive weights: Email (40%), Website (35%), WhatsApp (25%)"
 ```
 
 **✅ Good (Business-Friendly):**
+
 ```
 "Shows how actively customers interact with your business. Looks at email opens and clicks, website visits and purchases, and WhatsApp message responses over the last 90 days."
 ```
@@ -440,6 +494,7 @@ When developing new analytics metrics, **NEVER** use indirect heuristics or assu
 #### ❌ Examples of BAD Metric Logic (Heuristics to Avoid):
 
 1. **Website Engagement Based on Order Timing**:
+
    ```python
    # WRONG - Orders ≠ Website Activity
    # Customers can order offline, by phone, in-store, etc.
@@ -447,6 +502,7 @@ When developing new analytics metrics, **NEVER** use indirect heuristics or assu
    ```
 
 2. **Mobile Commerce Based on Order Amount**:
+
    ```python
    # WRONG - Order amount ≠ Device type
    # Small orders don't necessarily mean mobile usage
@@ -463,6 +519,7 @@ When developing new analytics metrics, **NEVER** use indirect heuristics or assu
 #### ✅ Examples of GOOD Metric Logic (Direct Data Sources):
 
 1. **Email Engagement Based on Actual Email Data**:
+
    ```python
    # CORRECT - Use actual email interaction data
    email_messages = partner.message_ids.filtered(lambda m: m.message_type == 'email')
@@ -470,10 +527,11 @@ When developing new analytics metrics, **NEVER** use indirect heuristics or assu
    ```
 
 2. **WhatsApp Success Based on Business Results**:
+
    ```python
    # CORRECT - Use won CRM opportunities with WhatsApp source
-   won_whatsapp_deals = crm_leads.filtered(lambda l: 
-       l.probability == 100 and 
+   won_whatsapp_deals = crm_leads.filtered(lambda l:
+       l.probability == 100 and
        l.source_id.name.startswith('WhatsApp Campaign')
    )
    ```
@@ -508,7 +566,7 @@ Before implementing any new metric, ask these questions:
 When reviewing analytics code, pay special attention to:
 
 - Any logic that assumes behavior based on indirect indicators
-- Metrics that use order timing/amounts to infer non-purchase behaviors  
+- Metrics that use order timing/amounts to infer non-purchase behaviors
 - Channel preference logic based on contact information availability
 - Any calculation that uses "heuristic" or "assumption" in comments
 - Metrics without clear, direct data source documentation
@@ -516,6 +574,7 @@ When reviewing analytics code, pay special attention to:
 #### Documentation Requirements
 
 Every new metric must include:
+
 - Clear explanation of data sources used
 - Business logic validation reasoning
 - Calculation transparency method
@@ -525,6 +584,7 @@ Every new metric must include:
 This approach ensures analytics remain trustworthy and actionable for business decision-making.
 
 ## Database Configuration
+
 - **Host**: localhost (default)
 - **Port**: 5432 (PostgreSQL default)
 - **Database**: odoo
@@ -532,21 +592,25 @@ This approach ensures analytics remain trustworthy and actionable for business d
 - **Password**: odoo (configured in .odoorc)
 
 ## Testing Strategy
+
 - Run tests with: `make test`
 - Module-specific tests in each addon's tests/ directory
 - Framework supports Python unittest and Odoo test decorators
 
 ## Code Quality
+
 - **Linting**: flake8 (install with `make install-dev`)
 - **Formatting**: black (install with `make install-dev`)
 - **Python Version**: 3.10+ (setup.py:68)
 
 ## Security Considerations
+
 - Admin password is hashed in .odoorc:6
 - Module access rights defined in security/ir.model.access.csv
 - Follow Odoo security best practices
 
 ## Production Deployment
+
 - Use `make run` for production mode
 - Configure proper database credentials
 - Remove --dev flags
@@ -555,6 +619,7 @@ This approach ensures analytics remain trustworthy and actionable for business d
 ## Troubleshooting
 
 ### Common Issues
+
 1. **Module not found**: Check addons_path in .odoorc
 2. **Database connection**: Verify PostgreSQL service and credentials
 3. **Permission errors**: Check file permissions and user access
@@ -565,23 +630,28 @@ This approach ensures analytics remain trustworthy and actionable for business d
    - CSV files don't support `#` comments - remove lines entirely, don't try to comment them out
 
 ### Development Tools
+
 - Use `make run-shell` for interactive debugging
 - Enable developer mode with --dev=all flag
 - Check logs for detailed error information
 
 ### Server Command Timeouts
+
 **IMPORTANT**: Server commands (like `make run-dev`, `make run-update`) may timeout after 2 minutes when run through automated tools. If testing module changes:
+
 1. Notify developer about changes that need testing
 2. Run commands manually in terminal for better reliability
 3. Use `make run-update -d odoo` with database parameter for module updates
 
 ## References
+
 - **Odoo Documentation**: https://www.odoo.com/documentation/18.0/
 - **Module Creation Guide**: HOW_TO_CREATE_MODULE.MD
 - **Contributing**: CONTRIBUTING.md
 - **Security**: SECURITY.md
 
 ## Quick Commands Reference
+
 ```bash
 # Essential development commands
 make help              # Show all available commands
@@ -602,6 +672,7 @@ make format           # Format code
 ```
 
 ## Module Development Workflow
+
 1. Create module structure in my_addons/
 2. Define models in models/
 3. Create views in views/
@@ -611,7 +682,9 @@ make format           # Format code
 7. Document changes
 
 ## Environment Variables
+
 Configure via .odoorc file:
+
 - Database settings (lines 2-4)
 - Addons path (line 5)
 - Admin password (line 6)

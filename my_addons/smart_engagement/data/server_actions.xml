@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Server Action: Mark Selected Contacts as Customers -->
+        <record id="action_mark_as_customers" model="ir.actions.server">
+            <field name="name">Mark as Customers</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="binding_model_id" ref="base.model_res_partner"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+for record in records:
+    if not record.is_company:
+        record.write({'customer_rank': 1})
+            </field>
+        </record>
+
+        <!-- Server Action: Compute Analytics for Selected Contacts -->
+        <record id="action_compute_analytics" model="ir.actions.server">
+            <field name="name">Compute Analytics</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="binding_model_id" ref="base.model_res_partner"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+for record in records:
+    if not record.is_company:
+        record._force_analytics_computation()
+            </field>
+        </record>
+
+        <!-- Server Action: Mark as Customers AND Compute Analytics -->
+        <record id="action_mark_customers_and_compute_analytics" model="ir.actions.server">
+            <field name="name">Mark as Customers &amp; Compute Analytics</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="binding_model_id" ref="base.model_res_partner"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+for record in records:
+    if not record.is_company:
+        record.write({'customer_rank': 1})
+        record._force_analytics_computation()
+            </field>
+        </record>
+
+        <!-- Server Action: Compute All Customer Analytics -->
+        <record id="action_compute_all_customer_analytics" model="ir.actions.server">
+            <field name="name">Compute All Customer Analytics</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="binding_model_id" ref="base.model_res_partner"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+all_customers = env['res.partner'].search([('customer_rank', '>', 0), ('is_company', '=', False)])
+all_customers._force_analytics_computation()
+            </field>
+        </record>
+
+        <!-- Server Action: Clean All Display Names -->
+        <record id="action_clean_all_display_names" model="ir.actions.server">
+            <field name="name">Clean All Display Names (Age Groups + Spending Tiers)</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="binding_model_id" ref="base.model_res_partner"/>
+            <field name="binding_view_types">list</field>
+            <field name="state">code</field>
+            <field name="code">
+# Force recomputation of ALL customer display fields to ensure clean formatting
+all_customers = env['res.partner'].search([('customer_rank', '>', 0), ('is_company', '=', False)])
+for customer in all_customers:
+    # Fix age group display names
+    customer._compute_customer_age_group()
+    # Fix spending tier display names  
+    customer._compute_customer_spending_tier()
+    
+# Also refresh the customer demographics report view
+env['smart_engagement.customer_demographics_report'].flush_model()
+            </field>
+        </record>
+    </data>
+</odoo>

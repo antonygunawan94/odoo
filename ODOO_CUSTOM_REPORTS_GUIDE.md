@@ -748,22 +748,22 @@ Add charts using Chart.js:
 
 ## Practical Examples
 
-### Example 1: WhatsApp Campaign Report
+### Example 1: Smart Engagement Campaign Report
 
-Perfect for your `wa_marketing_automation` module:
+Perfect for your `smart_engagement` module:
 
 ```python
-class WhatsAppCampaignReport(models.AbstractModel):
-    _name = 'report.wa_marketing_automation.campaign_report'
-    _description = 'WhatsApp Campaign Report'
+class SmartEngagementCampaignReport(models.AbstractModel):
+    _name = 'report.smart_engagement.campaign_report'
+    _description = 'Smart Engagement Campaign Report'
 
     @api.model
     def _get_report_values(self, docids, data=None):
-        campaigns = self.env['wa_marketing_automation.campaign'].browse(docids)
+        campaigns = self.env['smart_engagement.campaign'].browse(docids)
         
         report_data = {
             'doc_ids': docids,
-            'doc_model': 'wa_marketing_automation.campaign',
+            'doc_model': 'smart_engagement.campaign',
             'docs': campaigns,
             'time': datetime.now(),
             'get_campaign_stats': self._get_campaign_stats,
@@ -774,8 +774,8 @@ class WhatsAppCampaignReport(models.AbstractModel):
 
     def _get_campaign_stats(self, campaign_id):
         """Get campaign statistics"""
-        campaign = self.env['wa_marketing_automation.campaign'].browse(campaign_id)
-        logs = self.env['wa_marketing_automation.whatsapp_api_log'].search([
+        campaign = self.env['smart_engagement.campaign'].browse(campaign_id)
+        logs = self.env['smart_engagement.whatsapp_api_log'].search([
             ('campaign_id', '=', campaign_id)
         ])
         
@@ -789,7 +789,7 @@ class WhatsAppCampaignReport(models.AbstractModel):
 
     def _get_message_status(self, campaign_id):
         """Get message status breakdown"""
-        logs = self.env['wa_marketing_automation.whatsapp_api_log'].search([
+        logs = self.env['smart_engagement.whatsapp_api_log'].search([
             ('campaign_id', '=', campaign_id)
         ])
         
@@ -804,16 +804,16 @@ class WhatsAppCampaignReport(models.AbstractModel):
 
 ```python
 class CustomerSegmentationReport(models.AbstractModel):
-    _name = 'report.wa_marketing_automation.segmentation_report'
+    _name = 'report.smart_engagement.segmentation_report'
     _description = 'Customer Segmentation Report'
 
     @api.model
     def _get_report_values(self, docids, data=None):
-        segments = self.env['wa_marketing_automation.customer_segmentation'].browse(docids)
+        segments = self.env['smart_engagement.customer_segmentation'].browse(docids)
         
         return {
             'doc_ids': docids,
-            'doc_model': 'wa_marketing_automation.customer_segmentation',
+            'doc_model': 'smart_engagement.customer_segmentation',
             'docs': segments,
             'time': datetime.now(),
             'get_segment_customers': self._get_segment_customers,
@@ -822,7 +822,7 @@ class CustomerSegmentationReport(models.AbstractModel):
 
     def _get_segment_customers(self, segment_id):
         """Get customers in segment"""
-        segment = self.env['wa_marketing_automation.customer_segmentation'].browse(segment_id)
+        segment = self.env['smart_engagement.customer_segmentation'].browse(segment_id)
         domain = safe_eval(segment.domain) if segment.domain else []
         return self.env['res.partner'].search(domain)
 

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List view for Campaign Scheduled Actions -->
+    <record id="view_campaign_scheduled_actions_list_view" model="ir.ui.view">
+        <field name="name">campaign.scheduled.actions.list</field>
+        <field name="model">ir.cron</field>
+        <field name="arch" type="xml">
+            <list string="Campaign Scheduled Actions" create="false" edit="false">
+                <field name="cron_name" />
+                <field name="active" />
+                <field name="nextcall" />
+                <field name="lastcall" />
+                <field name="interval_number" />
+                <field name="interval_type" />
+                <field name="user_id" />
+                <field name="failure_count" />
+                <field name="state" invisible="1" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Form view for Campaign Scheduled Actions -->
+    <record id="view_campaign_scheduled_actions_form_view" model="ir.ui.view">
+        <field name="name">campaign.scheduled.actions.form</field>
+        <field name="model">ir.cron</field>
+        <field name="arch" type="xml">
+            <form string="Campaign Scheduled Action" create="false">
+                <header>
+                    <button name="method_direct_trigger" string="Run Manually" type="object"
+                        class="btn-primary" invisible="active == False" />
+                    <field name="state" widget="statusbar" statusbar_visible="code" />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="toggle_active" type="object" class="oe_stat_button"
+                            icon="fa-archive">
+                            <field name="active" widget="boolean_button"
+                                options='{"terminology": "archive"}' />
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="cron_name" readonly="1" />
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="user_id" readonly="1" />
+                            <field name="nextcall" />
+                            <field name="lastcall" readonly="1" />
+                            <field name="priority" />
+                        </group>
+                        <group>
+                            <field name="interval_number" />
+                            <field name="interval_type" />
+                            <field name="failure_count" readonly="1" />
+                            <field name="first_failure_date" readonly="1" />
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Python Code" name="code">
+                            <field name="code" widget="ace" options="{'mode': 'python'}"
+                                readonly="1" />
+                        </page>
+                        <page string="Technical Data" name="technical">
+                            <group>
+                                <field name="model_id" readonly="1" />
+                                <field name="ir_actions_server_id" readonly="1" />
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search view for Campaign Scheduled Actions -->
+    <record id="view_campaign_scheduled_actions_search_view" model="ir.ui.view">
+        <field name="name">campaign.scheduled.actions.search</field>
+        <field name="model">ir.cron</field>
+        <field name="arch" type="xml">
+            <search string="Campaign Scheduled Actions">
+                <field name="cron_name" string="Name" />
+                <field name="user_id" />
+                <separator />
+                <filter string="Active" name="active" domain="[('active', '=', True)]" />
+                <filter string="Inactive" name="inactive" domain="[('active', '=', False)]" />
+                <separator />
+                <filter string="One-time Campaigns" name="one_time"
+                    domain="[('cron_name', 'ilike', 'Campaign Execution:')]" />
+                <filter string="Recurring Campaigns" name="recurring"
+                    domain="[('cron_name', 'ilike', 'Recurring Campaign:')]" />
+                <separator />
+                <filter string="Failed" name="failed" domain="[('failure_count', '>', 0)]" />
+                <separator />
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_by_active" context="{'group_by': 'active'}" />
+                    <filter string="User" name="group_by_user" context="{'group_by': 'user_id'}" />
+                    <filter string="Interval Type" name="group_by_interval"
+                        context="{'group_by': 'interval_type'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action for Campaign Scheduled Actions -->
+    <record id="smart_engagement_scheduled_actions_action" model="ir.actions.act_window">
+        <field name="name">Campaign Scheduled Actions</field>
+        <field name="res_model">ir.cron</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            '|',
+            ('cron_name', 'ilike', 'Campaign Execution:'),
+            ('cron_name', 'ilike', 'Recurring Campaign:')
+            ]</field>
+        <field name="context">{
+            'search_default_active': 1,
+            'create': False,
+            'edit': False,
+            'delete': True
+            }</field>
+        <field name="view_id" ref="view_campaign_scheduled_actions_list_view" />
+        <field name="search_view_id" ref="view_campaign_scheduled_actions_search_view" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No scheduled actions found!
+            </p>
+            <p> This view shows all scheduled actions (cron jobs) created by your marketing
+                campaigns.<br /> Scheduled actions are automatically created when you run campaigns
+                with specific timing. </p>
+            <p>
+                <strong>One-time campaigns:</strong> Create "Campaign Execution:" jobs that run once
+                and deactivate.<br />
+                <strong>Recurring campaigns:</strong> Create "Recurring
+                Campaign:" jobs that run repeatedly. </p>
+        </field>
+    </record>
+</odoo> 
