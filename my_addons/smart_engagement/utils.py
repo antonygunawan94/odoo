@@ -496,3 +496,65 @@ class MessageTemplateRenderer:
         _logger.debug(f"Final formatted products result: {repr(result)}")
         return result
 
+
+# ==============================================================================
+# Webhook Integration Utility Functions
+# ==============================================================================
+
+def calculate_similarity(str1, str2):
+    """
+    Calculate string similarity score using Levenshtein distance.
+    
+    Args:
+        str1 (str): First string to compare
+        str2 (str): Second string to compare
+        
+    Returns:
+        float: Similarity score between 0.0 and 1.0 (1.0 = identical)
+    """
+    from difflib import SequenceMatcher
+    
+    if not str1 or not str2:
+        return 0.0
+    return SequenceMatcher(None, str1.lower(), str2.lower()).ratio()
+
+
+def normalize_phone(phone_str):
+    """
+    Normalize Indonesian phone number format to international format.
+    
+    Handles common Indonesian phone formats:
+    - 08123456789 → 628123456789
+    - +628123456789 → 628123456789  
+    - 8123456789 → 628123456789
+    - 628123456789 → 628123456789 (already correct)
+    
+    Args:
+        phone_str (str): Phone number in various formats
+        
+    Returns:
+        str|bool: Normalized phone number (628xxxxxxxxx) or False if invalid
+    """
+    if not phone_str:
+        return False
+        
+    # Remove all non-digits
+    phone = re.sub(r'\D', '', str(phone_str))
+    
+    # Auto-fix common formats:
+    if phone.startswith('08'):      # 08123456789 → 628123456789
+        phone = '62' + phone[1:]
+    elif phone.startswith('+62'):   # +628123456789 → 628123456789
+        phone = phone[1:]
+    elif phone.startswith('62'):    # Already correct
+        pass
+    elif phone.startswith('8'):     # 8123456789 → 628123456789  
+        phone = '62' + phone
+    else:
+        return False  # Invalid format, can't fix
+        
+    # Validate final format (Indonesian mobile: 628xxxxxxxxx)
+    if re.match(r'^628\d{8,12}$', phone):
+        return phone
+    return False
+

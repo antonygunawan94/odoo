@@ -4,7 +4,10 @@ from . import (
     customer_age_group_config,
     customer_segmentation,
     customer_spending_tier_config,
+    product_category,
+    product_product,
     res_config_settings,
     res_partner,
+    sale_order,
     whatsapp_api_log,
 )

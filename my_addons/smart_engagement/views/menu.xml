@@ -70,7 +70,7 @@
     <menuitem id="smart_engagement_menu_reports"
         name="Reports"
         parent="smart_engagement_menu_base"
-        sequence="40"
+        sequence="80"
     />
 
     <menuitem id="smart_engagement_menu_performance_analytics"

@@ -1,8 +1,14 @@
+import logging
 from datetime import date, timedelta
 
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
+from ..utils import calculate_similarity, normalize_phone
+
+_logger = logging.getLogger(__name__)
 
 
 class ResPartner(models.Model):
@@ -3308,3 +3314,202 @@ class ResPartner(models.Model):
             _logger.error(f"✗ Error computing RFM scores: {e}")
 
         _logger.info("Analytics computation complete")
+
+    # ==============================================================================
+    # Webhook Integration Methods
+    # ==============================================================================
+
+    @api.model
+    def find_duplicate_contact_with_score(self, payload):
+        """Find duplicate contact with weighted scoring - returns (match, score) tuple"""
+        
+        name = payload.get('name', '').strip()
+        
+        if not name:
+            return False, 0.0
+            
+        # Search for potential duplicates - check ALL contacts, not just customers
+        existing_partners = self.search([
+            ('is_company', '=', False),  # Only individuals, not companies
+        ])
+        
+        # Weighted scoring configuration
+        DUPLICATE_DETECTION_WEIGHTS = {
+            'name': 0.40,      # 40% - Most important for human identity
+            'phone': 0.25,     # 25% - Very reliable identifier  
+            'mobile': 0.25,    # 25% - Very reliable identifier
+            'email': 0.10,     # 10% - Can change, less reliable
+        }
+        
+        # Confidence thresholds
+        HIGH_CONFIDENCE_THRESHOLD = 0.90   # Auto-merge
+        
+        best_match = None
+        best_score = 0.0
+        
+        for partner in existing_partners:
+            score = self._calculate_duplicate_score(partner, payload, DUPLICATE_DETECTION_WEIGHTS)
+            
+            if score > best_score:
+                best_score = score
+                best_match = partner
+        
+        # Return match and score if confidence is high enough
+        if best_score >= HIGH_CONFIDENCE_THRESHOLD:
+            return best_match, best_score
+            
+        return False, best_score
+    
+    def _calculate_duplicate_score(self, existing_partner, new_data, weights):
+        """Calculate weighted similarity score between existing and new contact"""
+        
+        total_score = 0.0
+        total_weight = 0.0
+        
+        # Name similarity (40% weight)
+        if existing_partner.name and new_data.get('name'):
+            name_similarity = calculate_similarity(
+                existing_partner.name.strip().lower(), 
+                new_data['name'].strip().lower()
+            )
+            total_score += name_similarity * weights['name']
+            total_weight += weights['name']
+        
+        # Phone similarity (25% weight) 
+        new_phone = normalize_phone(new_data.get('phone') or new_data.get('mobile'))
+        if existing_partner.phone and new_phone:
+            partner_phone = normalize_phone(existing_partner.phone)
+            if partner_phone == new_phone:
+                phone_similarity = 1.0  # Exact match
+            else:
+                phone_similarity = calculate_similarity(partner_phone, new_phone)
+            total_score += phone_similarity * weights['phone']
+            total_weight += weights['phone']
+        
+        # Mobile similarity (25% weight)
+        if existing_partner.mobile and new_phone:
+            partner_mobile = normalize_phone(existing_partner.mobile)
+            if partner_mobile == new_phone:
+                mobile_similarity = 1.0  # Exact match
+            else:
+                mobile_similarity = calculate_similarity(partner_mobile, new_phone)
+            total_score += mobile_similarity * weights['mobile']
+            total_weight += weights['mobile']
+        
+        # Email similarity (10% weight)
+        if existing_partner.email and new_data.get('email'):
+            existing_email = existing_partner.email.strip().lower()
+            new_email = new_data['email'].strip().lower()
+            if existing_email == new_email:
+                email_similarity = 1.0  # Exact match
+            else:
+                email_similarity = calculate_similarity(existing_email, new_email)
+            total_score += email_similarity * weights['email']
+            total_weight += weights['email']
+        
+        # Calculate final weighted score
+        if total_weight > 0:
+            return total_score / total_weight
+        return 0.0
+
+    @api.model
+    def prepare_contact_vals(self, payload):
+        """Prepare and normalize contact values"""
+        
+        vals = {}
+        
+        # Fix name (title case, strip extra spaces)
+        name = payload.get('name', '').strip()
+        vals['name'] = ' '.join(word.capitalize() for word in name.split())
+        
+        # External ID for integration tracking
+        if payload.get('external_id') or payload.get('patient_id'):
+            external_id = payload.get('external_id') or payload.get('patient_id')
+            vals['ref'] = f"CONTACT-{external_id}"
+        
+        # Fix phone format
+        phone = normalize_phone(payload.get('phone', ''))
+        if phone:
+            vals['phone'] = phone
+        
+        mobile = normalize_phone(payload.get('mobile', ''))
+        if mobile:
+            vals['mobile'] = mobile
+        
+        # Fix email (lowercase, validate)
+        email = payload.get('email', '').strip().lower()
+        if email and '@' in email:
+            vals['email'] = email
+        
+        # Address fields
+        if payload.get('street'):
+            vals['street'] = payload['street'].strip()
+        if payload.get('city'):
+            vals['city'] = payload['city'].strip()
+        
+        # State lookup by name
+        if payload.get('state_name'):
+            state = self.env['res.country.state'].search([
+                ('name', 'ilike', payload['state_name'])
+            ], limit=1)
+            if state:
+                vals['state_id'] = state.id
+                vals['country_id'] = state.country_id.id
+        
+        # Date of birth (already exists in smart_engagement res.partner)
+        if payload.get('date_of_birth'):
+            try:
+                vals['date_of_birth'] = fields.Date.from_string(payload['date_of_birth'])
+            except:
+                import logging
+                _logger = logging.getLogger(__name__)
+                _logger.warning(f"Invalid date format for date_of_birth: {payload.get('date_of_birth')}")
+        
+        # Mark as customer
+        vals['customer_rank'] = 1
+        
+        return vals
+
+    @api.model
+    def smart_sync(self, payload):
+        """Smart synchronization of contact data with fuzzy matching and data normalization"""
+        try:
+            # Validate required fields
+            external_id = payload.get('external_id') or payload.get('patient_id')
+            if not external_id:
+                raise ValidationError("external_id or patient_id is required")
+            if not payload.get('name'):
+                raise ValidationError("name is required")
+            
+            # Auto-fix data
+            clean_vals = self.prepare_contact_vals(payload)
+            
+            # Weighted duplicate detection
+            existing, duplicate_score = self.find_duplicate_contact_with_score(payload)
+            
+            if existing:
+                existing.write(clean_vals)
+                result = {
+                    'success': True, 
+                    'action': 'updated', 
+                    'contact_id': existing.id,
+                    'contact_name': existing.name,
+                    'duplicate_score': duplicate_score
+                }
+                _logger.info(f"Updated contact: {existing.name} (ID: {existing.id}) - Duplicate score: {duplicate_score:.2f}")
+            else:
+                new_partner = self.create(clean_vals)
+                result = {
+                    'success': True, 
+                    'action': 'created', 
+                    'contact_id': new_partner.id,
+                    'contact_name': new_partner.name,
+                    'duplicate_score': 0.0
+                }
+                _logger.info(f"Created contact: {new_partner.name} (ID: {new_partner.id}) - No duplicates found")
+            
+            return result
+            
+        except Exception as e:
+            _logger.error(f"Contact smart_sync error: {e}")
+            return {'success': False, 'error': str(e)}

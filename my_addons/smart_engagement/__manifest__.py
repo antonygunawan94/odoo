@@ -5,7 +5,7 @@
     "summary": "Smart Engagement - Intelligent customer analytics, automated campaigns, and AI-powered customer intelligence suite",
     "description": "Smart engagement platform featuring intelligent customer analytics, RFM analysis, behavioral insights, churn prediction, automated messaging campaigns, customer segmentation, and AI-powered business intelligence reports. Includes WhatsApp automation, multi-channel engagement tracking, and configurable customer journey management for data-driven marketing decisions.",
     "author": "Antony Gunawan",
-    "depends": ["base", "mail", "crm", "contacts", "sale"],
+    "depends": ["base", "mail", "crm", "contacts", "sale", "base_automation"],
     "data": [
         "security/ir.model.access.csv",
         "data/ir_cron_data.xml",
@@ -15,6 +15,8 @@
         "data/sample_customers.xml",
         "data/force_analytics_computation.xml",
         "data/server_actions.xml",
+        "data/webhook_server_actions.xml",
+        "data/webhook_automation_rules.xml",
         "views/campaign_views.xml",
         "views/customer_segmentation_views.xml",
         "views/whatsapp_api_log_views.xml",

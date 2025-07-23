@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Contact Data Webhook Automation Rule -->
+        <record id="automation_webhook_contact_sync" model="base.automation">
+            <field name="name">Webhook: Contact Smart Sync</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="trigger">on_webhook</field>
+            <field name="active">True</field>
+            <field name="log_webhook_calls">True</field>
+            <field name="action_server_ids" eval="[(4, ref('smart_engagement.action_webhook_contact_smart_sync'))]"/>
+        </record>
+
+        <!-- Product Category Webhook Automation Rule -->
+        <record id="automation_webhook_category_sync" model="base.automation">
+            <field name="name">Webhook: Product Category Smart Sync</field>
+            <field name="model_id" ref="product.model_product_category"/>
+            <field name="trigger">on_webhook</field>
+            <field name="active">True</field>
+            <field name="log_webhook_calls">True</field>
+            <field name="action_server_ids" eval="[(4, ref('smart_engagement.action_webhook_category_smart_sync'))]"/>
+        </record>
+
+        <!-- Product Data Webhook Automation Rule -->
+        <record id="automation_webhook_product_sync" model="base.automation">
+            <field name="name">Webhook: Product Smart Sync</field>
+            <field name="model_id" ref="product.model_product_product"/>
+            <field name="trigger">on_webhook</field>
+            <field name="active">True</field>
+            <field name="log_webhook_calls">True</field>
+            <field name="action_server_ids" eval="[(4, ref('smart_engagement.action_webhook_product_smart_sync'))]"/>
+        </record>
+
+        <!-- Sale Order Webhook Automation Rule -->
+        <record id="automation_webhook_transaction_sync" model="base.automation">
+            <field name="name">Webhook: Sale Order Smart Sync</field>
+            <field name="model_id" ref="sale.model_sale_order"/>
+            <field name="trigger">on_webhook</field>
+            <field name="active">True</field>
+            <field name="log_webhook_calls">True</field>
+            <field name="action_server_ids" eval="[(4, ref('smart_engagement.action_webhook_sale_order_smart_sync'))]"/>
+        </record>
+    </data>
+</odoo>
