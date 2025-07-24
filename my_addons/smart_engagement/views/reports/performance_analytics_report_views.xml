@@ -181,16 +181,14 @@ action = {
                 }</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
-                    Performance Analytics Report (Transient Model with Server Action)
+                    Performance Analytics Report
                 </p>
                 <p>
-                    This report uses direct Python calculation with transient model
-                    for mathematically correct Average Order Value calculations.
+                    Generate comprehensive customer analytics and performance insights
+                    with accurate calculations for business decision-making.
                 </p>
                 <p>
-                    <strong>Key Features:</strong><br /> • Always fresh data (server action +
-                    transient model)<br /> • Direct calculation: AOV = Revenue ÷ Orders<br /> • No
-                    computed field aggregation issues<br /> • Simple Python logic approach </p>
+                    <strong>Key Features:</strong><br /> • Real-time data analysis<br /> • Accurate calculations: AOV = Revenue ÷ Orders<br /> • Reliable customer insights<br /> • Easy-to-understand metrics</p>
             </field>
         </record>
 
