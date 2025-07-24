@@ -1,113 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Contact Data Smart Sync Server Action -->
+        <!-- Contact Smart Sync Server Action - Simple Version -->
         <record id="action_webhook_contact_smart_sync" model="ir.actions.server">
             <field name="name">Webhook: Contact Smart Sync</field>
             <field name="model_id" ref="base.model_res_partner" />
             <field name="state">code</field>
-            <field name="code"><![CDATA[
-# Smart Sync for Contact Data
-# Expected payload format:
-# {
-#   "external_id": "string",     # required - external system ID
-#   "patient_id": "string",      # backwards compatibility - external ID
-#   "name": "string",            # required - Full name
-#   "phone": "string",           # Phone number (628123456789)
-#   "mobile": "string",          # Mobile number (628123456789)
-#   "email": "string",           # Email address
-#   "street": "string",          # Street address
-#   "city": "string",            # City
-#   "state_name": "string",      # State name (e.g., "Jawa Tengah")
-#   "date_of_birth": "date"      # Date of birth (YYYY-MM-DD)
-# }
+            <field name="code">
 if payload:
     result = model.smart_sync(payload)
     action = result
 else:
-    raise UserError("No payload provided in context")
-]]></field>
+    action = {'success': False, 'error': 'No payload provided in context'}
+            </field>
         </record>
 
-        <!-- Product Category Smart Sync Server Action -->
-        <record id="action_webhook_category_smart_sync" model="ir.actions.server">
-            <field name="name">Webhook: Product Category Smart Sync</field>
-            <field name="model_id" ref="product.model_product_category" />
-            <field name="state">code</field>
-            <field name="code"><![CDATA[
-# Smart Sync for Product Category
-# Expected payload format:
-# {
-#   "name": "string",         # required - Category name (e.g., "Services", "Products")
-#   "parent_name": "string"   # Parent category name (optional)
-# }
-
-if payload:
-    result = model.smart_sync(payload)
-    action = result
-else:
-    raise UserError("No payload provided in context")
-]]></field>
-        </record>
-
-        <!-- Product Smart Sync Server Action -->
+        <!-- Product Smart Sync Server Action - Simple Version -->
         <record id="action_webhook_product_smart_sync" model="ir.actions.server">
             <field name="name">Webhook: Product Smart Sync</field>
             <field name="model_id" ref="product.model_product_product" />
             <field name="state">code</field>
-            <field name="code"><![CDATA[
-# Smart Sync for Product Data
-# Expected payload format:
-# {
-#   "name": "string",           # required - Product name
-#   "default_code": "string",   # Internal reference (SKU)
-#   "barcode": "string",        # Product barcode  
-#   "list_price": "float",      # Sales price
-#   "type": "string",           # Product type (service, consu, product)
-#   "categ_name": "string",     # Category name (e.g., "Services", "Products")
-# }
-
+            <field name="code">
 if payload:
     result = model.smart_sync(payload)
     action = result
 else:
-    raise UserError("No payload provided in context")
-]]></field>
+    action = {'success': False, 'error': 'No payload provided in context'}
+            </field>
         </record>
 
-        <!-- Sale Order Smart Sync Server Action -->
+        <!-- Product Category Smart Sync Server Action - Simple Version -->
+        <record id="action_webhook_category_smart_sync" model="ir.actions.server">
+            <field name="name">Webhook: Product Category Smart Sync</field>
+            <field name="model_id" ref="product.model_product_category" />
+            <field name="state">code</field>
+            <field name="code">
+if payload:
+    result = model.smart_sync(payload)
+    action = result
+else:
+    action = {'success': False, 'error': 'No payload provided in context'}
+            </field>
+        </record>
+
+        <!-- Sale Order Smart Sync Server Action - Simple Version -->
         <record id="action_webhook_sale_order_smart_sync" model="ir.actions.server">
             <field name="name">Webhook: Sale Order Smart Sync</field>
             <field name="model_id" ref="sale.model_sale_order" />
             <field name="state">code</field>
-            <field name="code"><![CDATA[
-# Smart Sync for Sale Order Data
-# Expected payload format:
-# {
-#   "external_id": "string",     # required - external system ID
-#   "patient_id": "string",      # backwards compatibility - external ID
-#   "name": "string",            # Order reference
-#   "customer_name": "string",   # Customer name
-#   "date_order": "datetime",    # Order date
-#   "amount_total": "float",     # Total amount
-#   "source": "string",          # required - agreement/source ID
-#   "order_line": [
-#     {
-#       "product_code": "string",    # Product default_code/SKU
-#       "product_name": "string",    # Product name
-#       "product_uom_qty": "float",  # Quantity
-#       "price_unit": "float",       # Unit price
-#       "price_subtotal": "float"    # Line subtotal
-#     }
-#   ]
-# }
-
+            <field name="code">
 if payload:
     result = model.smart_sync(payload)
     action = result
 else:
-    raise UserError("No payload provided in context")
-]]></field>
+    action = {'success': False, 'error': 'No payload provided in context'}
+            </field>
         </record>
     </data>
 </odoo>

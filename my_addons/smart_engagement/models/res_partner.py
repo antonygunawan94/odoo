@@ -3328,10 +3328,11 @@ class ResPartner(models.Model):
         if not name:
             return False, 0.0
         
+        # Rely entirely on fuzzy matching logic - no exact external_id check
         # Get webhook duplicate detection configuration
         webhook_config = self.env['res.config.settings'].get_webhook_duplicate_config()
         
-        # Skip duplicate detection if disabled
+        # Skip fuzzy duplicate detection if disabled
         if not webhook_config.get('enabled', True):
             return False, 0.0
             
@@ -3452,7 +3453,7 @@ class ResPartner(models.Model):
         # External ID for integration tracking
         if payload.get('external_id') or payload.get('patient_id'):
             external_id = payload.get('external_id') or payload.get('patient_id')
-            vals['ref'] = f"CONTACT-{external_id}"
+            vals['ref'] = external_id
         
         # Fix phone format
         phone = normalize_phone(payload.get('phone', ''))
@@ -3505,6 +3506,7 @@ class ResPartner(models.Model):
             external_id = payload.get('external_id') or payload.get('patient_id')
             if not external_id:
                 raise ValidationError("external_id or patient_id is required")
+            
             if not payload.get('name'):
                 raise ValidationError("name is required")
             

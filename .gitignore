@@ -52,3 +52,5 @@ package.json
 
 venv
 local-webhook-urls*
+*.log
+vultr-odoo.md
